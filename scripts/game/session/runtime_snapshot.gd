@@ -1,6 +1,6 @@
 extends RefCounted
 # Explicit runtime fields; no Node, Resource, Variant object or double projection.
-const PLAYER_FIELDS = ["slot", "cooldown", "bloom", "heals", "sprint_latched", "selected_charge_battery", "selected_charge_target"]
+const PLAYER_FIELDS = ["slot", "cooldown", "bloom", "heals", "sprint_latched", "selected_charge_battery", "selected_charge_target", "selected_charge_parent"]
 const TACTICAL_FIELDS = ["enabled", "mode", "selected_weapon", "flight", "pulse", "map_context", "flight_damage_factor"]
 const TACTICAL_VECTORS = ["flight_start", "destination", "landing"]
 const BULLET = "res://scripts/game/projectile.gd"

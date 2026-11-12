@@ -33,6 +33,9 @@ var info: Label
 var listing: VBoxContainer
 var pending: Callable
 var battery_id := ""
+var detail_label: Label
+var detail_id := ""
+var plugin_charge_rows: Array = []
 var warehouse_page := 0
 var gesture: Dictionary = {}
 const DRAG_THRESHOLD := 6.0
@@ -133,10 +136,29 @@ func _input(event: InputEvent) -> void:
 		grid.queue_redraw()
 		get_viewport().set_input_as_handled()
 func _process(dt: float) -> void:
+	if visible: update_charge_details()
 	if visible and not box_id.is_empty() and exploration != null:
 		var revealed_before: int = exploration.box(state,box_id).get("revealed",[]).size()
 		exploration.tick_search(state,dt,get_tree().paused)
 		if exploration.box(state,box_id).get("revealed",[]).size() != revealed_before: refresh()
+
+# Mutate existing presentation nodes only. Charging must not replace a button
+# under a held pointer or disrupt focus, drag state, or selection callbacks.
+func update_charge_details() -> void:
+	if is_instance_valid(detail_label) and accessible_item(detail_id):
+		var item: Dictionary = state.items[detail_id]
+		detail_label.text = "%s [%s]\n品质%s 耐久%s 电量%s/%s\n插件%s" % [display_name(item.id),item.id,item.quality,item.durability,item.energy,item.capacity,str(item.plugins)]
+	for row: Dictionary in plugin_charge_rows:
+		if not is_instance_valid(row.label): continue
+		var valid: bool = selected==row.parent and accessible_item(row.parent) and ChargingService.manual_target_allowed(state,row.id,row.parent,inventory.definitions)
+		if valid:
+			var plugin: Dictionary = state.items[row.id]
+			row.label.text="已装%s [%s] 电量%.1f/%.1f" % [display_name(row.id),row.id,plugin.energy,plugin.capacity]
+		else:
+			row.label.text="已装物品已不可充电"
+		if is_instance_valid(row.button):
+			row.button.disabled=not valid or battery_id!=row.battery or not ChargingService.manual_battery_allowed(state,row.battery) or state.items[row.id].energy>=state.items[row.id].capacity
+
 func refresh() -> void:
 	if info == null or state.is_empty(): return
 	if is_instance_valid(held_button):
@@ -148,6 +170,9 @@ func refresh() -> void:
 	info.modulate = Color("#ef8d75") if inventory.weight(state,"bag") > state.containers.bag.maximum_weight * 0.8 else Color.WHITE
 	info.text = "背包重量 %.1f / %.1f   快捷数量 %s\n选中 %s   R旋转，拖拽放置，双击转移" % [inventory.weight(state,"bag"),state.containers.bag.maximum_weight,"  ".join(counts),display_name(selected)]
 	for location in tabs_by_source: tabs_by_source[location].visible=location!="warehouse" or at_base
+	detail_label=null
+	detail_id=""
+	plugin_charge_rows.clear()
 	for child in listing.get_children():
 		if child not in slot_buttons.values(): listing.remove_child(child); child.queue_free()
 	for slot: String in state.player.equipment:
@@ -191,15 +216,37 @@ func refresh() -> void:
 	if accessible_item(selected):
 		var item: Dictionary = state.items[selected]
 		var detail := Label.new()
+		detail_label=detail
+		detail_id=item.id
 		detail.text = "%s [%s]\n品质%s 耐久%s 电量%s/%s\n插件%s" % [display_name(item.id),item.id,item.quality,item.durability,item.energy,item.capacity,str(item.plugins)]
 		listing.add_child(detail)
 		if item.container_id == "bag" and item.get("is_battery",false):
-			button(listing,"选择此电池供电",func(): battery_id=selected; refresh())
-		if state.items.has(battery_id) and battery_id != selected:
-			button(listing,"使用"+display_name(battery_id)+"持续充电",func():
-				if accessible_item(selected) and accessible_item(battery_id) and state.items[battery_id].container_id=="bag":
-					charging_requested.emit(selected,battery_id)
+			var supply_id: String = item.id
+			button(listing,"选择此电池供电",func():
+				if visible and selected==supply_id and ChargingService.manual_battery_allowed(state,supply_id): battery_id=supply_id
 				refresh())
+		var target_id: String = item.id
+		var supply_id: String = battery_id
+		if ChargingService.manual_battery_allowed(state,supply_id) and ChargingService.manual_target_allowed(state,target_id,"",inventory.definitions):
+			button(listing,"使用"+display_name(battery_id)+"持续充电",func():
+				if visible and selected==target_id and battery_id==supply_id and accessible_item(target_id) and ChargingService.manual_target_allowed(state,target_id,"",inventory.definitions) and ChargingService.manual_battery_allowed(state,supply_id):
+					charging_requested.emit(target_id,supply_id)
+				refresh())
+		for plugin_id: String in item.get("plugins",{}).values():
+			if ChargingService.installed_charge_parent(state,plugin_id,inventory.definitions) != target_id: continue
+			var plugin: Dictionary = state.items[plugin_id]
+			var plugin_info := Label.new()
+			plugin_info.text="已装%s [%s] 电量%.1f/%.1f" % [display_name(plugin_id),plugin_id,plugin.energy,plugin.capacity]
+			listing.add_child(plugin_info)
+			var row := {"id":plugin_id,"parent":target_id,"battery":supply_id,"label":plugin_info,"button":null}
+			plugin_charge_rows.append(row)
+			if not ChargingService.manual_battery_allowed(state,supply_id): continue
+			var charge_button := button(listing,"为已装"+display_name(plugin_id)+"充电",func():
+				if visible and selected==target_id and battery_id==supply_id and accessible_item(target_id) and ChargingService.manual_target_allowed(state,plugin_id,target_id,inventory.definitions) and ChargingService.manual_battery_allowed(state,supply_id):
+					charging_requested.emit(plugin_id,supply_id)
+				refresh())
+			charge_button.disabled=plugin.energy>=plugin.capacity
+			row.button=charge_button
 	button(listing,"清除选择（用于卸下）",func(): selected=""; refresh())
 	if not box_id.is_empty() and exploration != null:
 		var box: Dictionary = exploration.box(state,box_id)

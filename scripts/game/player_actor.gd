@@ -15,6 +15,7 @@ var sprint_latched:=false
 var inventory_movement_locked:=false
 var selected_charge_battery:=""
 var selected_charge_target:=""
+var selected_charge_parent:=""
 var footstep_distance:=0.0
 func _ready():
  # Apply visibility after the art component has updated its own animation frame.
@@ -32,13 +33,16 @@ func _unhandled_input(event):
  var s:Dictionary=arena.state.player.combat
  if arena.hud!=null and (arena.hud.opened or (arena.hud.inventory_panel!=null and arena.hud.inventory_panel.visible)):return
  if event.is_action_pressed('weapon_next') or event.is_action_pressed('weapon_previous'):
+  clear_charge_selection()
   var previous_id:String=item().get('id','')
   slot=posmod(slot-1+(1 if event.is_action_pressed('weapon_next') else -1),3)+1;ActionRules.switch_weapon(s);tactical.sync()
   if item().get('id','')!=previous_id:arena.emit_sfx('weapon_switch',global_position)
  if event.is_action_pressed('sprint') and arena.hud.sprint_toggle:sprint_latched=not sprint_latched
  if event.is_action_pressed('tactical'):tactical.toggle()
  if event.is_action_pressed('interact') and tactical.fixture_shortcuts_allowed() and global_position.distance_to(arena.station)<80:tactical.install_next_fixture()
- if event.is_action_pressed('charge') and not item().is_empty():s.charging=not s.charging
+ if event.is_action_pressed('charge') and not item().is_empty():
+  clear_charge_selection()
+  s.charging=not s.charging
  if event.is_action_pressed('dodge'):
   if ActionRules.dodge(s,Input.get_vector('move_left','move_right','move_up','move_down'),get_global_mouse_position()-global_position,effective_config(),action_stamina_factor()):arena.emit_sfx('dodge',global_position)
  for i in range(6):
@@ -79,10 +83,15 @@ func _physics_process(dt):
  camera.force_update_scroll()
  aim=(get_global_mouse_position()-global_position).normalized()
  var weapon:Dictionary=item()
- if s.charging and not weapon.is_empty():
-  var target_id:String=selected_charge_target if selected_charge_target!="" else weapon.id
-  var transferred=ChargingService.charge_weapon(arena.state,target_id,30*dt,selected_charge_battery)
-  if transferred<=0 or arena.state.items[target_id].energy>=arena.state.items[target_id].capacity:s.charging=false;selected_charge_target="";selected_charge_battery=""
+ if s.charging:
+  var target_id:String=selected_charge_target if not selected_charge_target.is_empty() else weapon.get('id','')
+  var transferred:=0.0
+  if not selected_charge_target.is_empty():
+   transferred=ChargingService.charge_manual(arena.state,target_id,30*dt,selected_charge_battery,selected_charge_parent,arena.inventory.definitions)
+  elif not weapon.is_empty():
+   transferred=ChargingService.charge_weapon(arena.state,target_id,30*dt)
+  if transferred<=0 or arena.state.items.get(target_id,{}).get('energy',0)>=arena.state.items.get(target_id,{}).get('capacity',0):
+   s.charging=false;clear_charge_selection()
  ChargingService.wireless(arena.state,dt,15,global_position.distance_to(arena.station)<80,wireless_station_active(),false)
  ChargingService.drain_passives(arena.state,dt,effective_config().extra_drain,false)
  DamageRules.tick_heals(arena.state.player.vitals,heals,dt)
@@ -183,13 +192,18 @@ func receive_attack(attack:Dictionary,direction:Vector2=Vector2.ZERO,self_hit:bo
 
 
 
+func clear_charge_selection():
+ selected_charge_target="";selected_charge_battery="";selected_charge_parent=""
+
 func request_inventory_charge(target_id:String,battery_id:String):
- if not arena.state.items.has(target_id) or not arena.state.items.has(battery_id):return
+ var parent_id:String=ChargingService.installed_charge_parent(arena.state,target_id,arena.inventory.definitions)
+ if not ChargingService.manual_target_allowed(arena.state,target_id,parent_id,arena.inventory.definitions):return
+ if not ChargingService.manual_battery_allowed(arena.state,battery_id):return
  var target:Dictionary=arena.state.items[target_id]
- if target.container_id not in ['bag','equipment'] or target.capacity<=0:return
- if arena.state.items[battery_id].container_id!='bag':return
+ if target.energy>=target.capacity:return
  selected_charge_target=target_id
  selected_charge_battery=battery_id
+ selected_charge_parent=parent_id
  arena.state.player.combat.charging=true
 
 # 场景适配查询；默认探索/操作行为保持不变。
