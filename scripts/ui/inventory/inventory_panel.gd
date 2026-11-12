@@ -10,6 +10,8 @@ var external_permission: Callable
 var external_filter: Callable
 var tabs_by_source := {}
 var slot_buttons := {}
+var held_button: Button
+var refresh_pending := false
 var suppress_slot_click := false
 var state: Dictionary
 var inventory: InventoryService
@@ -92,7 +94,15 @@ func button(parent: Node, text: String, callback: Callable) -> Button:
 	b.text = text
 	parent.add_child(b)
 	b.pressed.connect(callback)
+	b.button_down.connect(func(): held_button=b)
+	b.button_up.connect(func():
+		if held_button==b: held_button=null
+		flush_refresh.call_deferred())
 	return b
+func flush_refresh() -> void:
+	if refresh_pending and held_button==null:
+		refresh_pending=false
+		if visible: refresh()
 func open_panel(id: String = "") -> void:
 	gesture.clear()
 	if not at_base and source=="warehouse": source="bag"
@@ -103,6 +113,8 @@ func open_panel(id: String = "") -> void:
 	movement_lock_changed.emit(not id.is_empty())
 	refresh()
 func close_panel() -> void:
+	held_button=null
+	refresh_pending=false
 	selector_callback=Callable()
 	selector_filter=Callable()
 	external_container=""
@@ -127,6 +139,10 @@ func _process(dt: float) -> void:
 		if exploration.box(state,box_id).get("revealed",[]).size() != revealed_before: refresh()
 func refresh() -> void:
 	if info == null or state.is_empty(): return
+	if is_instance_valid(held_button):
+		refresh_pending=true
+		grid.queue_redraw()
+		return
 	var counts: Array = []
 	for n in range(6): counts.append(str(n+1)+":"+str(inventory.quick_count(state,n)))
 	info.modulate = Color("#ef8d75") if inventory.weight(state,"bag") > state.containers.bag.maximum_weight * 0.8 else Color.WHITE
