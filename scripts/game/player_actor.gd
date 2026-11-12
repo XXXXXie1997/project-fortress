@@ -152,7 +152,7 @@ func sync_visual_state():
  visual.battery.visible=visual.charging
 func _draw():
  if arena==null:return
- if cooldown>0 and arena.weapons.get(item().get('definition_id',''),{}).get('kind','')=='melee':
+ if arena.state.player.combat.melee and cooldown>0 and arena.weapons.get(item().get('definition_id',''),{}).get('kind','')=='melee':
   var angle:float=(get_global_mouse_position()-global_position).angle()
   draw_arc(Vector2.ZERO,90,angle-0.8,angle+0.8,16,Color(0.7,0.95,1,0.4),4)
  var s:Dictionary=arena.state.player.combat
