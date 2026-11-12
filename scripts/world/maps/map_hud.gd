@@ -4,11 +4,11 @@ var choices:=VBoxContainer.new()
 var map_view:Control
 var full_map:=false
 var hint:=Label.new()
-var quest_list:=Label.new()
+var quest_list:=RichTextLabel.new()
 func _ready():
  super._ready()
  charge_title.hide()
- quest_list.position=Vector2(1050,200);add_child(quest_list)
+ quest_list.position=Vector2(1050,200);quest_list.size=Vector2(210,400);quest_list.bbcode_enabled=true;quest_list.add_theme_font_size_override('normal_font_size',14);add_child(quest_list)
  # 地图拥有自己的任务追踪，明确释放父HUD同类控件。
  if is_instance_valid(task_tracker):task_tracker.queue_free();task_tracker=null
  for child in get_children():
@@ -79,9 +79,8 @@ func _process(dt):
  var near:Dictionary=arena.nearby() if arena.ready_world else {}
  hint.text=('F '+near.get('label','')+'\n' if not near.is_empty() else '')+arena.message
  if not arena.state.expedition.get('active',false) and not menu.visible and not opened and (inventory_panel==null or not inventory_panel.visible):show_departure()
- quest_list.text=''
- for id in arena.state.quests.active:
-  var q:Dictionary=arena.state.quests.active[id];quest_list.text+=({'main_1':'调查郊区中继','main_2':'恢复外界通信','daily_kill':'清理感染者','daily_scrap':'提交废料'}.get(q.definition,'委托'))+' '+str(q.progress)+' / '+str(arena.services.quests.config.definitions[q.definition].count)+'\n'
+ var tracked:=QuestPresentation.tracker(arena.state,arena.services.quests)
+ if quest_list.text!=tracked:quest_list.text=tracked
  map_view.queue_redraw()
 
 

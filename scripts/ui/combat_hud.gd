@@ -9,7 +9,9 @@ var text:=Label.new()
 var quick:=HBoxContainer.new()
 var quick_slots:Array[Label]=[]
 var charge_title:=Label.new()
-var task_tracker:=Label.new()
+const QuestPresentation = preload("res://scripts/ui/progression/quest_presentation.gd")
+var task_tracker:=RichTextLabel.new()
+var quest_service:QuestService
 var sprint_toggle:=false
 var toggle:=CheckButton.new()
 var weapon_icon:=Sprite2D.new()
@@ -28,7 +30,8 @@ func _ready():
   var slot_label:=Label.new();quick.add_child(slot_label);quick_slots.append(slot_label)
   var icon:=TextureRect.new();icon.name='ArtIcon';icon.position=Vector2(4,-24);icon.size=Vector2(20,20);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;slot_label.add_child(icon)
  var minimap=load('res://scripts/ui/combat_minimap.gd').new();minimap.arena=arena;minimap.position=Vector2(1080,20);add_child(minimap)
- task_tracker.position=Vector2(1060,155);task_tracker.text='任务追踪：尚无任务';add_child(task_tracker)
+ quest_service=QuestService.new(arena.inventory)
+ task_tracker.position=Vector2(1050,155);task_tracker.size=Vector2(210,255);task_tracker.bbcode_enabled=true;task_tracker.add_theme_font_size_override('normal_font_size',14);task_tracker.text='任务追踪：尚无任务';add_child(task_tracker)
  charge_title.position=Vector2(980,640);charge_title.text='测试能源站：靠近无线充能\n靠近后 F 切换测试下挂\nV 开关灯 / 激光 / 发射器';add_child(charge_title)
 func _input(event):
  var management=arena.get('management')
@@ -67,13 +70,8 @@ func show_panel(content:String,pause:bool):
  text.text=content;panel.show();opened=true;get_tree().paused=pause;toggle.visible=pause
 func _process(_dt):
  if is_instance_valid(task_tracker):
-  task_tracker.text='任务追踪'
-  var active:Dictionary=arena.state.quests.get('active',{})
-  if active.is_empty():task_tracker.text+='：尚无任务'
-  for id in active:
-   var q:Dictionary=active[id]
-   var title:String={'main_1':'调查郊区中继','main_2':'恢复外界通信','daily_kill':'清理感染者','daily_scrap':'提交废料'}.get(q.definition,'委托')
-   task_tracker.text+='\n%s · %s'%[title,q.progress]
+  var tracked:=QuestPresentation.tracker(arena.state,quest_service)
+  if task_tracker.text!=tracked:task_tracker.text=tracked
   label.text='生命 %.0f / %.0f\nWASD 移动  Shift 冲刺  空格 闪避'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
  var weapon:Dictionary=arena.player.item()
  var energy:=0.0

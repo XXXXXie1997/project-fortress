@@ -1,4 +1,5 @@
 extends CanvasLayer
+const QuestPresentation = preload("res://scripts/ui/progression/quest_presentation.gd")
 signal committed(revision:int)
 var actor:CharacterBody2D
 var mode:='talents'
@@ -43,8 +44,8 @@ func _process(_dt):
  if terminal and not at_base():terminal=false;refresh()
  var current:=str(actor.arena.state.day)+str(actor.arena.state.player.get('growth',{}))+str(actor.arena.state.quests)
  if revision!=current:revision=current;refresh()
-func label(text:String):
- var item:=Label.new();item.text=text;rows.add_child(item)
+func label(text:String)->Label:
+ var item:=Label.new();item.text=text;rows.add_child(item);return item
 func button(text:String,callback:Callable):
  var item:=Button.new();item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.text=text;bind_button(item,callback);rows.add_child(item);return item
 func result(ok:bool):
@@ -119,7 +120,9 @@ func refresh():
     item.disabled=reason!=''
   for id in s.quests.active:
    var q:=quests.status(s,id)
-   label('%s | 进度%s | 剩余天数%s %s'%[quest_name(q.definition),q.progress,('不限期' if q.days_remaining<0 else str(q.days_remaining)),'已过期' if q.expired else ('即将到期' if q.near_deadline else '')])
+   var presentation:=QuestPresentation.describe(q)
+   var quest_label:=label(presentation.text)
+   quest_label.add_theme_color_override('font_color',presentation.color)
    label(quest_details(q.definition_data))
    if terminal:button('交付 '+quest_name(q.definition),quest_action.bind('deliver',id))
    button('放弃 '+quest_name(q.definition),quest_action.bind('abandon',id))
