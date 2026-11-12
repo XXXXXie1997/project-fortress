@@ -7,9 +7,14 @@ var roofs:Array=[]
 var doors:Dictionary={}
 var tiles:Dictionary={}
 var box_visuals:Dictionary={}
+var ground_layer:Node2D
 func rect(a:Array)->Rect2:return Rect2(a[0],a[1],a[2],a[3])
 func _ready():
  y_sort_enabled=true
+ ground_layer=preload("res://scripts/world/maps/static_map_ground.gd").new()
+ ground_layer.content=content;ground_layer.projection=projection
+ ground_layer.show_behind_parent=true;ground_layer.z_index=-1
+ add_child(ground_layer)
  for pair in [['paving','dungeon',Rect2(0,0,16,16)],['grass','town',Rect2(0,0,16,16)],['flowers','town',Rect2(16,0,16,16)],['roof','town',Rect2(16,64,16,16)],['wall','dungeon',Rect2(32,48,16,16)],['road','town',Rect2(16,32,16,16)],['floor','dungeon',Rect2(0,64,16,16)],['crate','dungeon',Rect2(80,112,16,16)],['tree','town',Rect2(48,0,16,32)]]:
   var tex:=AtlasTexture.new();tex.atlas=load('res://assets/runtime/environment/'+pair[1]+'.png');tex.region=pair[2];tiles[pair[0]]=tex
  var w:float=content.size[0];var h:float=content.size[1]
@@ -58,30 +63,7 @@ func _process(_dt):
    if not boxes.has(id):box_visuals[id].queue_free();box_visuals.erase(id)
  for roof in roofs:roof.node.modulate.a=0.06 if roof.rect.grow(8).has_point(projection.world_to_logical(arena.player.position)) else 1.0
  queue_redraw()
-func ground_tile(type:String,r:Rect2,tint:=Color.WHITE):
- var tex:AtlasTexture=preload('res://scripts/art/art104_nature.gd').texture(type,'armory' if type=='floor' else content.id);var uv:=texture_uv_pixels(tex)
- for i in range(uv.size()):uv[i]/=tex.atlas.get_size()
- draw_polygon(projection.rect_polygon(r),PackedColorArray([Color.WHITE]),uv,tex.atlas)
 func _draw():
- if tiles.is_empty():return
- var view:=Rect2(arena.player.position-Vector2(1600,1000),Vector2(3200,2000))
- for y in range(0,int(content.size[1]),48):
-  for x in range(0,int(content.size[0]),48):
-   if view.has_point(projection.logical_to_world(Vector2(x,y))):
-    var type:String='paving' if content.id=='city' else ('floor' if content.id=='armory' else ('flowers' if (x/48+y/48*3)%19==0 else 'grass'))
-    ground_tile(type,Rect2(x,y,48,48),Color(.55,.65,.55) if content.id=='suburbs' else Color(.55,.6,.65))
- for road in content.roads:
-  var r:=rect(road)
-  for y in range(int(r.position.y),int(r.end.y),48):
-   for x in range(int(r.position.x),int(r.end.x),48):ground_tile('road',Rect2(x,y,minf(48,r.end.x-x),minf(48,r.end.y-y)),Color(.55,.55,.45))
-  if r.size.x>r.size.y:
-   for x in range(int(r.position.x)+24,int(r.end.x)-24,96):draw_line(projection.logical_to_world(Vector2(x,r.get_center().y)),projection.logical_to_world(Vector2(x+40,r.get_center().y)),Color('b9ac74'),2)
-  else:
-   for y in range(int(r.position.y)+24,int(r.end.y)-24,96):draw_line(projection.logical_to_world(Vector2(r.get_center().x,y)),projection.logical_to_world(Vector2(r.get_center().x,y+40)),Color('b9ac74'),2)
- for room in content.rooms:
-  var r:=rect(room.rect)
-  for y in range(int(r.position.y),int(r.end.y),48):
-   for x in range(int(r.position.x),int(r.end.x),48):ground_tile('floor',Rect2(x,y,minf(48,r.end.x-x),minf(48,r.end.y-y)),Color(.6,.65,.65))
  if not arena.state.expedition.get('active',false):return
  for p in arena.catalog[content.id].points.values():
   var colors={'spawn':Color('7edbc8'),'extraction':Color('82c95e'),'travel':Color('51a8e7'),'exit':Color('e4bd69')}
