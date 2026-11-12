@@ -54,12 +54,13 @@ func _ready() -> void:
 	save_notice = HBoxContainer.new()
 	save_notice.position = Vector2(250, 20)
 	overlay.add_child(save_notice)
+	save_notice.visibility_changed.connect(_overlay_visibility)
 	save_notice_text = Label.new(); save_notice.add_child(save_notice_text)
 	var retry := Button.new(); retry.text = "重试保存"; save_notice.add_child(retry)
 	retry.pressed.connect(func():
 		if coordinator.shutdown().ok: save_notice.hide())
 	save_notice.hide()
-	phases = VBoxContainer.new(); phases.position = Vector2(1040, 470); overlay.add_child(phases)
+	phases = VBoxContainer.new(); phases.position = Vector2(1040, 420); overlay.add_child(phases)
 	rows = VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 12)
 	panel.add_child(rows)
@@ -203,7 +204,16 @@ func _process(delta: float) -> void:
 			button("继续生存", func():panel.hide())
 			message_line()
 			coordinator.request_save()
-	phases.visible = not panel.visible and not mounting and not coordinator.state.is_empty() and coordinator.state.session.location == "base" and coordinator.state.phase in ["morning", "dusk"]
+	phases.visible = not interface_open() and not mounting and not coordinator.state.is_empty() and coordinator.state.session.location == "base" and coordinator.state.phase in ["morning", "dusk"]
+
+# Presentation only: never hide a CanvasLayer that owns an active inventory.
+func interface_open() -> bool:
+	if panel.visible: return true
+	if not is_instance_valid(arena): return false
+	var management = arena.get("management")
+	if management != null and management.presentation_open(): return true
+	if is_instance_valid(arena.hud) and arena.hud.inventory_panel != null and arena.hud.inventory_panel.visible: return true
+	return is_instance_valid(arena.player) and is_instance_valid(arena.player.progression_panel) and arena.player.progression_panel.visible
 
 func queue_mount() -> void:
 	if mount_queued: return
@@ -267,7 +277,9 @@ func mount_current() -> void:
 
 func phase_button(label: String, action: Callable) -> void:
 	var control := Button.new(); control.text = label
-	control.pressed.connect(action); phases.add_child(control)
+	control.pressed.connect(func():
+		if not interface_open() and not mounting: action.call())
+	phases.add_child(control)
 
 func refresh_phase_controls() -> void:
 	for child in phases.get_children(): phases.remove_child(child); child.queue_free()
@@ -316,6 +328,11 @@ func confirm_night(mode: String, map_id := "", point := "") -> void:
 func _overlay_visibility() -> void:
 	if not is_instance_valid(arena) or not is_instance_valid(arena.player): return
 	arena.player.progression_ui_blocked = panel.visible or (is_instance_valid(arena.player.progression_panel) and arena.player.progression_panel.visible)
+	# Pause freezes management processing, so suppress its feedback synchronously.
+	var management = arena.get("management")
+	if management != null:
+		management.feedback_obscured = panel.visible or save_notice.visible
+		management.message.visible = not management.feedback_obscured and not management.inventory_panel.visible and not arena.player.progression_panel.visible
 	if not panel.visible: arena.player.progression_pointer_guard = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 
 func cancel_overlay() -> void:

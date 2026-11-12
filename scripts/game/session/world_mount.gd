@@ -96,7 +96,7 @@ static func mount_base(arena: Node2D, management: bool) -> void:
 		# Component compatibility augmentation must not override the official directory.
 		arena.inventory.definitions = Catalog.items()
 		arena.add_child(arena.management)
-		if arena.state.phase == "night": arena.management.root_panel.hide()
+		arena.management.root_panel.hide()
 		arena.management.world_changed.connect(arena.sync_layout)
 		arena.management.world_changed.connect(func(): arena.session_context.coordinator.request_save())
 		arena.management.placement_requested.connect(func(type, id): arena.placing_type = type; arena.moving_id = id)

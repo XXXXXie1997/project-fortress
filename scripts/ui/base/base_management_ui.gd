@@ -10,6 +10,9 @@ var content: VBoxContainer
 var scroll: ScrollContainer
 var message: Label
 var resource_status: Label
+var inventory_energy: Label
+var presentation_obscured := false
+var feedback_obscured := false
 var activity_label: Label
 var activity_id := ""
 var activity_kind := ""
@@ -34,8 +37,12 @@ func _ready() -> void:
 	add_child(root_panel)
 	scroll=ScrollContainer.new();scroll.custom_minimum_size=Vector2(390,570);root_panel.add_child(scroll)
 	content=VBoxContainer.new();content.size_flags_horizontal=Control.SIZE_EXPAND_FILL;scroll.add_child(content)
-	message=Label.new();message.position=Vector2(30,660);message.size=Vector2(1180,52);message.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;add_child(message)
+	message=Label.new();message.position=Vector2(400,8);message.size=Vector2(380,60);message.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;add_child(message)
 	inventory_panel=InventoryPanel.new();inventory_panel.bind_state(state,services.inventory);add_child(inventory_panel)
+	inventory_energy=Label.new()
+	inventory_energy.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	var inventory_content:Node=inventory_panel.get_child(0)
+	inventory_content.add_child(inventory_energy);inventory_content.move_child(inventory_energy,1)
 	resource_status=Label.new();resource_status.position=Vector2(800,12);add_child(resource_status)
 	confirmation=ConfirmationDialog.new();add_child(confirmation)
 	confirmation.canceled.connect(func():pending=Callable())
@@ -227,7 +234,12 @@ func _process(_dt: float) -> void:
 	for b:Dictionary in state.base.buildings.values():
 		if b.type=="warehouse":station_active=b.durability>0
 	resource_status.text="能源 %.1f / %.0f  仓库 %d×%d\n无线站：%s · 范围80 · %s" % [state.base.energy_store.energy,state.base.energy_store.capacity,state.containers.warehouse.width,state.containers.warehouse.height,"运行" if station_active else "废墟停用","正在充电" if state.player.get("combat",{}).get("charging",false) else "就近自动充电"]
+	inventory_energy.text="基地能源 %.1f / %.0f · 仓库 %d×%d" % [state.base.energy_store.energy,state.base.energy_store.capacity,state.containers.warehouse.width,state.containers.warehouse.height]
+	resource_status.visible=not presentation_obscured and not inventory_panel.visible
+	message.visible=not presentation_obscured and not feedback_obscured and not inventory_panel.visible
 
+func presentation_open() -> bool:
+	return root_panel.visible or inventory_panel.visible or is_modal_open()
 
 func is_modal_open() -> bool:
 	return confirmation.visible or (inventory_panel!=null and inventory_panel.dialog.visible)

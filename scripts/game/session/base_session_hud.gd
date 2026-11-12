@@ -4,6 +4,7 @@ var warning_rules:=DefenseResolution.new()
 func _ready():
 	super._ready()
 	process_mode = Node.PROCESS_MODE_PAUSABLE
+	charge_title.position = Vector2(950, 680)
 	charge_title.text = "仓库附近无线充能 · R 持续插电充能"
 	loss_warning.position=Vector2(365,100)
 	loss_warning.size=Vector2(550,60)
@@ -17,8 +18,15 @@ func _ready():
 	add_child(loss_warning);loss_warning.hide()
 func _process(delta):
 	super._process(delta)
+	var shell=arena.session_context.shell
+	var covered:bool=shell.interface_open()
+	# Keep the inventory and its children alive/visible; only suppress ambient HUD.
+	for element in [label,card,quick,weapon_icon,tactical_icon,task_tracker,charge_title]:
+		element.visible=not covered
+	arena.status_label.visible=not covered
+	arena.management.presentation_obscured=shell.panel.visible or arena.player.progression_panel.visible
 	var warning:Dictionary=warning_rules.warning_state(arena.state)
-	loss_warning.visible=warning.visible
+	loss_warning.visible=warning.visible and not covered
 	loss_warning.text="基地危急：损毁已达失守阈值" if warning.threshold_reached else "基地危急：接近失守"
 	loss_warning.text+="\n请保护核心设施；准备阶段可修复废墟"
 func _input(event):
