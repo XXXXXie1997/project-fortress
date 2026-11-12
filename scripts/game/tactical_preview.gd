@@ -53,7 +53,7 @@ func fire()->bool:
 func explode(center:Vector2):
  if not ensure_map_context():return
  actor.arena.emit_sfx('explosion',center,true,'player_explosion')
- if actor.arena.has_method('emit_sound'):actor.arena.emit_sound(center,1.4)
+ if actor.arena.has_method('emit_player_noise'):actor.arena.emit_player_noise('explosion',center)
  pulse=0.2;destination=center
  for target in actor.arena.targets:
   var distance:float=center.distance_to(target.global_position)

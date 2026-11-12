@@ -10,6 +10,7 @@ var navigation:=AStarGrid2D.new()
 var buckets:Dictionary={}
 var ambient_brightness:=1.0
 var calls_completed:=0
+var sprint_noise_distance:=0.0
 func _ready():
  if not session_context.is_empty():
   await preload('res://scripts/game/session/world_mount.gd').mount(self,'enemy')
@@ -102,6 +103,19 @@ func separation(enemy:Node2D)->Vector2:
     var desired:float=enemy.spec.radius+other.spec.radius+4
     if offset.length()<desired:force+=offset.normalized()*(1.0-offset.length()/desired)
  return force.limit_length(1.0)
+func emit_player_noise(action:String,source:Vector2):
+ var loudness:float=ai_config.get('player_noise',{}).get(action,0.0)
+ if loudness>0.0:emit_sound(source,loudness)
+func emit_player_movement_noise(source:Vector2,distance:float,sprinting:bool):
+ if not sprinting:
+  sprint_noise_distance=0.0
+  return
+ if distance<=0.001:return
+ sprint_noise_distance+=distance
+ var stride:float=maxf(1.0,ai_config.get('sprint_noise_stride',48.0))
+ if sprint_noise_distance>=stride:
+  sprint_noise_distance=fmod(sprint_noise_distance,stride)
+  emit_player_noise('sprint',source)
 func emit_sound(source:Vector2,loudness:float=1.0):
  for enemy in targets:
   if enemy.position.distance_to(source)<ai_config.hearing_range*loudness:enemy.hear(source)

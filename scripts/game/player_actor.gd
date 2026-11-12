@@ -66,6 +66,8 @@ func _physics_process(dt):
  collision_mask=collision_mask_for_action(s.dodge_left>0)
  var before_move:=global_position
  move_and_slide()
+ if arena.has_method('emit_player_movement_noise'):
+  arena.emit_player_movement_noise(global_position,global_position.distance_to(before_move),s.sprinting)
  if move!=Vector2.ZERO and s.dodge_left<=0:
   footstep_distance+=global_position.distance_to(before_move)
   if footstep_distance>=48.0:
@@ -107,7 +109,7 @@ func _physics_process(dt):
    else:
     weapon.energy-=params.energy_cost
     arena.emit_sfx('shot_heavy' if spec.get('pellets',1)>1 or spec.interval>=0.5 else ('shot_smg' if spec.interval<0.12 else 'shot_rifle'),global_position)
-    if arena.has_method('emit_sound'):arena.emit_sound(global_position)
+    if arena.has_method('emit_player_noise'):arena.emit_player_noise('gunshot',global_position)
     params.source_position=[global_position.x,global_position.y]
     for pellet in range(spec.get('pellets',1)):
      var bullet=load('res://scripts/game/projectile.gd').new();bullet.arena=arena;bullet.position=global_position;bullet.damage=params.damage;bullet.attack=params.duplicate()
