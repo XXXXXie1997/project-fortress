@@ -1,5 +1,8 @@
 extends "res://scripts/world/enemies/enemy_arena.gd"
 var grid:=GridProjection.new(48.0,Vector2(96,48),Vector2.ZERO)
+const Perimeter = preload("res://scripts/base/base_geometry.gd")
+var perimeter_walls: Array[StaticBody2D] = []
+var perimeter_signature := ""
 var base_navigation:=AStar2D.new()
 var nav_timer:=0.0
 var gate_logical:=Vector2(1152,470)
@@ -51,7 +54,7 @@ func _ready():
   actor.position=grid.logical_to_world(actor.logical_rect.get_center());add_child(actor);fixtures.append(actor)
   if b.type=='warehouse':station=actor.position
  var shield=load('res://scripts/base/actors/defense_fixture.gd').new();shield.arena=self;shield.kind='shield';shield.logical_rect=Rect2(1143,405,18,130);shield.position=grid.logical_to_world(gate_logical);add_child(shield);fixtures.append(shield)
- for rect in [Rect2(1143,0,30,405),Rect2(1143,535,30,329),Rect2(0,0,30,864),Rect2(0,0,1152,30),Rect2(0,834,1152,30)]:wall(rect)
+ sync_perimeter()
  for i in state.base.residents.size():
   var actor=load('res://scripts/base/actors/resident_actor.gd').new();actor.arena=self;actor.id=state.base.residents[i].id;actor.position=grid.logical_to_world(Vector2(900,430+i*80));actor.post=actor.position;add_child(actor);residents.append(actor)
  player.position=grid.logical_to_world(Vector2(850,470));player.camera.enabled=true
@@ -110,6 +113,7 @@ func _unhandled_input(event):
 func _physics_process(dt):
  var tick_start:=Time.get_ticks_usec()
  if cycle==null:return
+ sync_perimeter()
  elapsed+=dt;frame_samples.append(dt)
  nav_timer-=dt
  if nav_timer<=0:rebuild_base_navigation();nav_timer=1.0
@@ -198,7 +202,22 @@ func _process(_dt):
 
 
 
-func wall(rect:Rect2,low:bool=false):
+func sync_perimeter() -> void:
+ if not state.get('base',{}).has('bounds'):return
+ var signature:=str(state.base.bounds)
+ if signature==perimeter_signature:return
+ perimeter_signature=signature
+ for old in perimeter_walls:
+  if not is_instance_valid(old):continue
+  old.collision_layer=0
+  remove_child(old)
+  old.queue_free()
+ perimeter_walls.clear()
+ for rect in Perimeter.wall_rects(state.base.bounds):perimeter_walls.append(wall(rect))
+ nav_timer=0.0
+ queue_redraw()
+
+func wall(rect:Rect2,low:bool=false)->StaticBody2D:
  var node:=StaticBody2D.new();node.collision_layer=8 if low else 1
  var points:=grid.rect_polygon(rect)
  node.position=grid.logical_to_world(rect.get_center())
@@ -215,13 +234,15 @@ func wall(rect:Rect2,low:bool=false):
   for point in grid.rect_polygon(part):strip.append(point-visual.position)
   visual.polygon=strip;add_child(visual);node.tree_exiting.connect(visual.queue_free)
  var occluder:=LightOccluder2D.new();var polygon:=OccluderPolygon2D.new();polygon.polygon=local;occluder.occluder=polygon;node.add_child(occluder);add_child(node)
+ return node
 func placement_polygon(cell:Vector2i,type:String)->PackedVector2Array:
  var size:Array=building.config.types[type].size
  return grid.rect_polygon(Rect2(Vector2(cell)*48,Vector2(size[0],size[1])*48))
 func mouse_build_cell()->Vector2i:return grid.world_to_cell(get_global_mouse_position())
 func _draw():
- for y in range(18):
-  for x in range(34):
+ var area:=Perimeter.bounds_rect(state.base.get('bounds',[0,0,24,18]))
+ for y in range(int(area.position.y/48),int(area.end.y/48)):
+  for x in range(int(area.position.x/48),int(area.end.x/48)+10):
    var poly:=grid.rect_polygon(Rect2(x*48,y*48,48,48))
    draw_colored_polygon(poly,Color('77734f') if (x+y)%2==0 else Color('6d6948'))
    draw_polyline(PackedVector2Array([poly[0],poly[1],poly[2],poly[3],poly[0]]),Color('585c46'),1)
@@ -233,17 +254,20 @@ func rebuild_base_navigation():
  base_navigation.clear()
  var shape:=CircleShape2D.new();shape.radius=13
  var query:=PhysicsShapeQueryParameters2D.new();query.shape=shape;query.collision_mask=1+32
- for y in range(36):
-  for x in range(70):
-   var point:=grid.logical_to_world(Vector2(x*24+12,y*24+12))
+ var region:=Perimeter.navigation_rect(state.base.bounds)
+ var columns:=int(ceil(region.size.x/24.0))
+ var rows:=int(ceil(region.size.y/24.0))
+ for y in range(rows):
+  for x in range(columns):
+   var point:=grid.logical_to_world(region.position+Vector2(x*24+12,y*24+12))
    query.transform=Transform2D(0,point)
-   if get_world_2d().direct_space_state.intersect_shape(query,1).is_empty():base_navigation.add_point(y*70+x,point)
+   if get_world_2d().direct_space_state.intersect_shape(query,1).is_empty():base_navigation.add_point(y*columns+x,point)
  for id in base_navigation.get_point_ids():
-  var x:=int(id)%70;var y:=int(id)/70
+  var x:=int(id)%columns;var y:=int(id)/columns
   for offset in [Vector2i(1,0),Vector2i(0,1),Vector2i(1,1),Vector2i(-1,1)]:
    var next:Vector2i=Vector2i(x,y)+offset
-   if next.x<0 or next.x>=70 or next.y>=36:continue
-   var target:int=next.y*70+next.x
+   if next.x<0 or next.x>=columns or next.y>=rows:continue
+   var target:int=next.y*columns+next.x
    if base_navigation.has_point(target) and clear_line(base_navigation.get_point_position(id),base_navigation.get_point_position(target),33):base_navigation.connect_points(id,target)
 func walk_direction(point:Vector2,goal:Vector2)->Vector2:
  if clear_line(point,goal,33):return point.direction_to(goal)

@@ -83,7 +83,7 @@ static func mount_base(arena: Node2D, management: bool) -> void:
 	shield.arena = arena; shield.kind = "shield"; shield.logical_rect = Rect2(1143, 405, 18, 130)
 	shield.position = arena.grid.logical_to_world(arena.gate_logical)
 	arena.add_child(shield); arena.fixtures.append(shield)
-	for rect in [Rect2(1143,0,30,405), Rect2(1143,535,30,329), Rect2(0,0,30,864), Rect2(0,0,1152,30), Rect2(0,834,1152,30)]: arena.wall(rect)
+	arena.sync_perimeter()
 	for i in arena.state.base.residents.size():
 		var resident = load("res://scripts/base/actors/resident_actor.gd").new()
 		resident.arena = arena; resident.id = arena.state.base.residents[i].id

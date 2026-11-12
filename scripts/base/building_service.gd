@@ -46,6 +46,8 @@ func valid_position(state: Dictionary, type: String, cell: Array, camera: Rect2i
 	var rect := Rect2i(cell[0], cell[1], size[0], size[1])
 	var bounds: Array = state.base.bounds
 	if not Rect2i(bounds[0], bounds[1], bounds[2], bounds[3]).encloses(rect) or not camera.encloses(rect): return false
+	var footprint := Rect2(Vector2(rect.position) * 48, Vector2(rect.size) * 48)
+	if footprint.intersects(preload("res://scripts/base/base_geometry.gd").entrance_reservation(bounds)): return false
 	for zone: Array in config.forbidden:
 		if rect.intersects(Rect2i(zone[0], zone[1], zone[2], zone[3])): return false
 	for id: String in state.base.buildings:

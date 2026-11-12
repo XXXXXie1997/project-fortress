@@ -16,7 +16,8 @@ func _physics_process(dt):
  elif position.distance_to(base_target.position)<=spec.range+20 and r.cooldown<=0:
   r.attack_left=spec.windup
  var goal:Vector2=base_target.position
- if arena.grid.world_to_logical(position).x>1173 and arena.grid.world_to_logical(goal).x<1152:goal=arena.grid.logical_to_world(arena.gate_logical)
+ var geometry=preload('res://scripts/base/base_geometry.gd')
+ if geometry.approach_side(arena.grid.world_to_logical(position),arena.state.base.bounds) and not geometry.approach_side(arena.grid.world_to_logical(goal),arena.state.base.bounds):goal=arena.grid.logical_to_world(arena.gate_logical)
  velocity=arena.walk_direction(position,goal)*spec.speed if position.distance_to(goal)>spec.range*0.65 and r.attack_left<=0 else Vector2.ZERO
  velocity+=arena.separation(self)*35
  move_and_slide()

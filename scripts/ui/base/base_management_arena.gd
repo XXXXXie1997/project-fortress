@@ -67,6 +67,7 @@ func _process(dt):
 	sync_layout()
 	queue_redraw()
 func sync_layout() -> void:
+	sync_perimeter()
 	# Read authoritative state after every UI transaction; preserve capacitor/order data.
 	var signature:=""
 	for id:String in state.base.buildings:signature+=id+str(state.base.buildings[id].cell)
