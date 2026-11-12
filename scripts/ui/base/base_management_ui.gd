@@ -100,7 +100,8 @@ func show_production(id: String) -> void:
 	var quantity:=SpinBox.new();quantity.min_value=1;quantity.max_value=99;content.add_child(quantity)
 	for recipe: String in services.production.recipes:
 		var r: Dictionary=services.production.recipes[recipe]
-		button("制作 "+definition_name(r.output.keys()[0])+" 每份材料"+cost_text(r.cost)+" 能源"+str(r.energy),func():report(submit_order(id,recipe,int(quantity.value)),"已预付并下单",order_block_reason(id,recipe,int(quantity.value)));show_production(id))
+		var recipe_button:=button("制作 "+definition_name(r.output.keys()[0])+"\n每份材料："+cost_text(r.cost)+"\n每份能源："+str(r.energy),func():report(submit_order(id,recipe,int(quantity.value)),"已预付并下单",order_block_reason(id,recipe,int(quantity.value)));show_production(id))
+		recipe_button.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	activity_id=id;activity_kind="production"
 	activity_label=Label.new();activity_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(activity_label)
