@@ -40,7 +40,7 @@ func _unhandled_input(event):
  if event.is_action_pressed('sprint') and arena.hud.sprint_toggle:sprint_latched=not sprint_latched
  if event.is_action_pressed('tactical'):tactical.toggle()
  if event.is_action_pressed('interact') and tactical.fixture_shortcuts_allowed() and global_position.distance_to(arena.station)<80:tactical.install_next_fixture()
- if event.is_action_pressed('charge') and not item().is_empty():
+ if event.is_action_pressed('charge') and (s.charging or not item().is_empty()):
   clear_charge_selection()
   s.charging=not s.charging
  if event.is_action_pressed('dodge'):
