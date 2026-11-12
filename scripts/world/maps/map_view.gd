@@ -4,6 +4,19 @@ var bounds:=Rect2()
 var factor:=1.0
 var labels:Array=[]
 var label_rects:Array=[]
+var recommended_regions:Array=[]
+func refresh_recommended_regions():
+ recommended_regions.clear()
+ var counts:Dictionary={}
+ for q in arena.state.quests.active.values():
+  var definition:Dictionary=arena.services.quests.config.definitions.get(q.definition,{})
+  if definition.get('kind','')!='daily':continue
+  if q.get('deadline',0)>0 and arena.state.day>=q.deadline:continue
+  var region:String=definition.get('region','')
+  if region.is_empty() or not arena.catalog.has(region):continue
+  counts[region]=counts.get(region,0)+1
+ for region in counts:
+  recommended_regions.append({'region':region,'count':counts[region],'name':{'suburbs':'郊区','city':'城区','armory':'武器库'}.get(region,region)})
 func map_point(world:Vector2)->Vector2:return (world-bounds.position)*factor+Vector2(6,6)
 func rect_shape(rect:Array)->PackedVector2Array:
  var result:=PackedVector2Array()
@@ -11,11 +24,21 @@ func rect_shape(rect:Array)->PackedVector2Array:
  return result
 func _draw():
  labels.clear();label_rects.clear()
+ recommended_regions.clear()
  draw_rect(Rect2(Vector2.ZERO,size),Color(.03,.06,.08,.94))
  if not arena.state.expedition.get('active',false):return
  var id:String=arena.state.expedition.map_id;var content:Dictionary=arena.catalog[id]
  bounds=arena.projection.world_bounds(Rect2(Vector2.ZERO,Vector2(content.size[0],content.size[1])))
  factor=minf((size.x-(242 if size.x>400 else 12))/bounds.size.x,(size.y-12)/bounds.size.y)
+ if size.x>400:
+  refresh_recommended_regions()
+  for region in recommended_regions:
+   if region.region==id:
+    # Current quest definitions recommend the whole map, never a fabricated loot point.
+    var area:=rect_shape([0,0,content.size[0],content.size[1]])
+    draw_colored_polygon(area,Color(.25,.65,.5,.16))
+    var outline:=area.duplicate();outline.append(area[0])
+    draw_polyline(outline,Color('7edbc8'),2)
  for road in content.roads:draw_colored_polygon(rect_shape(road),Color('596258'))
  for room in content.rooms:draw_colored_polygon(rect_shape(room.rect),Color('8d9692'))
  for obstacle in content.barriers:draw_colored_polygon(rect_shape(obstacle),Color('9c8b68'))
@@ -53,4 +76,13 @@ func draw_labels():
   draw_line(pos,Vector2(x-10,y+15),Color(entry.color,.65),1)
   draw_circle(pos,3,entry.color)
   draw_string(font,Vector2(x+5,y+20),number+'  '+entry.text,HORIZONTAL_ALIGNMENT_LEFT,204,14,entry.color)
+ if not recommended_regions.is_empty():
+  var top:float=size.y-18-recommended_regions.size()*48-26
+  draw_string(font,Vector2(x+5,top+18),'委托推荐区域',HORIZONTAL_ALIGNMENT_LEFT,204,14,Color('7edbc8'))
+  for i in range(recommended_regions.size()):
+   var region:Dictionary=recommended_regions[i]
+   var y:float=top+26+i*48
+   draw_rect(Rect2(x,y,214,44),Color(.08,.22,.19))
+   draw_string(font,Vector2(x+5,y+18),'%s · %d项委托'%[region.name,region.count],HORIZONTAL_ALIGNMENT_LEFT,204,14,Color('7edbc8'))
+   draw_string(font,Vector2(x+5,y+36),'范围：整片区域，无精确目标点',HORIZONTAL_ALIGNMENT_LEFT,204,12,Color.WHITE)
 
