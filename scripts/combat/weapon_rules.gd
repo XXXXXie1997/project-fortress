@@ -11,6 +11,16 @@ static func recover_bloom(bloom: float, weapon: Dictionary, dt: float, paused: b
 static func after_shot(bloom: float, weapon: Dictionary) -> float:
 	return minf(weapon.max_bloom, bloom + weapon.bloom_per_shot)
 
+static func durability_factor(item: Dictionary, weapon: Dictionary) -> float:
+	if item.get("durability", 0.0) <= 0.0:
+		return 0.0
+	return clampf(weapon.get("degraded_factor", 1.0), 0.0, 1.0) if item.durability < weapon.get("degrade_threshold", 0.0) else 1.0
+
+# Call once after an attack is accepted, never per projectile or victim.
+static func wear_after_attack(item: Dictionary, weapon: Dictionary, cfg: Dictionary) -> void:
+	var wear: float = weapon.get("durability_wear", cfg.get("melee_durability_wear" if weapon.get("kind", "") == "melee" else "ranged_durability_wear", 0.0))
+	item.durability = maxf(0.0, item.get("durability", 0.0) - maxf(0.0, wear))
+
 static func attack_parameters(item: Dictionary, weapon: Dictionary) -> Dictionary:
 	if item.get("durability", 0.0) <= 0.0:
 		return {}
@@ -21,8 +31,7 @@ static func attack_parameters(item: Dictionary, weapon: Dictionary) -> Dictionar
 	var damage: float = weapon.damage
 	if weapon.kind == "melee" and powered:
 		damage += weapon.get("energy_bonus", 0.0)
-	var degraded: bool = item.durability < weapon.get("degrade_threshold", 0.0)
-	return {"damage": damage * (weapon.get("degraded_factor", 1.0) if degraded else 1.0), "energy_cost": cost if powered else 0.0, "penetration": weapon.penetration, "knockback": weapon.knockback}
+	return {"damage": damage * durability_factor(item, weapon), "energy_cost": cost if powered else 0.0, "penetration": weapon.penetration, "knockback": weapon.knockback}
 
 # Read-only projection. ChargingService owns passive energy drain.
 static func extra_effects(items: Array, cfg: Dictionary) -> Dictionary:

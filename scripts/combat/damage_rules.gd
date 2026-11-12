@@ -22,7 +22,10 @@ static func hit(vitals: Dictionary, action: Dictionary, armor: Dictionary, attac
 	var hp_damage := damage
 	if not armor.is_empty() and armor.get("durability", 0.0) > 0.0:
 		var rating := maxf(0.001, armor.get("rating", 1.0))
-		hp_damage *= armored_damage_fraction(attack.get("penetration", 0.0), rating, cfg)
+		var fraction := armored_damage_fraction(attack.get("penetration", 0.0), rating, cfg)
+		if armor.durability < cfg.get("armor_degrade_threshold", 0.0):
+			fraction = 1.0 - (1.0 - fraction) * clampf(cfg.get("armor_degraded_factor", 1.0), 0.0, 1.0)
+		hp_damage *= fraction
 		result.armor_loss = minf(armor.durability, damage * cfg.armor_wear)
 		armor.durability -= result.armor_loss
 	result.hp_loss = minf(vitals.hp, hp_damage)

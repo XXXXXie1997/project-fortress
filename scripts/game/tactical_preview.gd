@@ -11,6 +11,7 @@ var destination:=Vector2.ZERO
 var pulse:=0.0
 var map_context:=''
 var fixture_shortcuts_enabled:=false
+var flight_damage_factor:=1.0
 func fixture_shortcuts_allowed()->bool:
  return fixture_shortcuts_enabled and actor!=null and actor.arena.session_context.is_empty()
 func reset_map_effects():
@@ -19,10 +20,19 @@ func reset_map_effects():
  queue_redraw()
 func ensure_map_context()->bool:
  if not actor.arena.has_method('combat_context'):return true
- var current:String=actor.arena.combat_context()
+ var current:String=canonical_context(actor.arena.combat_context())
+ map_context=canonical_context(map_context)
  if current!=map_context:
   reset_map_effects();map_context=current
  return actor.arena.combat_map_ready()
+func canonical_context(value:String)->String:
+ # JSON restores integer expedition IDs as floats. That is the same expedition,
+ # not a map transition; retain in-flight effects across both old encodings.
+ var parts:=value.split('|',true,1)
+ if parts.size()==2 and parts[0].is_valid_float():
+  var number:=parts[0].to_float()
+  if is_finite(number) and number==floor(number):return str(int(number))+'|'+parts[1]
+ return value
 func battery()->Dictionary:
  var weapon:Dictionary=actor.item()
  return actor.arena.state.items.get(weapon.get('plugins',{}).get('tactical',''),{})
@@ -45,8 +55,11 @@ func fire()->bool:
  if not ensure_map_context():return false
  if not enabled or mode!=2 or flight>0 or battery().is_empty():return false
  var item:Dictionary=actor.item()
- if item.get('energy',0)<15:return false
+ if item.get('energy',0)<15 or item.get('durability',0)<=0:return false
+ var spec:Dictionary=actor.arena.weapons.get(item.get('definition_id',''),{})
+ flight_damage_factor=WeaponRules.durability_factor(item,spec)
  item.energy-=15
+ WeaponRules.wear_after_attack(item,spec,actor.effective_config())
  actor.arena.emit_sfx('shot_heavy',actor.global_position,false,'player_launcher')
  destination=landing;flight_start=actor.global_position;flight=0.5
  return true
@@ -57,10 +70,10 @@ func explode(center:Vector2):
  pulse=0.2;destination=center
  for target in actor.arena.targets:
   var distance:float=center.distance_to(target.global_position)
-  if distance<=120 and actor.arena.clear_line(center,target.global_position):actor.arena.hit(target,45 if distance<55 else 20,{'penetration':10.0,'knockback':20.0},target.position-center)
+  if distance<=120 and actor.arena.clear_line(center,target.global_position):actor.arena.hit(target,(45 if distance<55 else 20)*flight_damage_factor,{'penetration':10.0,'knockback':20.0},target.position-center)
  var distance:float=center.distance_to(actor.global_position)
  if distance<=120 and actor.arena.clear_line(center,actor.global_position):
-  actor.receive_attack({'damage':45 if distance<55 else 20,'penetration':10},actor.global_position-center,true)
+  actor.receive_attack({'damage':(45 if distance<55 else 20)*flight_damage_factor,'penetration':10},actor.global_position-center,true)
 func polygon(center:Vector2,radius:float)->PackedVector2Array:
  var points:=PackedVector2Array()
  for i in range(64):

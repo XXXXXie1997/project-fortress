@@ -100,6 +100,7 @@ func _physics_process(dt):
    if melee:
     if ActionRules.start_melee(s,spec.stamina_cost*stamina_factor,effective_config()):
      weapon.energy-=params.energy_cost
+     WeaponRules.wear_after_attack(weapon,spec,effective_config())
      arena.emit_sfx('melee_swing',global_position)
      params.sfx_melee=true
      for target in arena.targets:
@@ -108,6 +109,7 @@ func _physics_process(dt):
      cooldown=spec.interval
    else:
     weapon.energy-=params.energy_cost
+    WeaponRules.wear_after_attack(weapon,spec,effective_config())
     arena.emit_sfx('shot_heavy' if spec.get('pellets',1)>1 or spec.interval>=0.5 else ('shot_smg' if spec.interval<0.12 else 'shot_rifle'),global_position)
     if arena.has_method('emit_player_noise'):arena.emit_player_noise('gunshot',global_position)
     params.source_position=[global_position.x,global_position.y]
