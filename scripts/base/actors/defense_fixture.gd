@@ -7,6 +7,25 @@ var logical_rect:Rect2
 var footprint:=PackedVector2Array()
 var art_visual:Node2D
 var charge_sound_left:=0.0
+var retired:=false
+# Layout transactions replace/delete the authoritative instance before queue_free runs.
+# Retire all callback/physics surfaces immediately; never fabricate fallback building data.
+func retire() -> void:
+ if retired:return
+ retired=true
+ process_mode=Node.PROCESS_MODE_DISABLED
+ set_process(false);set_physics_process(false)
+ collision_layer=0;collision_mask=0
+ hide()
+ if is_instance_valid(arena):arena.fixtures.erase(self)
+ queue_free()
+func live_instance() -> bool:
+ if retired:return false
+ if not is_instance_valid(arena):
+  retire();return false
+ if kind!='shield' and not arena.state.base.buildings.has(id):
+  retire();return false
+ return true
 func data()->Dictionary:
  return arena.state.base.shield if kind=='shield' else arena.state.base.buildings[id]
 func _ready():
@@ -20,17 +39,19 @@ func _ready():
  art_visual.scale=Vector2.ONE*clampf(width/180.0,0.45,2.0)
  add_child(art_visual)
 func _process(_dt):
- if art_visual==null:return
+ if not live_instance() or art_visual==null:return
  var d:=data()
  art_visual.alive=d.energy>0 if kind=='shield' else d.durability>0
  if kind=='turret' and art_visual.alive:
   var target=arena.nearest_enemy(position,360)
   if target!=null:art_visual.aim=position.direction_to(target.position)
 func receive_damage(amount:float,_direction:Vector2=Vector2.ZERO):
+ if not live_instance():return
  var d:=data()
  if kind=='shield':d.energy=maxf(0,d.energy-amount)
  else:d.durability=maxf(0,d.durability-amount)
 func _physics_process(dt):
+ if not live_instance():return
  charge_sound_left=maxf(0,charge_sound_left-dt)
  var d:=data()
  var alive:bool=d.energy>0 if kind=='shield' else d.durability>0
@@ -53,6 +74,7 @@ func _physics_process(dt):
     arena.emit_sfx('shot_rifle',position,true,id)
  queue_redraw()
 func _draw():
+ if not live_instance():return
  var d:=data()
  var alive:bool=d.energy>0 if kind=='shield' else d.durability>0
  var color:=Color('68dbed') if kind=='shield' else Color('7c969d')

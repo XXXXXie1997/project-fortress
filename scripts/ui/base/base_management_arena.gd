@@ -73,7 +73,7 @@ func sync_layout() -> void:
 	if signature!=layout_signature:
 		layout_signature=signature
 		for actor in fixtures.duplicate():
-			if actor.kind!="shield":fixtures.erase(actor);actor.set_physics_process(false);actor.queue_free()
+			if actor.kind!="shield":actor.retire()
 		for id:String in state.base.buildings:
 			var b:Dictionary=state.base.buildings[id]
 			var actor=load("res://scripts/base/actors/defense_fixture.gd").new()
