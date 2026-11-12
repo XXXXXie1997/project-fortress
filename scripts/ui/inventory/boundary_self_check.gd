@@ -1,0 +1,35 @@
+extends SceneTree
+func _initialize():call_deferred("run")
+func run():
+	var s := WorldState.fresh()
+	var inv := InventoryService.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/items.json")).items)
+	inv.setup(s)
+	var pack := inv.spawn(s,"backpack_small","warehouse")
+	inv.equip(s,pack.id,"backpack")
+	var gun := inv.spawn(s,"rifle_basic","warehouse")
+	var p := InventoryPanel.new()
+	p.bind_state(s,inv)
+	root.add_child(p)
+	p.open_panel()
+	p.rotated=true
+	assert(p.transfer_item(gun.id,"bag",Vector2i(4,0),true))
+	assert(s.items[gun.id].cell==[4,0] and s.items[gun.id].rotated)
+	var gun2 := inv.spawn(s,"rifle_basic","warehouse")
+	var before := WorldState.encode(s)
+	assert(not p.transfer_item(gun2.id,"bag",Vector2i(4,0),true))
+	assert(WorldState.encode(s)==before)
+	s.containers.bag.maximum_weight=3.0
+	before=WorldState.encode(s)
+	assert(not p.transfer_item(gun2.id,"bag",Vector2i(0,0),true))
+	assert(WorldState.encode(s)==before)
+	p.source="warehouse";p.selected=gun2.id;p.at_base=false
+	assert(p.source=="bag" and p.selected=="")
+	assert(p.visible_items("warehouse").is_empty())
+	assert(not p.accessible_item(gun2.id))
+	before=WorldState.encode(s)
+	assert(not p.transfer_item(gun2.id,"bag"))
+	assert(WorldState.encode(s)==before)
+	p.queue_free()
+	await process_frame
+	print("INVENTORY_R3_BOUNDARIES_PASS")
+	quit()

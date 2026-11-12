@@ -1,0 +1,26 @@
+extends SceneTree
+func _initialize():call_deferred("run")
+func run():
+	var s:=WorldState.fresh()
+	var inv:=InventoryService.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/items.json")).items)
+	inv.setup(s)
+	var gun:=inv.spawn(s,"rifle_basic","warehouse")
+	var meds:=inv.spawn(s,"medical_needle","warehouse",5)
+	var p:=InventoryPanel.new();p.bind_state(s,inv);root.add_child(p)
+	p.bind_external_container("warehouse",func():return false)
+	p.open_panel()
+	var before:=WorldState.encode(s)
+	assert(p.visible_items("warehouse").is_empty())
+	assert(not p.transfer_item(gun.id,"bag"))
+	assert(WorldState.encode(s)==before)
+	p.bind_external_container("warehouse",func():return true,func(i):return i.definition_id=="medical_needle")
+	p.selected=gun.id
+	assert(not p.accessible_item(gun.id) and not p.transfer_item(gun.id,"bag"))
+	assert(WorldState.encode(s)==before)
+	assert(p.transfer_item(meds.id,"bag"))
+	p.close_panel();p.open_panel()
+	assert(p.accessible_item(gun.id))
+	p.queue_free()
+	await process_frame
+	print("EXTERNAL_CONTEXT_GUARD_PASS")
+	quit()

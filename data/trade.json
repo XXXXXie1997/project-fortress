@@ -1,0 +1,2 @@
+{"provisional":true,"sell_ratio":0.5,"stock":[{"item":"scrap","level":1,"minimum":2,"maximum":4},{"item":"rifle_basic","plugin":"scope_basic","plugin_chance":0.5,"level":2,"minimum":1,"maximum":1},{"item":"nightvision","level":2,"minimum":1,"maximum":1},{"item":"trade_blade","level":3,"minimum":1,"maximum":1}],"item_definitions":{"trade_blade":{"category":"melee","size":[1,2],"weight":1,"durability":100,"capacity":120,"price":200,"passive":"D001"}}}
+

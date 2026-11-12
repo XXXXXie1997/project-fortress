@@ -1,0 +1,1 @@
+{"provisional":true,"equipment":{"weapon_1":"rifle_basic","weapon_2":"knife_basic","armor":"armor_basic","backpack":"backpack_small"},"supplies":[{"definition_id":"battery_basic","quantity":3,"energy_each":100.0},{"definition_id":"medical_needle","quantity":5,"energy_each":0.0}],"quick":["medical_needle","","","","",""]}

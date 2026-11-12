@@ -1,0 +1,27 @@
+extends "res://scripts/world/maps/map_hud.gd"
+func _ready():
+	super._ready()
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+func _input(event):
+	if arena.session_context.shell.panel.visible:
+		if event.is_action_pressed("cancel"): arena.session_context.shell.cancel_overlay()
+		if event is InputEventKey or event is InputEventAction: get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("cancel") and not menu.visible and not full_map and (inventory_panel == null or not inventory_panel.visible) and not arena.player.progression_panel.visible:
+		arena.session_context.shell.show_pause()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("interact") and not opened and not arena.session_context.shell.near_candidate().is_empty():
+		arena.session_context.shell.show_candidate(arena.session_context.shell.near_candidate())
+		get_viewport().set_input_as_handled()
+		return
+	super._input(event)
+
+func _process(delta):
+	super._process(delta)
+	var phase: String = {"morning":"清晨","day":"白天","dusk":"黄昏","night":"夜晚"}.get(arena.state.phase,"当前阶段")
+	label.text = "生命 %.0f / %.0f · 第 %d 天 %s\n%s" % [arena.state.player.vitals.hp,arena.state.player.vitals.max_hp,arena.state.day,phase,arena.catalog.get(arena.state.expedition.get("map_id",""),{}).get("title","避难所")]
+	quest_list.text = ""
+	for quest: Dictionary in arena.state.quests.active.values():
+		var title: String = {"main_1":"调查郊区中继","main_2":"恢复外界通信","daily_kill":"清理感染者","daily_scrap":"提交废料"}.get(quest.definition,"委托")
+		quest_list.text += "%s %d / %d\n" % [title,int(quest.progress),int(arena.services.quests.config.definitions[quest.definition].count)]

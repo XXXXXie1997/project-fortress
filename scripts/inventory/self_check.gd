@@ -1,0 +1,33 @@
+extends SceneTree
+
+func _initialize() -> void:
+	var catalog: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/items.json"))
+	var inventory := InventoryService.new(catalog.items)
+	var state := WorldState.fresh()
+	inventory.setup(state)
+	assert(state.containers.bag.width == 3)
+	var pack := inventory.spawn(state, "backpack_small", "warehouse")
+	assert(inventory.equip(state, pack.id, "backpack").ok)
+	for n in range(4): assert(not inventory.spawn(state, "medical_needle", "bag", 5).is_empty())
+	state.player.quick[0] = "medical_needle"
+	assert(inventory.quick_count(state, 0) == 20)
+	assert(inventory.consume(state, "medical_needle", 6))
+	assert(inventory.quick_count(state, 0) == 14)
+	var battery := inventory.spawn(state, "battery_basic", "bag")
+	state.items[battery.id].energy = 80.0
+	assert(inventory.move(state, battery.id, "warehouse").ok)
+	assert(state.base.energy_store.energy == 80 and state.items[battery.id].energy == 0)
+	assert(inventory.move(state, battery.id, "bag").ok)
+	assert(state.base.energy_store.energy == 0 and state.items[battery.id].energy == 80)
+	var gun := inventory.spawn(state, "rifle_basic", "warehouse")
+	assert(inventory.equip(state, gun.id, "weapon_1").ok)
+	assert(ChargingService.charge_weapon(state, gun.id, 30) == 30)
+	assert(state.items[gun.id].energy == 30 and state.items[battery.id].energy == 50)
+	var unique := inventory.spawn(state, "nightvision", "ground")
+	assert(not unique.is_empty())
+	assert(inventory.spawn(state, "nightvision", "warehouse").is_empty())
+	assert(inventory.destroy(state, unique.id))
+	assert(not inventory.spawn(state, "nightvision", "warehouse").is_empty())
+	assert(not WorldState.decode(WorldState.encode(state)).is_empty())
+	print("INVENTORY SELF CHECK PASSED")
+	quit()

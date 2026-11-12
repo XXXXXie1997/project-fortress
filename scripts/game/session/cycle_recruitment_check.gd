@@ -1,0 +1,52 @@
+extends SceneTree
+const Coordinator = preload("res://scripts/game/session/session_coordinator.gd")
+func _initialize(): call_deferred("run")
+func run():
+	var c = Coordinator.new("user://cycle-recruit-%s" % Time.get_ticks_usec())
+	assert(c.create_world(42).ok)
+	var candidate: Dictionary = c.state.world.recruitment.candidates["field:suburbs:survivor_1"].duplicate(true)
+	assert(c.shutdown().ok and c.restore().ok)
+	assert(c.state.world.recruitment.candidates[candidate.id].hp == candidate.hp and c.state.world.recruitment.candidates[candidate.id].power == candidate.power and c.state.world.recruitment.candidates[candidate.id].accepted == candidate.accepted)
+	assert(c.to_dusk().ok)
+	assert(c.begin_night("explore",true,"suburbs","south").ok)
+	assert(c.state.expedition.maps.suburbs.enemies.size() > 8)
+	var frozen_count: int = c.state.cycle.night.snapshot.base.residents.size()
+	c.state.base.resident_capacity = 0
+	var before := WorldState.encode(c.state)
+	assert(not c.transact(func(s: Dictionary) -> Dictionary: return c.services.recruitment.accept(s,candidate.id,c.services.inventory)).ok)
+	assert(WorldState.encode(c.state) == before)
+	c.state.base.resident_capacity = 6
+	assert(c.transact(func(s: Dictionary) -> Dictionary: return c.services.recruitment.accept(s,candidate.id,c.services.inventory)).ok)
+	assert(c.state.base.residents.size() == 1)
+	assert(c.state.base.residents[0].max_hp == candidate.hp)
+	assert(c.state.cycle.night.snapshot.base.residents.size() == frozen_count)
+	before = WorldState.encode(c.state)
+	assert(not c.transact(func(s: Dictionary) -> Dictionary: return c.services.recruitment.accept(s,candidate.id,c.services.inventory)).ok)
+	assert(WorldState.encode(c.state) == before)
+	assert(c.finish_exploration(true,[100,200]).ok)
+	assert(c.state.base.residents.size() == 1)
+	assert(c.shutdown().ok)
+	# Long-cycle fixture uses paid real construction, not fabricated defense totals.
+	var long_run = Coordinator.new("user://cycle-long-%s" % Time.get_ticks_usec())
+	assert(long_run.create_world(88).ok)
+	assert(not long_run.services.inventory.spawn(long_run.state,"scrap","warehouse",100).is_empty())
+	for cell in [[3,7],[5,7],[7,7],[9,7]]:
+		assert(not long_run.services.building.build(long_run.state,"turret",cell,Rect2i(0,0,24,18)).is_empty())
+	for day in 15:
+		assert(long_run.to_dusk().ok)
+		assert(long_run.begin_night("rest",true).ok)
+		var result: Dictionary = long_run.finish_night()
+		assert(result.ok and result.held)
+		var stable := WorldState.encode(long_run.state)
+		assert(not long_run.finish_night().ok)
+		assert(WorldState.encode(long_run.state) == stable)
+	assert(long_run.state.day == 16)
+	assert(long_run.state.base.generation_ids.size() == 30)
+	assert(long_run.state.cycle.results.size() == 15)
+	assert(long_run.state.quests.refresh_day == 16)
+	assert(long_run.shutdown().ok)
+	assert(long_run.restore().ok and long_run.state.day == 16)
+	print("SESSION_RECRUIT_BOUNDARIES_AND_15_DAYS_PASS")
+	quit()
+
+

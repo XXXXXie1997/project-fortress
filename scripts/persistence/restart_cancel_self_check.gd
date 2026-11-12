@@ -1,0 +1,20 @@
+extends SceneTree
+func _initialize():
+ var svc:=SaveService.new("res://.godot-local/cancel-version-"+str(Time.get_ticks_usec()))
+ var s:=WorldState.fresh()
+ var first:=svc.request("slot",s)
+ s.day=2
+ var second:=svc.request("slot",s)
+ var other:=svc.request("other",s,"morning")
+ assert(not svc.cancel_pending_version("slot","latest",first.version).ok)
+ assert(svc.pending["slot/latest"].version==second.version)
+ assert(svc.cancel_pending_version("slot","latest",second.version).cancelled)
+ assert(svc.pending.size()==1 and svc.pending["other/morning"].version==other.version)
+ svc.dispatch()
+ assert(not svc.cancel_pending_version("other","morning",other.version).ok)
+ assert(svc.shutdown().ok)
+ assert(svc.load_snapshot("other","morning").state.day==2)
+ assert(svc.set_failure_lock("slot",true) and svc.is_failure_locked("slot"))
+ assert(svc.set_failure_lock("slot",false) and not svc.is_failure_locked("slot"))
+ print("EXACT CANDIDATE CANCELLATION SELF CHECK PASSED")
+ quit()

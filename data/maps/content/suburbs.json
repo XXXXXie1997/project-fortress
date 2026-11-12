@@ -1,0 +1,506 @@
+{
+  "id": "suburbs",
+  "title": "城郊：断联公路",
+  "size": [
+    2400,
+    1920
+  ],
+  "initial_spawn": "south",
+  "points": {
+    "south": {
+      "kind": "spawn",
+      "position": [
+        240,
+        1700
+      ],
+      "label": "南侧公路"
+    },
+    "north_camp": {
+      "kind": "spawn",
+      "position": [
+        2040,
+        240
+      ],
+      "label": "北侧营地"
+    },
+    "escape": {
+      "kind": "extraction",
+      "position": [
+        100,
+        1720
+      ],
+      "label": "返回避难所"
+    },
+    "relay": {
+      "kind": "travel",
+      "position": [
+        1200,
+        1320
+      ],
+      "label": "旧电站传送器"
+    },
+    "armory_road": {
+      "kind": "exit",
+      "position": [
+        2260,
+        1200
+      ],
+      "label": "通往武器库",
+      "target_map": "armory",
+      "target_point": "entrance"
+    },
+    "city_road": {
+      "kind": "exit",
+      "position": [
+        2260,
+        320
+      ],
+      "label": "通往废弃城区",
+      "target_map": "city",
+      "target_point": "west"
+    }
+  },
+  "rooms": [
+    {
+      "id": "supply",
+      "rect": [
+        1440,
+        240,
+        480,
+        384
+      ],
+      "door": [
+        1632,
+        600,
+        96,
+        24
+      ],
+      "locked": true
+    },
+    {
+      "id": "cottage",
+      "rect": [
+        480,
+        1056,
+        384,
+        336
+      ],
+      "door": [
+        624,
+        1368,
+        96,
+        24
+      ],
+      "locked": false
+    },
+    {
+      "id": "station",
+      "rect": [
+        1056,
+        768,
+        432,
+        336
+      ],
+      "door": [
+        1224,
+        1080,
+        96,
+        24
+      ],
+      "locked": false
+    }
+  ],
+  "roads": [
+    [
+      144,
+      1440,
+      2112,
+      144
+    ],
+    [
+      1872,
+      144,
+      144,
+      1440
+    ],
+    [
+      1008,
+      1152,
+      1008,
+      96
+    ],
+    [
+      1008,
+      384,
+      96,
+      1152
+    ]
+  ],
+  "barriers": [
+    [
+      160,
+      864,
+      240,
+      48
+    ],
+    [
+      1440,
+      1440,
+      240,
+      48
+    ],
+    [
+      1560,
+      1160,
+      48,
+      220
+    ],
+    [
+      1476,
+      288,
+      96,
+      24
+    ],
+    [
+      516,
+      1104,
+      96,
+      24
+    ],
+    [
+      1092,
+      816,
+      96,
+      24
+    ]
+  ],
+  "trees": [
+    [
+      120,
+      264
+    ],
+    [
+      120,
+      408
+    ],
+    [
+      264,
+      120
+    ],
+    [
+      264,
+      264
+    ],
+    [
+      264,
+      552
+    ],
+    [
+      408,
+      120
+    ],
+    [
+      408,
+      408
+    ],
+    [
+      408,
+      552
+    ],
+    [
+      552,
+      264
+    ],
+    [
+      552,
+      408
+    ],
+    [
+      696,
+      120
+    ],
+    [
+      696,
+      264
+    ],
+    [
+      696,
+      552
+    ],
+    [
+      100,
+      1140
+    ],
+    [
+      240,
+      1260
+    ],
+    [
+      840,
+      560
+    ],
+    [
+      1720,
+      1660
+    ],
+    [
+      2110,
+      740
+    ]
+  ],
+  "enemies": [
+    {
+      "id": "s_boss",
+      "type": "boss",
+      "position": [
+        430,
+        380
+      ]
+    },
+    {
+      "id": "s_road1",
+      "type": "basic",
+      "position": [
+        900,
+        1450
+      ]
+    },
+    {
+      "id": "s_road2",
+      "type": "fast",
+      "position": [
+        1700,
+        1520
+      ]
+    },
+    {
+      "id": "s_home",
+      "type": "basic",
+      "position": [
+        660,
+        1220
+      ]
+    },
+    {
+      "id": "s_station",
+      "type": "ranged",
+      "position": [
+        1240,
+        930
+      ]
+    },
+    {
+      "id": "s_locker",
+      "type": "armored",
+      "position": [
+        1650,
+        420
+      ]
+    },
+    {
+      "id": "s_cross",
+      "type": "basic",
+      "position": [
+        2010,
+        1020
+      ]
+    },
+    {
+      "id": "s_north",
+      "type": "fast",
+      "position": [
+        2000,
+        580
+      ]
+    }
+  ],
+  "night_enemies": [
+    {
+      "id": "s_night1",
+      "type": "fast",
+      "position": [
+        1450,
+        1550
+      ]
+    },
+    {
+      "id": "s_night2",
+      "type": "ranged",
+      "position": [
+        2100,
+        1000
+      ]
+    },
+    {
+      "id": "s_night3",
+      "type": "basic",
+      "position": [
+        1000,
+        700
+      ]
+    }
+  ],
+  "containers": [
+    {
+      "id": "starter_cache",
+      "position": [
+        350,
+        1590
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 6
+        },
+        {
+          "definition_id": "medical_needle",
+          "quantity": 2
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "road_parts",
+      "position": [
+        1360,
+        1510
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 8
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "cottage_box",
+      "position": [
+        600,
+        1160
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 5
+        },
+        {
+          "definition_id": "battery_basic",
+          "quantity": 1
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "key_cache",
+      "position": [
+        1320,
+        1190
+      ],
+      "loot": [
+        {
+          "definition_id": "suburbs_key",
+          "quantity": 1,
+          "door_key": "suburbs:supply"
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "supply_vault",
+      "position": [
+        1650,
+        350
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 18
+        },
+        {
+          "definition_id": "battery_basic",
+          "quantity": 2
+        },
+        {
+          "definition_id": "medical_needle",
+          "quantity": 5
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "station_parts",
+      "position": [
+        1160,
+        870
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 10
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "garden_seeds",
+      "position": [
+        820,
+        1120
+      ],
+      "loot": [
+        {
+          "definition_id": "seed_catalyst",
+          "quantity": 3
+        },
+        {
+          "definition_id": "seed_material",
+          "quantity": 3
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "farm_shed",
+      "position": [
+        1800,
+        1680
+      ],
+      "loot": [
+        {
+          "definition_id": "seed_material",
+          "quantity": 2
+        },
+        {
+          "definition_id": "scrap",
+          "quantity": 5
+        }
+      ],
+      "search_seconds": 0.6
+    }
+  ],
+  "doors": {
+    "supply": "suburbs_key"
+  },
+  "objectives": [
+    {
+      "id": "suburbs_contact",
+      "position": [
+        1360,
+        860
+      ],
+      "label": "调查中继记录",
+      "quest_target": "map_1_relay"
+    }
+  ],
+  "events": [
+    {
+      "id": "distress",
+      "position": [
+        2110,
+        980
+      ],
+      "label": "异常求救广播"
+    }
+  ]
+}

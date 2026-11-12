@@ -1,0 +1,332 @@
+{
+  "id": "armory",
+  "title": "支线：封锁武器库",
+  "size": [
+    1920,
+    1920
+  ],
+  "initial_spawn": "entrance",
+  "points": {
+    "entrance": {
+      "kind": "spawn",
+      "position": [
+        220,
+        1660
+      ],
+      "label": "货运入口"
+    },
+    "roof_camp": {
+      "kind": "spawn",
+      "position": [
+        1700,
+        1540
+      ],
+      "label": "东侧维修坪"
+    },
+    "escape": {
+      "kind": "extraction",
+      "position": [
+        100,
+        1720
+      ],
+      "label": "武器库撤离"
+    },
+    "relay": {
+      "kind": "travel",
+      "position": [
+        980,
+        1550
+      ],
+      "label": "后勤传送器"
+    },
+    "road": {
+      "kind": "exit",
+      "position": [
+        110,
+        1500
+      ],
+      "label": "返回城郊",
+      "target_map": "suburbs",
+      "target_point": "armory_road"
+    }
+  },
+  "rooms": [
+    {
+      "id": "barracks",
+      "rect": [
+        240,
+        240,
+        480,
+        576
+      ],
+      "door": [
+        432,
+        792,
+        96,
+        24
+      ],
+      "locked": false
+    },
+    {
+      "id": "vault",
+      "rect": [
+        1152,
+        192,
+        528,
+        528
+      ],
+      "door": [
+        1368,
+        696,
+        96,
+        24
+      ],
+      "locked": true
+    },
+    {
+      "id": "workshop",
+      "rect": [
+        720,
+        864,
+        672,
+        384
+      ],
+      "door": [
+        1008,
+        1224,
+        96,
+        24
+      ],
+      "locked": false
+    }
+  ],
+  "roads": [
+    [
+      144,
+      1392,
+      1632,
+      144
+    ],
+    [
+      816,
+      144,
+      144,
+      1344
+    ]
+  ],
+  "barriers": [
+    [
+      240,
+      1030,
+      240,
+      48
+    ],
+    [
+      1450,
+      980,
+      48,
+      350
+    ],
+    [
+      1080,
+      360,
+      48,
+      240
+    ],
+    [
+      280,
+      1350,
+      288,
+      24
+    ],
+    [
+      276,
+      288,
+      96,
+      24
+    ],
+    [
+      1188,
+      240,
+      96,
+      24
+    ],
+    [
+      756,
+      912,
+      96,
+      24
+    ]
+  ],
+  "trees": [],
+  "enemies": [
+    {
+      "id": "a_guard",
+      "type": "armored",
+      "position": [
+        900,
+        720
+      ]
+    },
+    {
+      "id": "a_guard2",
+      "type": "ranged",
+      "position": [
+        960,
+        1120
+      ]
+    },
+    {
+      "id": "a_fast",
+      "type": "fast",
+      "position": [
+        1420,
+        1420
+      ]
+    },
+    {
+      "id": "a_barracks",
+      "type": "basic",
+      "position": [
+        420,
+        480
+      ]
+    },
+    {
+      "id": "a_vault",
+      "type": "armored",
+      "position": [
+        1410,
+        380
+      ]
+    },
+    {
+      "id": "a_watch",
+      "type": "ranged",
+      "position": [
+        1640,
+        930
+      ]
+    },
+    {
+      "id": "a_fast2",
+      "type": "fast",
+      "position": [
+        500,
+        1240
+      ]
+    }
+  ],
+  "night_enemies": [
+    {
+      "id": "a_night1",
+      "type": "armored",
+      "position": [
+        1060,
+        1400
+      ]
+    },
+    {
+      "id": "a_night2",
+      "type": "ranged",
+      "position": [
+        1760,
+        580
+      ]
+    }
+  ],
+  "containers": [
+    {
+      "id": "rack",
+      "position": [
+        400,
+        380
+      ],
+      "loot": [
+        {
+          "definition_id": "rifle_basic",
+          "quantity": 1
+        },
+        {
+          "definition_id": "battery_basic",
+          "quantity": 1
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "workbench",
+      "position": [
+        900,
+        1040
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 8
+        },
+        {
+          "definition_id": "scatter_basic",
+          "quantity": 1
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "locker_key",
+      "position": [
+        1080,
+        1330
+      ],
+      "loot": [
+        {
+          "definition_id": "armory_key",
+          "quantity": 1,
+          "door_key": "armory:vault"
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "sealed_rack",
+      "position": [
+        1450,
+        300
+      ],
+      "loot": [
+        {
+          "definition_id": "sniper_basic",
+          "quantity": 1
+        },
+        {
+          "definition_id": "energy_blade",
+          "quantity": 1
+        },
+        {
+          "definition_id": "battery_basic",
+          "quantity": 2
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "loading_crate",
+      "position": [
+        1500,
+        1560
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 12
+        }
+      ],
+      "search_seconds": 0.6
+    }
+  ],
+  "doors": {
+    "vault": "armory_key"
+  },
+  "objectives": [],
+  "events": []
+}

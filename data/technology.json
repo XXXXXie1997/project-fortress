@@ -1,0 +1,1 @@
+{"provisional":true,"nodes":{"storage":{"requires":[],"energy":20,"materials":{"scrap":2},"effects":{"storage_level":2}},"agriculture":{"requires":["storage"],"energy":30,"materials":{"scrap":3},"effects":{"seed_return_guaranteed":true}}}}

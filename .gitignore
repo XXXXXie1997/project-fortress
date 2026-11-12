@@ -7,10 +7,15 @@ builds/
 .agents/
 docs/
 /assets/source/
+/assets/runtime/**/*-source.png*
+/assets/runtime/**/*-draft.png*
+/assets/runtime/**/*-d01-*.png*
 /scenes/**/*.png
 /scenes/**/*.png.import
 *.md
 *.log
+*.tmp
+/scenes/enemies/pressure.json
 **/*preview.png
 **/*preview.png.import
 **/*-sha.json

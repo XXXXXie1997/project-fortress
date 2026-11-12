@@ -1,0 +1,1 @@
+{"provisional":true,"version":1,"health_exponent":1.0,"spawn_interval":0.2,"types":{"basic":{"cost":1.0},"fast":{"cost":1.5},"armored":{"cost":3.0},"ranged":{"cost":2.0}},"spawn_logical":[[1450,360],[1495,402],[1540,444],[1585,486],[1630,528]]}

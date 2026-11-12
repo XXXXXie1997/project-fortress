@@ -1,0 +1,474 @@
+{
+  "id": "city",
+  "title": "废弃城区：最后信号",
+  "size": [
+    2880,
+    2400
+  ],
+  "initial_spawn": "west",
+  "points": {
+    "west": {
+      "kind": "spawn",
+      "position": [
+        180,
+        2100
+      ],
+      "label": "西侧街口"
+    },
+    "east": {
+      "kind": "spawn",
+      "position": [
+        2580,
+        2000
+      ],
+      "label": "东侧广场"
+    },
+    "escape": {
+      "kind": "extraction",
+      "position": [
+        100,
+        2240
+      ],
+      "label": "城区撤离"
+    },
+    "relay": {
+      "kind": "travel",
+      "position": [
+        1600,
+        1920
+      ],
+      "label": "市政传送器"
+    },
+    "road": {
+      "kind": "exit",
+      "position": [
+        100,
+        1940
+      ],
+      "label": "返回城郊",
+      "target_map": "suburbs",
+      "target_point": "city_road"
+    }
+  },
+  "rooms": [
+    {
+      "id": "clinic",
+      "rect": [
+        288,
+        288,
+        576,
+        480
+      ],
+      "door": [
+        528,
+        744,
+        96,
+        24
+      ],
+      "locked": false
+    },
+    {
+      "id": "market",
+      "rect": [
+        1152,
+        384,
+        576,
+        528
+      ],
+      "door": [
+        1392,
+        888,
+        96,
+        24
+      ],
+      "locked": false
+    },
+    {
+      "id": "radio",
+      "rect": [
+        2160,
+        144,
+        528,
+        528
+      ],
+      "door": [
+        2376,
+        648,
+        96,
+        24
+      ],
+      "locked": true
+    },
+    {
+      "id": "apartments",
+      "rect": [
+        480,
+        1344,
+        624,
+        480
+      ],
+      "door": [
+        744,
+        1800,
+        96,
+        24
+      ],
+      "locked": false
+    },
+    {
+      "id": "garage",
+      "rect": [
+        1824,
+        1248,
+        576,
+        480
+      ],
+      "door": [
+        2064,
+        1704,
+        96,
+        24
+      ],
+      "locked": false
+    }
+  ],
+  "roads": [
+    [
+      144,
+      1920,
+      2592,
+      144
+    ],
+    [
+      912,
+      144,
+      144,
+      1920
+    ],
+    [
+      144,
+      1008,
+      2592,
+      192
+    ],
+    [
+      1872,
+      144,
+      144,
+      1872
+    ]
+  ],
+  "barriers": [
+    [
+      1200,
+      1720,
+      400,
+      32
+    ],
+    [
+      1100,
+      1100,
+      300,
+      48
+    ],
+    [
+      2100,
+      1930,
+      240,
+      48
+    ],
+    [
+      220,
+      940,
+      240,
+      48
+    ],
+    [
+      324,
+      336,
+      96,
+      24
+    ],
+    [
+      1188,
+      432,
+      96,
+      24
+    ],
+    [
+      2196,
+      192,
+      96,
+      24
+    ],
+    [
+      516,
+      1392,
+      96,
+      24
+    ],
+    [
+      1860,
+      1296,
+      96,
+      24
+    ]
+  ],
+  "trees": [],
+  "enemies": [
+    {
+      "id": "c_0",
+      "type": "basic",
+      "position": [
+        700,
+        2020
+      ]
+    },
+    {
+      "id": "c_1",
+      "type": "fast",
+      "position": [
+        1300,
+        2120
+      ]
+    },
+    {
+      "id": "c_2",
+      "type": "ranged",
+      "position": [
+        1700,
+        1050
+      ]
+    },
+    {
+      "id": "c_3",
+      "type": "armored",
+      "position": [
+        1980,
+        800
+      ]
+    },
+    {
+      "id": "c_4",
+      "type": "basic",
+      "position": [
+        600,
+        550
+      ]
+    },
+    {
+      "id": "c_5",
+      "type": "ranged",
+      "position": [
+        1450,
+        650
+      ]
+    },
+    {
+      "id": "c_6",
+      "type": "fast",
+      "position": [
+        780,
+        1530
+      ]
+    },
+    {
+      "id": "c_7",
+      "type": "armored",
+      "position": [
+        2130,
+        1460
+      ]
+    },
+    {
+      "id": "c_8",
+      "type": "ranged",
+      "position": [
+        2460,
+        400
+      ]
+    },
+    {
+      "id": "c_9",
+      "type": "fast",
+      "position": [
+        2540,
+        1700
+      ]
+    },
+    {
+      "id": "c_10",
+      "type": "basic",
+      "position": [
+        1200,
+        1250
+      ]
+    }
+  ],
+  "night_enemies": [
+    {
+      "id": "c_night1",
+      "type": "ranged",
+      "position": [
+        2700,
+        1120
+      ]
+    },
+    {
+      "id": "c_night2",
+      "type": "armored",
+      "position": [
+        1600,
+        2080
+      ]
+    },
+    {
+      "id": "c_night3",
+      "type": "fast",
+      "position": [
+        1100,
+        840
+      ]
+    },
+    {
+      "id": "c_night4",
+      "type": "basic",
+      "position": [
+        430,
+        1060
+      ]
+    }
+  ],
+  "containers": [
+    {
+      "id": "clinic_supplies",
+      "position": [
+        550,
+        430
+      ],
+      "loot": [
+        {
+          "definition_id": "medical_needle",
+          "quantity": 5
+        },
+        {
+          "definition_id": "battery_basic",
+          "quantity": 1
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "market_stock",
+      "position": [
+        1400,
+        530
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 15
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "apartment_key",
+      "position": [
+        700,
+        1500
+      ],
+      "loot": [
+        {
+          "definition_id": "city_key",
+          "quantity": 1,
+          "door_key": "city:radio"
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "garage_stock",
+      "position": [
+        2060,
+        1400
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 12
+        },
+        {
+          "definition_id": "battery_basic",
+          "quantity": 2
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "radio_vault",
+      "position": [
+        2360,
+        350
+      ],
+      "loot": [
+        {
+          "definition_id": "scrap",
+          "quantity": 25
+        },
+        {
+          "definition_id": "battery_basic",
+          "quantity": 3
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "botanical_lab",
+      "position": [
+        360,
+        600
+      ],
+      "loot": [
+        {
+          "definition_id": "seed_catalyst",
+          "quantity": 4
+        },
+        {
+          "definition_id": "catalyst",
+          "quantity": 2
+        }
+      ],
+      "search_seconds": 0.6
+    },
+    {
+      "id": "market_seeds",
+      "position": [
+        1550,
+        780
+      ],
+      "loot": [
+        {
+          "definition_id": "seed_material",
+          "quantity": 4
+        }
+      ],
+      "search_seconds": 0.6
+    }
+  ],
+  "doors": {
+    "radio": "city_key"
+  },
+  "objectives": [
+    {
+      "id": "city_contact",
+      "position": [
+        2530,
+        330
+      ],
+      "label": "恢复外界通信",
+      "quest_target": "map_2_transmitter"
+    }
+  ],
+  "events": []
+}

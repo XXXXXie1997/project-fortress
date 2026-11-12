@@ -1,0 +1,185 @@
+{
+  "forbidden": [
+    [
+      10,
+      16,
+      4,
+      2
+    ]
+  ],
+  "initial": [
+    {
+      "type": "warehouse",
+      "cell": [
+        0,
+        0
+      ]
+    },
+    {
+      "type": "technology",
+      "cell": [
+        3,
+        0
+      ]
+    },
+    {
+      "type": "quest",
+      "cell": [
+        6,
+        0
+      ]
+    },
+    {
+      "type": "workstation",
+      "cell": [
+        9,
+        0
+      ]
+    },
+    {
+      "type": "trade",
+      "cell": [
+        12,
+        0
+      ]
+    },
+    {
+      "type": "generator",
+      "cell": [
+        15,
+        0
+      ]
+    }
+  ],
+  "resident_capacity": 3,
+  "expansions": [
+    {
+      "bounds": [
+        -4,
+        -4,
+        32,
+        22
+      ],
+      "cost": {
+        "scrap": 20
+      },
+      "residents": 3
+    }
+  ],
+  "generation": 30,
+  "types": {
+    "generator": {
+      "hp": 100,
+      "unique": false,
+      "size": [
+        2,
+        2
+      ],
+      "cost": {
+        "scrap": 10
+      },
+      "max_level": 3,
+      "plots": 2
+    },
+    "warehouse": {
+      "hp": 100,
+      "unique": true,
+      "size": [
+        2,
+        2
+      ],
+      "cost": {
+        "scrap": 10
+      },
+      "max_level": 3,
+      "plots": 2
+    },
+    "quest": {
+      "hp": 100,
+      "unique": true,
+      "size": [
+        2,
+        2
+      ],
+      "cost": {
+        "scrap": 10
+      },
+      "max_level": 3,
+      "plots": 2
+    },
+    "workstation": {
+      "hp": 100,
+      "unique": true,
+      "size": [
+        2,
+        2
+      ],
+      "cost": {
+        "scrap": 10
+      },
+      "max_level": 3,
+      "plots": 2
+    },
+    "turret": {
+      "hp": 100,
+      "unique": false,
+      "size": [
+        2,
+        2
+      ],
+      "cost": {
+        "scrap": 10
+      },
+      "max_level": 3,
+      "plots": 2
+    },
+    "trade": {
+      "hp": 100,
+      "unique": true,
+      "size": [
+        2,
+        2
+      ],
+      "cost": {
+        "scrap": 10
+      },
+      "max_level": 3,
+      "plots": 2
+    },
+    "farm": {
+      "hp": 100,
+      "unique": false,
+      "size": [
+        2,
+        2
+      ],
+      "cost": {
+        "scrap": 10
+      },
+      "max_level": 3,
+      "plots": 2
+    },
+    "technology": {
+      "hp": 100,
+      "unique": true,
+      "size": [
+        2,
+        2
+      ],
+      "cost": {
+        "scrap": 10
+      },
+      "max_level": 3,
+      "plots": 2
+    }
+  },
+  "storage_increment": 500,
+  "bounds": [
+    0,
+    0,
+    24,
+    18
+  ],
+  "provisional": true,
+  "initial_energy": 200
+}

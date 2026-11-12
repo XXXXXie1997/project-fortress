@@ -1,0 +1,670 @@
+{
+  "provisional": true,
+  "repair_scrap": 5,
+  "dismantle_scrap": 2,
+  "tiers": {
+    "rifle_basic": {
+      "family": "rifle",
+      "level": 1,
+      "materials": {
+        "scrap": 10
+      },
+      "energy": 20
+    },
+    "rifle_advanced": {
+      "family": "rifle",
+      "level": 2,
+      "materials": {
+        "scrap": 20,
+        "boss_core": 1
+      },
+      "energy": 40,
+      "requires": [
+        "storage"
+      ]
+    },
+    "armor_basic": {
+      "family": "armor_basic",
+      "level": 1,
+      "materials": {
+        "scrap": 8
+      },
+      "energy": 16
+    },
+    "armor_advanced": {
+      "family": "armor_basic",
+      "level": 2,
+      "materials": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "requires": [
+        "storage"
+      ]
+    },
+    "backpack_small": {
+      "family": "backpack_small",
+      "level": 1,
+      "materials": {
+        "scrap": 8
+      },
+      "energy": 16
+    },
+    "backpack_large": {
+      "family": "backpack_small",
+      "level": 2,
+      "materials": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "requires": [
+        "storage"
+      ]
+    },
+    "scope_basic": {
+      "family": "scope_basic",
+      "level": 1,
+      "materials": {
+        "scrap": 8
+      },
+      "energy": 16
+    },
+    "scope_advanced": {
+      "family": "scope_basic",
+      "level": 2,
+      "materials": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "requires": [
+        "storage"
+      ]
+    },
+    "tactical_light": {
+      "family": "tactical_light",
+      "level": 1,
+      "materials": {
+        "scrap": 8
+      },
+      "energy": 16
+    },
+    "tactical_light_advanced": {
+      "family": "tactical_light",
+      "level": 2,
+      "materials": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "requires": [
+        "storage"
+      ]
+    },
+    "tactical_laser": {
+      "family": "tactical_laser",
+      "level": 1,
+      "materials": {
+        "scrap": 8
+      },
+      "energy": 16
+    },
+    "tactical_laser_advanced": {
+      "family": "tactical_laser",
+      "level": 2,
+      "materials": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "requires": [
+        "storage"
+      ]
+    },
+    "tactical_launcher": {
+      "family": "tactical_launcher",
+      "level": 1,
+      "materials": {
+        "scrap": 8
+      },
+      "energy": 16
+    },
+    "tactical_launcher_advanced": {
+      "family": "tactical_launcher",
+      "level": 2,
+      "materials": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "requires": [
+        "storage"
+      ]
+    },
+    "muzzle_basic": {
+      "family": "muzzle_basic",
+      "level": 1,
+      "materials": {
+        "scrap": 8
+      },
+      "energy": 16
+    },
+    "muzzle_advanced": {
+      "family": "muzzle_basic",
+      "level": 2,
+      "materials": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "requires": [
+        "storage"
+      ]
+    },
+    "capacitor_basic": {
+      "family": "capacitor_basic",
+      "level": 1,
+      "materials": {
+        "scrap": 8
+      },
+      "energy": 16
+    },
+    "capacitor_advanced": {
+      "family": "capacitor_basic",
+      "level": 2,
+      "materials": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "requires": [
+        "storage"
+      ]
+    },
+    "scatter_basic": {
+      "family": "scatter_basic",
+      "level": 1,
+      "materials": {
+        "scrap": 10
+      },
+      "energy": 20
+    },
+    "scatter_advanced": {
+      "family": "scatter_basic",
+      "level": 2,
+      "materials": {
+        "scrap": 20
+      },
+      "energy": 40,
+      "requires": [
+        "storage"
+      ]
+    },
+    "sniper_basic": {
+      "family": "sniper_basic",
+      "level": 1,
+      "materials": {
+        "scrap": 10
+      },
+      "energy": 20
+    },
+    "sniper_advanced": {
+      "family": "sniper_basic",
+      "level": 2,
+      "materials": {
+        "scrap": 20
+      },
+      "energy": 40,
+      "requires": [
+        "storage"
+      ]
+    },
+    "knife_basic": {
+      "family": "knife_basic",
+      "level": 1,
+      "materials": {
+        "scrap": 10
+      },
+      "energy": 20
+    },
+    "knife_advanced": {
+      "family": "knife_basic",
+      "level": 2,
+      "materials": {
+        "scrap": 20
+      },
+      "energy": 40,
+      "requires": [
+        "storage"
+      ]
+    },
+    "energy_blade": {
+      "family": "energy_blade",
+      "level": 1,
+      "materials": {
+        "scrap": 10
+      },
+      "energy": 20
+    },
+    "energy_blade_advanced": {
+      "family": "energy_blade",
+      "level": 2,
+      "materials": {
+        "scrap": 20
+      },
+      "energy": 40,
+      "requires": [
+        "storage"
+      ]
+    }
+  },
+  "recipes": {
+    "rifle_basic": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 10
+      },
+      "energy": 20,
+      "capacity": 1,
+      "output": {
+        "rifle_basic": 1
+      }
+    },
+    "rifle_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 20,
+        "boss_core": 1
+      },
+      "energy": 40,
+      "capacity": 1,
+      "output": {
+        "rifle_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "battery_basic": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 3
+      },
+      "energy": 3,
+      "capacity": 1,
+      "output": {
+        "battery_basic": 1
+      }
+    },
+    "medical_needle": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 3
+      },
+      "energy": 3,
+      "capacity": 1,
+      "output": {
+        "medical_needle": 1
+      }
+    },
+    "knife_basic": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 10
+      },
+      "energy": 20,
+      "capacity": 1,
+      "output": {
+        "knife_basic": 1
+      },
+      "requires": []
+    },
+    "armor_basic": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 8
+      },
+      "energy": 16,
+      "capacity": 1,
+      "output": {
+        "armor_basic": 1
+      },
+      "requires": []
+    },
+    "backpack_small": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 8
+      },
+      "energy": 16,
+      "capacity": 1,
+      "output": {
+        "backpack_small": 1
+      },
+      "requires": []
+    },
+    "nightvision": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 12
+      },
+      "energy": 12,
+      "capacity": 1,
+      "output": {
+        "nightvision": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "exoskeleton": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 12
+      },
+      "energy": 12,
+      "capacity": 1,
+      "output": {
+        "exoskeleton": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "aim_assist": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 12
+      },
+      "energy": 12,
+      "capacity": 1,
+      "output": {
+        "aim_assist": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "scope_basic": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 8
+      },
+      "energy": 16,
+      "capacity": 1,
+      "output": {
+        "scope_basic": 1
+      },
+      "requires": []
+    },
+    "scatter_basic": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 10
+      },
+      "energy": 20,
+      "capacity": 1,
+      "output": {
+        "scatter_basic": 1
+      },
+      "requires": []
+    },
+    "sniper_basic": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 10
+      },
+      "energy": 20,
+      "capacity": 1,
+      "output": {
+        "sniper_basic": 1
+      },
+      "requires": []
+    },
+    "energy_blade": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 10
+      },
+      "energy": 20,
+      "capacity": 1,
+      "output": {
+        "energy_blade": 1
+      },
+      "requires": []
+    },
+    "tactical_light": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 8
+      },
+      "energy": 16,
+      "capacity": 1,
+      "output": {
+        "tactical_light": 1
+      },
+      "requires": []
+    },
+    "tactical_laser": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 8
+      },
+      "energy": 16,
+      "capacity": 1,
+      "output": {
+        "tactical_laser": 1
+      },
+      "requires": []
+    },
+    "tactical_launcher": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 8
+      },
+      "energy": 16,
+      "capacity": 1,
+      "output": {
+        "tactical_launcher": 1
+      },
+      "requires": []
+    },
+    "bandage": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 3
+      },
+      "energy": 4,
+      "capacity": 1,
+      "output": {
+        "bandage": 1
+      }
+    },
+    "armor_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "capacity": 1,
+      "output": {
+        "armor_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "backpack_large": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "capacity": 1,
+      "output": {
+        "backpack_large": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "scope_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "capacity": 1,
+      "output": {
+        "scope_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "tactical_light_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "capacity": 1,
+      "output": {
+        "tactical_light_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "tactical_laser_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "capacity": 1,
+      "output": {
+        "tactical_laser_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "tactical_launcher_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "capacity": 1,
+      "output": {
+        "tactical_launcher_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "muzzle_basic": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 8
+      },
+      "energy": 16,
+      "capacity": 1,
+      "output": {
+        "muzzle_basic": 1
+      },
+      "requires": []
+    },
+    "muzzle_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "capacity": 1,
+      "output": {
+        "muzzle_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "capacitor_basic": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 8
+      },
+      "energy": 16,
+      "capacity": 1,
+      "output": {
+        "capacitor_basic": 1
+      },
+      "requires": []
+    },
+    "capacitor_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 16
+      },
+      "energy": 32,
+      "capacity": 1,
+      "output": {
+        "capacitor_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "scatter_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 20
+      },
+      "energy": 40,
+      "capacity": 1,
+      "output": {
+        "scatter_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "sniper_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 20
+      },
+      "energy": 40,
+      "capacity": 1,
+      "output": {
+        "sniper_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "knife_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 20
+      },
+      "energy": 40,
+      "capacity": 1,
+      "output": {
+        "knife_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    },
+    "energy_blade_advanced": {
+      "facility": "workstation",
+      "cost": {
+        "scrap": 20
+      },
+      "energy": 40,
+      "capacity": 1,
+      "output": {
+        "energy_blade_advanced": 1
+      },
+      "requires": [
+        "storage"
+      ]
+    }
+  }
+}

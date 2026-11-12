@@ -1,0 +1,1 @@
+{"provisional":true,"resident":{"hp_min":80,"hp_max":100,"power_min":4,"power_max":6,"weapon":"rifle_basic","energy_per_power":0.5},"turret":{"capacity":60,"shot_energy":1,"range":260},"shield":{"capacity":100,"charge_ratio":1}}

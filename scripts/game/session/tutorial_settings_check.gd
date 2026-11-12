@@ -1,0 +1,41 @@
+extends "res://scripts/game/session/main_mouse_check.gd"
+func run():
+	shell=load("res://scenes/main.tscn").instantiate();root.add_child(shell)
+	shell.coordinator.saver=SaveService.new("user://tutorial-settings-%s"%Time.get_ticks_usec())
+	await click("开始新过程");await click("确认新建");await mounted()
+	assert(paused and shell.overlay_mode=="tutorial")
+	var before:=WorldState.encode(shell.coordinator.state)
+	var esc:=InputEventKey.new();esc.keycode=KEY_ESCAPE;esc.pressed=true;Input.parse_input_event(esc)
+	for frame in 6:await process_frame
+	assert(paused and shell.overlay_mode=="tutorial")
+	assert(WorldState.encode(shell.coordinator.state)==before)
+	await capture("tutorial-first-page")
+	for page in 3:await click("下一页")
+	await capture("tutorial-save-page")
+	await click("开始游玩")
+	assert(not paused)
+	assert("basics_v1" in shell.coordinator.saver.load_tutorial().state.completed)
+	# The completion file is global to the save root, not scoped to slot_1.
+	var old_slot:String=shell.coordinator.slot;shell.coordinator.slot="slot_3"
+	assert("basics_v1" in shell.coordinator.saver.load_tutorial().state.completed)
+	shell.coordinator.slot=old_slot
+	shell.show_pause();await click("设置与帮助")
+	var old_sprint:bool=shell.preferences.get_value("controls","sprint_toggle",false)
+	await click("Shift 冲刺")
+	assert(shell.arena.hud.sprint_toggle!=old_sprint)
+	var disk:=ConfigFile.new();assert(disk.load("user://session-settings.cfg")==OK)
+	assert(disk.get_value("controls","sprint_toggle")==not old_sprint)
+	await capture("settings-preview")
+	await click("回看分页教学")
+	assert(paused and shell.tutorial_page==0)
+	for page in 3:await click("下一页")
+	await click("完成教学")
+	assert(shell.overlay_mode=="settings" and paused)
+	await click("Shift 冲刺")
+	assert(shell.arena.hud.sprint_toggle==old_sprint)
+	await click("返回");await click("继续游戏")
+	assert(not paused)
+	assert(shell.coordinator.shutdown().ok)
+	print("SESSION_TUTORIAL_REAL_PAGES_SETTINGS_PASS")
+	shell.audio_manager.shutdown_audio();await create_timer(.1,true).timeout
+	quit()

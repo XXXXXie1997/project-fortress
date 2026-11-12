@@ -1,0 +1,31 @@
+extends SceneTree
+func _init() -> void:
+	var defs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/items.json")).items
+	var crops: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/crops.json"))
+	var trade: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/trade.json"))
+	defs.merge(crops.item_definitions)
+	defs.merge(trade.item_definitions)
+	var inv := InventoryService.new(defs)
+	var s := WorldState.fresh()
+	inv.setup(s)
+	var b := BuildingService.new(inv,JSON.parse_string(FileAccess.get_file_as_string("res://data/buildings.json")))
+	b.setup(s)
+	var deps := {"inventory":inv,"building":b,"production":ProductionService.new(b,{}),"farming":FarmingService.new(b,crops.crops),"quests":QuestService.new(inv),"trade":TradeService.new(inv,trade),"exploration":ExplorationService.new(inv,JSON.parse_string(FileAccess.get_file_as_string("res://data/maps/exploration.json")).maps)}
+	var cycle = load("res://scripts/base/day_cycle.gd").new(deps)
+	assert(cycle.to_dusk(s))
+	assert(not cycle.to_dusk(s))
+	assert(cycle.begin_night(s,"manual").ok)
+	assert(not cycle.finish_night(s,{"enemy_power":1},true).ok)
+	assert(cycle.finish_night(s,{"enemy_power":0},true).ok)
+	assert(s.day == 2 and s.phase == "morning")
+	assert(not cycle.finish_night(s).ok)
+	assert(cycle.claim_loot(s,"night:1"))
+	assert(not cycle.claim_loot(s,"night:1"))
+	var snap: Dictionary = cycle.defense.capture(s,10,"test")
+	for id in snap.base.buildings: snap.base.buildings[id].durability = 0
+	assert(cycle.defense.lost(snap))
+	assert(cycle.threat.schedule(s,"major",true,true))
+	assert(s.threat.events.major.day == 4)
+	assert(not cycle.threat.schedule(s,"major",true,true))
+	print("DEV401 SELF CHECK PASS")
+	quit()

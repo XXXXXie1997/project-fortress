@@ -1,0 +1,552 @@
+{
+  "version": 1,
+  "provisional": true,
+  "items": {
+    "battery_basic": {
+      "category": "battery",
+      "size": [
+        1,
+        2
+      ],
+      "weight": 0.5,
+      "backpack_stack": 1,
+      "warehouse_stack": 1,
+      "capacity": 100.0,
+      "price": 20,
+      "sources": [
+        "loot",
+        "craft",
+        "trade"
+      ],
+      "name": "电池",
+      "display_name": "电池"
+    },
+    "medical_needle": {
+      "category": "consumable",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "backpack_stack": 5,
+      "warehouse_stack": 50,
+      "heal": {
+        "cast_time": 0.6,
+        "instant": 25.0,
+        "interrupt_cast": true,
+        "interrupt_hot": false
+      },
+      "name": "医疗针",
+      "display_name": "医疗针"
+    },
+    "scrap": {
+      "category": "material",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.2,
+      "backpack_stack": 20,
+      "warehouse_stack": 200,
+      "name": "废料",
+      "display_name": "废料"
+    },
+    "rifle_basic": {
+      "category": "ranged",
+      "size": [
+        3,
+        1
+      ],
+      "weight": 3,
+      "capacity": 60,
+      "durability": 100,
+      "name": "能量步枪",
+      "display_name": "能量步枪"
+    },
+    "knife_basic": {
+      "category": "melee",
+      "size": [
+        1,
+        2
+      ],
+      "weight": 1,
+      "durability": 100,
+      "name": "普通刀",
+      "display_name": "普通刀"
+    },
+    "armor_basic": {
+      "category": "armor",
+      "size": [
+        2,
+        2
+      ],
+      "weight": 3,
+      "durability": 100,
+      "name": "基础护甲",
+      "display_name": "基础护甲"
+    },
+    "backpack_small": {
+      "category": "backpack",
+      "size": [
+        2,
+        2
+      ],
+      "weight": 1,
+      "bag_width": 6,
+      "bag_height": 4,
+      "bag_weight": 30,
+      "durability": 100,
+      "name": "小背包",
+      "display_name": "小背包"
+    },
+    "nightvision": {
+      "category": "extra",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.5,
+      "unique": true,
+      "capacity": 1000,
+      "name": "夜视镜",
+      "display_name": "夜视镜"
+    },
+    "exoskeleton": {
+      "category": "extra",
+      "size": [
+        2,
+        2
+      ],
+      "weight": 2,
+      "unique": true,
+      "capacity": 1000,
+      "name": "动力外骨骼",
+      "display_name": "动力外骨骼"
+    },
+    "aim_assist": {
+      "category": "extra",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.5,
+      "unique": true,
+      "capacity": 1000,
+      "name": "辅助瞄准模块",
+      "display_name": "辅助瞄准模块"
+    },
+    "seed_catalyst": {
+      "category": "material",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "warehouse_stack": 200,
+      "backpack_stack": 20,
+      "name": "催化作物种子",
+      "display_name": "催化作物种子"
+    },
+    "seed_material": {
+      "category": "material",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "warehouse_stack": 200,
+      "backpack_stack": 20,
+      "name": "材料作物种子",
+      "display_name": "材料作物种子"
+    },
+    "catalyst": {
+      "category": "material",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "warehouse_stack": 200,
+      "backpack_stack": 20,
+      "name": "催化剂",
+      "display_name": "催化剂"
+    },
+    "rifle_advanced": {
+      "category": "ranged",
+      "size": [
+        3,
+        1
+      ],
+      "weight": 3,
+      "capacity": 80,
+      "durability": 150,
+      "quality": 2,
+      "price": 100,
+      "name": "强化能量步枪",
+      "display_name": "强化能量步枪"
+    },
+    "scope_basic": {
+      "category": "plugin",
+      "slot": "scope",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "price": 15,
+      "name": "基础瞄具",
+      "display_name": "基础瞄具"
+    },
+    "trade_blade": {
+      "category": "melee",
+      "size": [
+        1,
+        2
+      ],
+      "weight": 1,
+      "durability": 100,
+      "capacity": 120,
+      "price": 200,
+      "passive": "D001",
+      "name": "独特能量刀",
+      "display_name": "独特能量刀"
+    },
+    "scatter_basic": {
+      "category": "ranged",
+      "size": [
+        3,
+        1
+      ],
+      "weight": 3,
+      "capacity": 60,
+      "durability": 100,
+      "name": "散射枪",
+      "display_name": "散射枪"
+    },
+    "sniper_basic": {
+      "category": "ranged",
+      "size": [
+        3,
+        1
+      ],
+      "weight": 3,
+      "capacity": 60,
+      "durability": 100,
+      "name": "狙击枪",
+      "display_name": "狙击枪"
+    },
+    "energy_blade": {
+      "category": "melee",
+      "size": [
+        1,
+        2
+      ],
+      "weight": 1,
+      "durability": 100,
+      "capacity": 50.0,
+      "name": "能量刀",
+      "display_name": "能量刀"
+    },
+    "suburbs_key": {
+      "category": "material",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "backpack_stack": 20,
+      "warehouse_stack": 200,
+      "name": "城郊钥匙",
+      "display_name": "城郊钥匙"
+    },
+    "armory_key": {
+      "category": "material",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "backpack_stack": 20,
+      "warehouse_stack": 200,
+      "name": "武器库钥匙",
+      "display_name": "武器库钥匙"
+    },
+    "city_key": {
+      "category": "material",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "backpack_stack": 20,
+      "warehouse_stack": 200,
+      "name": "城区钥匙",
+      "display_name": "城区钥匙"
+    },
+    "boss_core": {
+      "category": "material",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "backpack_stack": 20,
+      "warehouse_stack": 200,
+      "name": "首领核心",
+      "display_name": "首领核心"
+    },
+    "tactical_light": {
+      "category": "plugin",
+      "slot": "tactical",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.2,
+      "capacity": 100.0,
+      "durability": 100.0,
+      "tactical_type": "light",
+      "name": "战术灯",
+      "display_name": "战术灯"
+    },
+    "tactical_laser": {
+      "category": "plugin",
+      "slot": "tactical",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.2,
+      "capacity": 100.0,
+      "durability": 100.0,
+      "tactical_type": "laser",
+      "name": "激光瞄准器",
+      "display_name": "激光瞄准器"
+    },
+    "tactical_launcher": {
+      "category": "plugin",
+      "slot": "tactical",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.2,
+      "capacity": 100.0,
+      "durability": 100.0,
+      "tactical_type": "launcher",
+      "name": "下挂发射器",
+      "display_name": "下挂发射器"
+    },
+    "bandage": {
+      "name": "止血绷带",
+      "category": "consumable",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "backpack_stack": 5,
+      "warehouse_stack": 50,
+      "heal": {
+        "cast_time": 1.5,
+        "instant": 0.0,
+        "duration": 6.0,
+        "rate": 5.0,
+        "interrupt_cast": true,
+        "interrupt_hot": false
+      },
+      "display_name": "止血绷带"
+    },
+    "muzzle_basic": {
+      "name": "基础枪口",
+      "category": "plugin",
+      "slot": "muzzle",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "durability": 100.0,
+      "price": 15,
+      "display_name": "基础枪口"
+    },
+    "capacitor_basic": {
+      "name": "基础电容插件",
+      "category": "plugin",
+      "slot": "capacitor",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "durability": 100.0,
+      "price": 15,
+      "display_name": "基础电容插件"
+    },
+    "armor_advanced": {
+      "category": "armor",
+      "size": [
+        2,
+        2
+      ],
+      "weight": 3,
+      "durability": 150.0,
+      "name": "强化护甲",
+      "quality": 2,
+      "display_name": "强化护甲"
+    },
+    "backpack_large": {
+      "category": "backpack",
+      "size": [
+        2,
+        2
+      ],
+      "weight": 1,
+      "bag_width": 8,
+      "bag_height": 5,
+      "bag_weight": 45.0,
+      "durability": 100,
+      "name": "大背包",
+      "quality": 2,
+      "display_name": "大背包"
+    },
+    "scope_advanced": {
+      "category": "plugin",
+      "slot": "scope",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "price": 15,
+      "name": "基础瞄具Ⅱ",
+      "durability": 150.0,
+      "quality": 2,
+      "display_name": "基础瞄具Ⅱ"
+    },
+    "tactical_light_advanced": {
+      "category": "plugin",
+      "slot": "tactical",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.2,
+      "capacity": 150.0,
+      "durability": 150.0,
+      "tactical_type": "light",
+      "name": "战术灯Ⅱ",
+      "quality": 2,
+      "display_name": "战术灯Ⅱ"
+    },
+    "tactical_laser_advanced": {
+      "category": "plugin",
+      "slot": "tactical",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.2,
+      "capacity": 150.0,
+      "durability": 150.0,
+      "tactical_type": "laser",
+      "name": "激光瞄准器Ⅱ",
+      "quality": 2,
+      "display_name": "激光瞄准器Ⅱ"
+    },
+    "tactical_launcher_advanced": {
+      "category": "plugin",
+      "slot": "tactical",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.2,
+      "capacity": 150.0,
+      "durability": 150.0,
+      "tactical_type": "launcher",
+      "name": "下挂发射器Ⅱ",
+      "quality": 2,
+      "display_name": "下挂发射器Ⅱ"
+    },
+    "muzzle_advanced": {
+      "name": "基础枪口Ⅱ",
+      "category": "plugin",
+      "slot": "muzzle",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "durability": 150.0,
+      "price": 15,
+      "quality": 2,
+      "display_name": "基础枪口Ⅱ"
+    },
+    "capacitor_advanced": {
+      "name": "基础电容插件Ⅱ",
+      "category": "plugin",
+      "slot": "capacitor",
+      "size": [
+        1,
+        1
+      ],
+      "weight": 0.1,
+      "durability": 150.0,
+      "price": 15,
+      "quality": 2,
+      "display_name": "基础电容插件Ⅱ"
+    },
+    "scatter_advanced": {
+      "category": "ranged",
+      "size": [
+        3,
+        1
+      ],
+      "weight": 3,
+      "capacity": 90.0,
+      "durability": 150.0,
+      "name": "强化散射枪",
+      "quality": 2,
+      "display_name": "强化散射枪"
+    },
+    "sniper_advanced": {
+      "category": "ranged",
+      "size": [
+        3,
+        1
+      ],
+      "weight": 3,
+      "capacity": 90.0,
+      "durability": 150.0,
+      "name": "强化狙击枪",
+      "quality": 2,
+      "display_name": "强化狙击枪"
+    },
+    "knife_advanced": {
+      "category": "melee",
+      "size": [
+        1,
+        2
+      ],
+      "weight": 1,
+      "durability": 150.0,
+      "name": "强化普通刀",
+      "quality": 2,
+      "display_name": "强化普通刀"
+    },
+    "energy_blade_advanced": {
+      "category": "melee",
+      "size": [
+        1,
+        2
+      ],
+      "weight": 1,
+      "durability": 150.0,
+      "capacity": 75.0,
+      "name": "强化能量刀",
+      "quality": 2,
+      "display_name": "强化能量刀"
+    }
+  }
+}
