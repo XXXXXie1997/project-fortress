@@ -44,6 +44,7 @@ func _ready() -> void:
 	var inventory_content:Node=inventory_panel.get_child(0)
 	inventory_content.add_child(inventory_energy);inventory_content.move_child(inventory_energy,1)
 	resource_status=Label.new();resource_status.position=Vector2(800,12);add_child(resource_status)
+	preload("res://scripts/ui/hud_backdrop.gd").attach(resource_status)
 	confirmation=ConfirmationDialog.new();add_child(confirmation)
 	confirmation.canceled.connect(func():pending=Callable())
 	confirmation.confirmed.connect(func():

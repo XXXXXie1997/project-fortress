@@ -305,6 +305,8 @@ func refresh_phase_controls() -> void:
 			return {"ok": EnergyService.transfer(trial.base.energy_store,trial.base.shield,trial.base.shield.capacity) > 0})))
 	if not coordinator.state.cycle.pending_loot.is_empty(): phase_button("领取守夜战利品", show_night_loot)
 
+	preload("res://scripts/ui/hud_backdrop.gd").attach(phases)
+
 func show_departures(night: bool) -> void:
 	overlay_mode = "stage"
 	clear("选择夜探地点" if night else "选择出发地点")

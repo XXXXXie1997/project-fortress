@@ -25,14 +25,20 @@ func _ready():
   sprite.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;sprite.scale=Vector2(1.5,1.5);add_child(sprite)
  weapon_icon.position=Vector2(40,595);tactical_icon.position=Vector2(100,595)
  panel.position=Vector2(390,180);panel.custom_minimum_size=Vector2(500,260);panel.add_child(text);add_child(panel);panel.hide()
- quick.position=Vector2(400,675);add_child(quick)
+ quick.position=Vector2(400,675);quick.add_theme_constant_override("separation",24);add_child(quick)
  for i in range(6):
-  var slot_label:=Label.new();quick.add_child(slot_label);quick_slots.append(slot_label)
-  var icon:=TextureRect.new();icon.name='ArtIcon';icon.position=Vector2(4,-24);icon.size=Vector2(20,20);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;slot_label.add_child(icon)
+  var slot_label:=Label.new();slot_label.custom_minimum_size=Vector2(62,70);slot_label.add_theme_font_size_override("font_size",13);quick.add_child(slot_label);quick_slots.append(slot_label)
+  preload("res://scripts/ui/hud_backdrop.gd").attach(slot_label)
+  var icon:=TextureRect.new();icon.name='ArtIcon';icon.position=Vector2(19,23);icon.size=Vector2(26,26);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;slot_label.add_child(icon)
  var minimap=load('res://scripts/ui/combat_minimap.gd').new();minimap.arena=arena;minimap.position=Vector2(1080,20);add_child(minimap)
  quest_service=QuestService.new(arena.inventory)
  task_tracker.position=Vector2(1050,155);task_tracker.size=Vector2(210,255);task_tracker.bbcode_enabled=true;task_tracker.add_theme_font_size_override('normal_font_size',14);task_tracker.text='任务追踪：尚无任务';add_child(task_tracker)
  charge_title.position=Vector2(980,640);charge_title.text='测试能源站：靠近无线充能\n靠近后 F 切换测试下挂\nV 开关灯 / 激光 / 发射器';add_child(charge_title)
+ preload("res://scripts/ui/hud_backdrop.gd").attach(label)
+ card.custom_minimum_size.x=130
+ preload("res://scripts/ui/hud_backdrop.gd").attach(card,48)
+ preload("res://scripts/ui/hud_backdrop.gd").attach(task_tracker)
+ preload("res://scripts/ui/hud_backdrop.gd").attach(charge_title)
 func _input(event):
  var management=arena.get('management')
  if management!=null and management.has_method('is_modal_open') and management.is_modal_open():
@@ -79,8 +85,9 @@ func _process(_dt):
   if i.get('is_battery',false):energy+=i.energy
  for i in range(6):
   var count:int=arena.inventory.quick_count(arena.state,i)
-  quick_slots[i].text='%d %s %d   '%[i+1,'医疗针' if arena.state.player.quick[i]=='medical_needle' else '物品',count]
-  quick_slots[i].modulate=Color.WHITE if count>0 else Color(0.45,0.45,0.45)
+  quick_slots[i].text='[%d]\n\n     %s'%[i+1,str(count) if count>0 else '—']
+  quick_slots[i].modulate=Color.WHITE
+  quick_slots[i].add_theme_color_override("font_color",Color.WHITE if count>0 else Color("75838b"))
   var icon:TextureRect=quick_slots[i].get_node('ArtIcon')
   var quick_id:String=arena.state.player.quick[i]
   icon.texture=preload('res://scripts/art/fortress_art.gd').item_icon(quick_id) if not quick_id.is_empty() else null
@@ -116,5 +123,5 @@ func layout_bottom_hud():
  card.position=Vector2(20,viewport_size.y-20-card.get_combined_minimum_size().y)
  weapon_icon.position=Vector2(40,card.position.y-26)
  tactical_icon.position=Vector2(100,card.position.y-26)
- quick.position=Vector2(maxf(200,(viewport_size.x-quick.get_combined_minimum_size().x)*0.5),viewport_size.y-20-quick.get_combined_minimum_size().y)
+ quick.position=Vector2(maxf(200,(viewport_size.x-quick.get_combined_minimum_size().x)*0.5),viewport_size.y-28-quick.get_combined_minimum_size().y)
  charge_title.position=Vector2(maxf(20,viewport_size.x-20-charge_title.get_combined_minimum_size().x),viewport_size.y-76-charge_title.get_combined_minimum_size().y)

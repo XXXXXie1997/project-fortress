@@ -3,11 +3,12 @@ var shell
 func _ready():
  mouse_filter=Control.MOUSE_FILTER_IGNORE
  add_theme_constant_override("separation",10)
+ preload("res://scripts/ui/hud_backdrop.gd").attach(self)
  for entry in [["背包","TAB"],["玩家","P"],["地图","M"],["任务","J"],["天赋","T"]]:
   var column:=VBoxContainer.new();column.mouse_filter=Control.MOUSE_FILTER_IGNORE
   column.custom_minimum_size.x=48;column.add_theme_constant_override("separation",3);add_child(column)
   var icon:=TextureRect.new();var atlas:=AtlasTexture.new()
-  atlas.atlas=load("res://assets/runtime/ui/action_icons.png");atlas.region=Rect2((get_child_count()-1)*24,0,24,24)
+  atlas.atlas=load("res://assets/runtime/ui/action_icons.png");atlas.region=Rect2((get_child_count()-2)*24,0,24,24)
   icon.texture=atlas;icon.custom_minimum_size=Vector2(48,48);icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
   icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;column.add_child(icon)
   var title:=Label.new();title.text=entry[0];title.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;title.add_theme_font_size_override("font_size",13);title.mouse_filter=Control.MOUSE_FILTER_IGNORE;column.add_child(title)

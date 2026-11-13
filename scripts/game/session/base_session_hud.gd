@@ -16,6 +16,7 @@ func _ready():
 	loss_warning.add_theme_constant_override("shadow_offset_x",2)
 	loss_warning.add_theme_constant_override("shadow_offset_y",2)
 	add_child(loss_warning);loss_warning.hide()
+	preload("res://scripts/ui/hud_backdrop.gd").attach(loss_warning)
 func _process(delta):
 	super._process(delta)
 	var shell=arena.session_context.shell
