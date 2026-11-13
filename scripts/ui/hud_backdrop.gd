@@ -6,8 +6,7 @@ static func attach(target:Control,top:float=0.0):
 func _ready():
  show_behind_parent=true
  texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
- style=StyleBoxTexture.new();style.texture=load("res://assets/runtime/ui/hud_panel.png")
- for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:style.set_texture_margin(side,5)
+ style=preload("res://scripts/ui/wasteland_theme.gd").box("panel_normal")
 func _process(_dt):queue_redraw()
 func _draw():
  if style==null:return

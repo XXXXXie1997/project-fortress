@@ -31,7 +31,7 @@ func bind_context(s: Dictionary, context: Dictionary) -> void:
 		services.inventory.definitions.merge(data.get("item_definitions",{}))
 func _ready() -> void:
 	root_panel=PanelContainer.new()
-	var background:=StyleBoxFlat.new();background.bg_color=Color("#1d2b32");root_panel.add_theme_stylebox_override("panel",background)
+	preload("res://scripts/ui/wasteland_theme.gd").apply(root_panel)
 	root_panel.position=Vector2(18,80)
 	root_panel.size=Vector2(390,570)
 	add_child(root_panel)
@@ -43,9 +43,9 @@ func _ready() -> void:
 	inventory_energy.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	var inventory_content:Node=inventory_panel.get_child(0)
 	inventory_content.add_child(inventory_energy);inventory_content.move_child(inventory_energy,1)
-	resource_status=Label.new();resource_status.position=Vector2(800,12);add_child(resource_status)
+	resource_status=Label.new();resource_status.position=Vector2(290,38);add_child(resource_status)
 	preload("res://scripts/ui/hud_backdrop.gd").attach(resource_status)
-	confirmation=ConfirmationDialog.new();add_child(confirmation)
+	confirmation=ConfirmationDialog.new();confirmation.theme=preload("res://scripts/ui/wasteland_theme.gd").get_theme();add_child(confirmation)
 	confirmation.canceled.connect(func():pending=Callable())
 	confirmation.confirmed.connect(func():
 		var action:=pending

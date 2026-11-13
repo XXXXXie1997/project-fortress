@@ -46,14 +46,13 @@ func bind_state(s: Dictionary, inv: InventoryService, exp: ExplorationService = 
 	inventory = inv
 	exploration = exp
 func _ready() -> void:
-	var background := StyleBoxFlat.new()
-	background.bg_color=Color("#1d2b32")
-	add_theme_stylebox_override("panel",background)
-	position = Vector2(30,30)
-	size = Vector2(1220,660)
+	preload("res://scripts/ui/wasteland_theme.gd").apply(self)
+	position = Vector2(30,24)
+	size = Vector2(minf(1220,get_viewport_rect().size.x-60),660)
 	var root := VBoxContainer.new()
 	add_child(root)
 	var tabs := HBoxContainer.new()
+	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",26);root.add_child(heading)
 	root.add_child(tabs)
 	for location in ["bag","warehouse","equipment"]:
 		tabs_by_source[location]=button(tabs,{"bag":"背包","warehouse":"仓库","equipment":"已装备"}[location],func():
@@ -76,12 +75,13 @@ func _ready() -> void:
 	var body := HBoxContainer.new()
 	root.add_child(body)
 	grid = Control.new()
-	grid.custom_minimum_size = Vector2(800,440)
+	grid.custom_minimum_size = Vector2(800,400)
 	body.add_child(grid)
 	grid.draw.connect(draw_grid)
 	grid.gui_input.connect(grid_input)
 	listing = VBoxContainer.new()
-	body.add_child(listing)
+	var detail_scroll:=ScrollContainer.new();detail_scroll.custom_minimum_size=Vector2(260,400);detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;body.add_child(detail_scroll);detail_scroll.add_child(listing);body.move_child(detail_scroll,0)
+	listing.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var quick := HBoxContainer.new()
 	root.add_child(quick)
 	for n in range(6):
@@ -89,6 +89,7 @@ func _ready() -> void:
 			if accessible_item(selected): state.player.quick[n] = state.items[selected].definition_id
 			refresh())
 	dialog = ConfirmationDialog.new()
+	dialog.theme=preload("res://scripts/ui/wasteland_theme.gd").get_theme()
 	add_child(dialog)
 	dialog.confirmed.connect(func(): pending.call(); refresh())
 	hide()
@@ -295,11 +296,11 @@ func draw_grid() -> void:
 		var c: Dictionary = state.containers.get(location,{"width":8,"height":8})
 		for y in range(mini(8,maxi(1,int(c.height)))):
 			for x in range(mini(8,maxi(1,int(c.width)))):
-				grid.draw_rect(Rect2(origin+Vector2(x,y)*CELL,Vector2.ONE*CELL),Color("#405d68"),false)
+				grid.draw_rect(Rect2(origin+Vector2(x,y)*CELL,Vector2.ONE*CELL),Color("#4b504b"),false)
 		for item: Dictionary in visible_items(location):
 			var rect := item_rect(item,location,right)
 			if rect.position.x < origin.x or rect.position.x >= origin.x+352: continue
-			grid.draw_rect(rect.grow(-2),Color("#526c66") if item.id != selected else Color("#ae854b"))
+			preload("res://scripts/ui/wasteland_theme.gd").box("slot_normal" if item.id!=selected else "slot_selected",4).draw(grid.get_canvas_item(),rect.grow(-2))
 			var icon:Texture2D=preload('res://scripts/art/fortress_art.gd').item_icon(item.definition_id)
 			if icon!=null:
 				grid.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST

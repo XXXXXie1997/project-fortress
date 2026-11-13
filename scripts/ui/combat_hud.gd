@@ -14,28 +14,34 @@ var task_tracker:=RichTextLabel.new()
 var quest_service:QuestService
 var sprint_toggle:=false
 var toggle:=CheckButton.new()
+var health_bar:=ProgressBar.new()
 var weapon_icon:=Sprite2D.new()
 var tactical_icon:=Sprite2D.new()
 func _ready():
  process_mode=Node.PROCESS_MODE_ALWAYS
- label.position=Vector2(20,20);add_child(label)
+ label.position=Vector2(36,40);label.custom_minimum_size=Vector2(200,36);add_child(label)
  card.position=Vector2(20,625);add_child(card)
+ health_bar.position=Vector2(0,26);health_bar.size=Vector2(190,6);health_bar.show_percentage=false;health_bar.mouse_filter=Control.MOUSE_FILTER_IGNORE;label.add_child(health_bar)
+ var health_fill:=StyleBoxFlat.new();health_fill.bg_color=Color("9a6558");health_bar.add_theme_stylebox_override("fill",health_fill)
+ var health_empty:=StyleBoxFlat.new();health_empty.bg_color=Color("101314");health_bar.add_theme_stylebox_override("background",health_empty)
  toggle.text='冲刺：按一下切换（默认按住）';toggle.position=Vector2(410,460);toggle.toggled.connect(func(value):sprint_toggle=value);add_child(toggle);toggle.hide()
  for sprite in [weapon_icon,tactical_icon]:
   sprite.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;sprite.scale=Vector2(1.5,1.5);add_child(sprite)
  weapon_icon.position=Vector2(40,595);tactical_icon.position=Vector2(100,595)
  panel.position=Vector2(390,180);panel.custom_minimum_size=Vector2(500,260);panel.add_child(text);add_child(panel);panel.hide()
- quick.position=Vector2(400,675);quick.add_theme_constant_override("separation",24);add_child(quick)
+ quick.position=Vector2(400,675);quick.add_theme_constant_override("separation",20);add_child(quick)
  for i in range(6):
-  var slot_label:=Label.new();slot_label.custom_minimum_size=Vector2(62,70);slot_label.add_theme_font_size_override("font_size",13);quick.add_child(slot_label);quick_slots.append(slot_label)
+  var slot_label:=Label.new();slot_label.custom_minimum_size=Vector2(40,56);slot_label.add_theme_font_size_override("font_size",13);quick.add_child(slot_label);quick_slots.append(slot_label)
   preload("res://scripts/ui/hud_backdrop.gd").attach(slot_label)
-  var icon:=TextureRect.new();icon.name='ArtIcon';icon.position=Vector2(19,23);icon.size=Vector2(26,26);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;slot_label.add_child(icon)
+  var icon:=TextureRect.new();icon.name='ArtIcon';icon.position=Vector2(7,16);icon.size=Vector2(26,26);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;slot_label.add_child(icon)
  var minimap=load('res://scripts/ui/combat_minimap.gd').new();minimap.arena=arena;minimap.position=Vector2(1080,20);add_child(minimap)
  quest_service=QuestService.new(arena.inventory)
- task_tracker.position=Vector2(1050,155);task_tracker.size=Vector2(210,255);task_tracker.bbcode_enabled=true;task_tracker.add_theme_font_size_override('normal_font_size',14);task_tracker.text='任务追踪：尚无任务';add_child(task_tracker)
+ task_tracker.position=Vector2(1050,210);task_tracker.size=Vector2(210,255);task_tracker.bbcode_enabled=true;task_tracker.add_theme_font_size_override('normal_font_size',14);task_tracker.text='任务追踪：尚无任务';add_child(task_tracker)
  charge_title.position=Vector2(980,640);charge_title.text='测试能源站：靠近无线充能\n靠近后 F 切换测试下挂\nV 开关灯 / 激光 / 发射器';add_child(charge_title)
  preload("res://scripts/ui/hud_backdrop.gd").attach(label)
- card.custom_minimum_size.x=130
+ card.custom_minimum_size.x=210
+ card.add_theme_font_size_override("font_size",24)
+ card.add_theme_color_override("font_color",Color("c5a065"))
  preload("res://scripts/ui/hud_backdrop.gd").attach(card,48)
  preload("res://scripts/ui/hud_backdrop.gd").attach(task_tracker)
  preload("res://scripts/ui/hud_backdrop.gd").attach(charge_title)
@@ -75,6 +81,7 @@ func _input(event):
 func show_panel(content:String,pause:bool):
  text.text=content;panel.show();opened=true;get_tree().paused=pause;toggle.visible=pause
 func _process(_dt):
+ health_bar.max_value=arena.state.player.vitals.max_hp;health_bar.value=arena.state.player.vitals.hp
  if is_instance_valid(task_tracker):
   var tracked:=QuestPresentation.tracker(arena.state,quest_service)
   if task_tracker.text!=tracked:task_tracker.text=tracked
@@ -94,7 +101,7 @@ func _process(_dt):
  weapon_icon.texture=preload('res://scripts/art/fortress_art.gd').item_icon(weapon.definition_id) if not weapon.is_empty() else null;weapon_icon.visible=not weapon.is_empty()
  var tactical:Dictionary=arena.player.tactical.battery()
  tactical_icon.texture=preload('res://scripts/art/fortress_art.gd').item_icon(tactical.definition_id) if not tactical.is_empty() else null;tactical_icon.visible=not tactical.is_empty()
- card.modulate=Color.CYAN if arena.state.player.combat.charging else Color.WHITE
+ card.modulate=Color("e7c18a") if arena.state.player.combat.charging else Color.WHITE
  card.text='%.0f/%.0f'%[weapon.get('energy',0),energy]
  layout_bottom_hud()
 

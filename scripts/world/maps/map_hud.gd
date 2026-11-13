@@ -14,6 +14,7 @@ func _ready():
  for child in get_children():
   if child is Label and child.text.begins_with('任务追踪：'):child.queue_free()
   if child.get_script()!=null and child.get_script().resource_path.ends_with('combat_minimap.gd'):child.queue_free()
+ preload("res://scripts/ui/wasteland_theme.gd").apply(menu)
  menu.position=Vector2(300,100);menu.custom_minimum_size=Vector2(680,450);menu.add_child(choices);add_child(menu);menu.hide()
  map_view=load('res://scripts/world/maps/map_view.gd').new();map_view.arena=arena;map_view.position=Vector2(1050,20);map_view.size=Vector2(210,170);add_child(map_view)
  hint.position=Vector2(360,560);add_child(hint)

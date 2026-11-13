@@ -61,7 +61,7 @@ func _ready() -> void:
 	retry.pressed.connect(func():
 		if coordinator.shutdown().ok: save_notice.hide())
 	save_notice.hide()
-	phases = VBoxContainer.new(); phases.position = Vector2(950, 320); overlay.add_child(phases)
+	phases = VBoxContainer.new(); phases.position = Vector2(1024, 440); overlay.add_child(phases)
 	var shortcuts=preload("res://scripts/ui/action_shortcuts.gd").new();shortcuts.shell=self;overlay.add_child(shortcuts)
 	rows = VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 12)
@@ -70,6 +70,7 @@ func _ready() -> void:
 	get_tree().auto_accept_quit = false
 
 func clear(title: String) -> void:
+	panel.theme=preload("res://scripts/ui/wasteland_theme.gd").get_theme() if overlay_mode!="start" else null
 	for child in rows.get_children():
 		rows.remove_child(child)
 		child.queue_free()
@@ -298,8 +299,8 @@ func refresh_phase_controls() -> void:
 			if coordinator.begin_night("manual").ok: queue_mount())
 		phase_button("自动休息", func(): confirm_night("rest"))
 		phase_button("夜间探索", func(): show_departures(true))
-	phase_button("基地遗物与地面箱", show_base_containers)
-	phase_button("用基地能源补充护盾", func():
+	phase_button("遗物与地面箱", show_base_containers)
+	phase_button("补充基地护盾", func():
 		report(coordinator.transact(func(trial: Dictionary) -> Dictionary:
 			if not coordinator.services.building.preparation(trial): return {"ok":false}
 			return {"ok": EnergyService.transfer(trial.base.energy_store,trial.base.shield,trial.base.shield.capacity) > 0})))

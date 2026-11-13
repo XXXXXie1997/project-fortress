@@ -13,7 +13,7 @@ var revision:=''
 var names:Dictionary={'vitality':'体魄：生命上限','stamina':'耐力：体力上限','accuracy':'精准：基础散布','stealth':'潜行：视觉积累减速','hurt_speed':'应激：生命受伤后加速','storage':'仓储技术','agriculture':'稳定返种'}
 func _ready():
  layer=20
- box=PanelContainer.new();box.position=Vector2(180,70);box.size=Vector2(920,560);add_child(box)
+ box=PanelContainer.new();preload("res://scripts/ui/wasteland_theme.gd").apply(box);box.position=Vector2(180,70);box.size=Vector2(920,560);add_child(box)
  var scroll:=ScrollContainer.new();scroll.custom_minimum_size=Vector2(900,530);box.add_child(scroll)
  rows=VBoxContainer.new();rows.size_flags_horizontal=Control.SIZE_EXPAND_FILL;scroll.add_child(rows)
  visible=false
@@ -68,7 +68,7 @@ func refresh():
   for id in growth.config.nodes:
    var node:Dictionary=growth.config.nodes[id]
    for required in node.requires:
-    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(115,65),positions[id]+Vector2(115,0)]);line.width=3;line.default_color=Color.CYAN;surface.add_child(line)
+    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(115,65),positions[id]+Vector2(115,0)]);line.width=3;line.default_color=Color("c5a065");surface.add_child(line)
    var item:=Button.new();item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(245,65);item.text='%s\n%d / %d'%[names[id],g.ranks.get(id,0),node.max_rank];bind_button(item,invest.bind(id));surface.add_child(item)
   label('潜行只减警觉积累；应激只在实际生命损失后触发，重复刷新不叠加。')
   var reset_button=button('基地洗点：预览费用',func():
@@ -85,7 +85,7 @@ func refresh():
   for id in tech.config.nodes:
    var node:Dictionary=tech.config.nodes[id]
    for required in node.requires:
-    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(160,70),positions[id]+Vector2(160,0)]);line.width=3;line.default_color=Color.CYAN;surface.add_child(line)
+    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(160,70),positions[id]+Vector2(160,0)]);line.width=3;line.default_color=Color("c5a065");surface.add_child(line)
    var item:=Button.new();item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(330,80)
    item.text='%s\n能源%s · %s\n%s'%[names.get(id,id),node.energy,materials(node.materials),'已解锁' if s.base.get('technology',{}).has(id) else '解锁']
    bind_button(item,unlock.bind(id));surface.add_child(item)
