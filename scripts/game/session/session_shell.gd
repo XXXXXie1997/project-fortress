@@ -14,6 +14,7 @@ var mounting := false
 var mount_queued := false
 var save_notice: HBoxContainer
 var save_notice_text: Label
+var phase_actions:Array[Callable]=[]
 var phases: VBoxContainer
 var phase_signature := ""
 var autosave_elapsed := 0.0
@@ -60,7 +61,8 @@ func _ready() -> void:
 	retry.pressed.connect(func():
 		if coordinator.shutdown().ok: save_notice.hide())
 	save_notice.hide()
-	phases = VBoxContainer.new(); phases.position = Vector2(1040, 420); overlay.add_child(phases)
+	phases = VBoxContainer.new(); phases.position = Vector2(950, 320); overlay.add_child(phases)
+	var shortcuts=preload("res://scripts/ui/action_shortcuts.gd").new();shortcuts.shell=self;overlay.add_child(shortcuts)
 	rows = VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 12)
 	panel.add_child(rows)
@@ -276,12 +278,16 @@ func mount_current() -> void:
 		if not completed.get("ok",false) or not "basics_v1" in completed.state.get("completed",[]): show_tutorial(0)
 
 func phase_button(label: String, action: Callable) -> void:
-	var control := Button.new(); control.text = label
-	control.pressed.connect(func():
-		if not interface_open() and not mounting: action.call())
-	phases.add_child(control)
+	var row:=HBoxContainer.new();row.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	if phases.get_child_count()>0:
+		phase_actions.append(action)
+		var icon:=TextureRect.new();var atlas:=AtlasTexture.new();atlas.atlas=load("res://assets/runtime/ui/action_icons.png");atlas.region=Rect2(120,0,24,24)
+		icon.texture=atlas;icon.custom_minimum_size=Vector2(24,24);icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(icon)
+	var caption:=Label.new();caption.text=("[F%d] "%phase_actions.size() if phases.get_child_count()>0 else "")+label;caption.add_theme_font_size_override("font_size",14);caption.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(caption)
+	phases.add_child(row)
 
 func refresh_phase_controls() -> void:
+	phase_actions.clear()
 	for child in phases.get_children(): phases.remove_child(child); child.queue_free()
 	phase_button("第 %d 天 · %s" % [coordinator.state.day, "清晨" if coordinator.state.phase == "morning" else "黄昏"], func(): pass)
 	if coordinator.state.phase == "morning":
@@ -336,7 +342,7 @@ func _overlay_visibility() -> void:
 	if not panel.visible: arena.player.progression_pointer_guard = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 
 func cancel_overlay() -> void:
-	if overlay_mode in ["stage", "pause"]:
+	if overlay_mode in ["stage", "pause", "player"]:
 		panel.hide()
 		get_tree().paused = false
 
@@ -495,3 +501,23 @@ func update_audio_context() -> void:
 				context = "battle"; break
 	audio_manager.play_context(context)
 	audio_manager.sfx.set_listener(arena.player.global_position)
+
+# Keyboard-first HUD: mouse remains an aiming device until a panel is opened.
+func _input(event:InputEvent):
+	if not event is InputEventKey or not event.pressed or event.echo:return
+	if not is_instance_valid(arena) or mounting:return
+	if panel.visible:
+		if overlay_mode=="player" and event.physical_keycode==KEY_P:
+			cancel_overlay();get_viewport().set_input_as_handled()
+		return
+	if interface_open():return
+	if event.physical_keycode==KEY_P:
+		overlay_mode="player";clear("玩家信息")
+		var info:=Label.new()
+		var player:Dictionary=coordinator.state.player
+		info.text="生命 %.0f / %.0f\n\n关闭此面板后：Tab 查看背包与装备\nT 查看天赋成长\n\n[P] / [Esc] 返回"%[player.vitals.hp,player.vitals.max_hp]
+		rows.add_child(info);get_viewport().set_input_as_handled()
+	elif event.physical_keycode>=KEY_F1 and event.physical_keycode<=KEY_F6 and phases.visible:
+		var index:int=event.physical_keycode-KEY_F1
+		if index<phase_actions.size():phase_actions[index].call()
+		get_viewport().set_input_as_handled()

@@ -4,7 +4,7 @@ func _ready():
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 func _input(event):
 	if arena.session_context.shell.panel.visible:
-		if event.is_action_pressed("cancel"): arena.session_context.shell.cancel_overlay()
+		if event.is_action_pressed("cancel") or (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode==KEY_P and arena.session_context.shell.overlay_mode=="player"): arena.session_context.shell.cancel_overlay()
 		if event is InputEventKey or event is InputEventAction: get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("cancel") and not menu.visible and not full_map and (inventory_panel == null or not inventory_panel.visible) and not arena.player.progression_panel.visible:

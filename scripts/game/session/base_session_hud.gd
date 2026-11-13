@@ -24,6 +24,7 @@ func _process(delta):
 	for element in [label,card,quick,weapon_icon,tactical_icon,task_tracker,charge_title]:
 		element.visible=not covered
 	arena.status_label.visible=false
+	charge_title.visible=false
 	arena.management.presentation_obscured=shell.panel.visible or arena.player.progression_panel.visible
 	var warning:Dictionary=warning_rules.warning_state(arena.state)
 	loss_warning.visible=warning.visible and not covered
@@ -31,7 +32,7 @@ func _process(delta):
 	loss_warning.text+="\n请保护核心设施；准备阶段可修复废墟"
 func _input(event):
 	if arena.session_context.shell.panel.visible:
-		if event.is_action_pressed("cancel"): arena.session_context.shell.cancel_overlay()
+		if event.is_action_pressed("cancel") or (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode==KEY_P and arena.session_context.shell.overlay_mode=="player"): arena.session_context.shell.cancel_overlay()
 		if event is InputEventKey or event is InputEventAction: get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("cancel"):
