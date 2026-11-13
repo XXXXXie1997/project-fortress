@@ -23,7 +23,7 @@ func _process(delta):
 	# Keep the inventory and its children alive/visible; only suppress ambient HUD.
 	for element in [label,card,quick,weapon_icon,tactical_icon,task_tracker,charge_title]:
 		element.visible=not covered
-	arena.status_label.visible=not covered
+	arena.status_label.visible=false
 	arena.management.presentation_obscured=shell.panel.visible or arena.player.progression_panel.visible
 	var warning:Dictionary=warning_rules.warning_state(arena.state)
 	loss_warning.visible=warning.visible and not covered

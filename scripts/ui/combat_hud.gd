@@ -72,7 +72,7 @@ func _process(_dt):
  if is_instance_valid(task_tracker):
   var tracked:=QuestPresentation.tracker(arena.state,quest_service)
   if task_tracker.text!=tracked:task_tracker.text=tracked
-  label.text='生命 %.0f / %.0f\nWASD 移动  Shift 冲刺  空格 闪避'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
+  label.text='生命 %.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
  var weapon:Dictionary=arena.player.item()
  var energy:=0.0
  for i in arena.inventory.items_in(arena.state,'bag'):
@@ -88,7 +88,8 @@ func _process(_dt):
  var tactical:Dictionary=arena.player.tactical.battery()
  tactical_icon.texture=preload('res://scripts/art/fortress_art.gd').item_icon(tactical.definition_id) if not tactical.is_empty() else null;tactical_icon.visible=not tactical.is_empty()
  card.modulate=Color.CYAN if arena.state.player.combat.charging else Color.WHITE
- card.text='武器 %d  %s\n能源 %.1f / 背包 %.1f\nR 充电  Q/E 切换  右键瞄准'%[arena.player.slot,preload('res://scripts/content/catalog.gd').item_name(weapon.get('definition_id','')),weapon.get('energy',0),energy]
+ card.text='%.0f/%.0f'%[weapon.get('energy',0),energy]
+ layout_bottom_hud()
 
 
 
@@ -109,3 +110,11 @@ func open_inventory(box_id:String=""):
 
 
 
+
+func layout_bottom_hud():
+ var viewport_size:=get_viewport().get_visible_rect().size
+ card.position=Vector2(20,viewport_size.y-20-card.get_combined_minimum_size().y)
+ weapon_icon.position=Vector2(40,card.position.y-26)
+ tactical_icon.position=Vector2(100,card.position.y-26)
+ quick.position=Vector2(maxf(200,(viewport_size.x-quick.get_combined_minimum_size().x)*0.5),viewport_size.y-20-quick.get_combined_minimum_size().y)
+ charge_title.position=Vector2(maxf(20,viewport_size.x-20-charge_title.get_combined_minimum_size().x),viewport_size.y-76-charge_title.get_combined_minimum_size().y)

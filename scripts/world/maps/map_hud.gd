@@ -75,7 +75,7 @@ func _input(event):
  super._input(event)
 func _process(dt):
  super._process(dt)
- label.text='生命 %.0f / %.0f · 第 %d 天 %s\n%s'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp,arena.state.day,arena.state.phase,arena.catalog.get(arena.state.expedition.get('map_id',''),{}).get('title','避难所')]
+ label.text='生命 %.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
  var near:Dictionary=arena.nearby() if arena.ready_world else {}
  hint.text=('F '+near.get('label','')+'\n' if not near.is_empty() else '')+arena.message
  if not arena.state.expedition.get('active',false) and not menu.visible and not opened and (inventory_panel==null or not inventory_panel.visible):show_departure()
