@@ -31,6 +31,12 @@ var last_feedback := ""
 var feedback: Label
 var info: Label
 var listing: VBoxContainer
+var equipment_layout:Control
+var weight_bar:ProgressBar
+var sort_bag_button:Button
+var binding_row:HBoxContainer
+var tabs:HBoxContainer
+var detail_scroll:ScrollContainer
 var pending: Callable
 var battery_id := ""
 var detail_label: Label
@@ -47,13 +53,13 @@ func bind_state(s: Dictionary, inv: InventoryService, exp: ExplorationService = 
 	exploration = exp
 func _ready() -> void:
 	preload("res://scripts/ui/wasteland_theme.gd").apply(self)
-	position = Vector2(30,24)
-	size = Vector2(minf(1220,get_viewport_rect().size.x-60),660)
-	var root := VBoxContainer.new()
+	position = Vector2(56,44)
+	size = Vector2(1168,632)
+	var root := Control.new()
 	add_child(root)
-	var tabs := HBoxContainer.new()
-	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",26);root.add_child(heading)
-	root.add_child(tabs)
+	tabs = HBoxContainer.new()
+	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",26);root.add_child(heading);heading.position=Vector2(16,12)
+	root.add_child(tabs);tabs.position=Vector2(310,66)
 	for location in ["bag","warehouse","equipment"]:
 		tabs_by_source[location]=button(tabs,{"bag":"背包","warehouse":"仓库","equipment":"已装备"}[location],func():
 			if location=="warehouse" and not at_base: return
@@ -65,27 +71,37 @@ func _ready() -> void:
 				refresh())
 	button(tabs,"整理",func(): inventory.sort_container(state,source); refresh())
 	button(tabs,"旋转选中 (R)",func(): rotated=not rotated; refresh())
-	button(tabs,"仓库左右分页",func(): warehouse_page=8 if warehouse_page==0 else 0; refresh())
+	button(tabs,"仓库左右分页",func(): warehouse_page=12 if warehouse_page==0 else 0; refresh())
 	button(tabs,"关闭 Esc",close_panel)
 	info = Label.new()
-	root.add_child(info)
+	root.add_child(info);info.position=Vector2(302,350)
+	weight_bar=ProgressBar.new();weight_bar.position=Vector2(302,376);weight_bar.show_percentage=false;weight_bar.size=Vector2(264,8);root.add_child(weight_bar)
+	var fill:=StyleBoxFlat.new();fill.bg_color=Color("c5a065");weight_bar.add_theme_stylebox_override("fill",fill)
 	feedback=Label.new()
 	feedback.modulate=Color("#f0ba7a")
-	root.add_child(feedback)
-	var body := HBoxContainer.new()
+	root.add_child(feedback);feedback.position=Vector2(16,570)
+	var body := Control.new()
 	root.add_child(body)
+	for line_rect in [Rect2(16,88,1120,1),Rect2(16,138,240,1),Rect2(302,138,240,1),Rect2(640,138,240,1),Rect2(16,552,1120,1)]:
+		var line:=ColorRect.new();line.position=line_rect.position;line.size=line_rect.size;line.color=Color("4b504b");line.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(line)
+	button(root,"关闭",close_panel).position=Vector2(1072,10)
+	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(442,458)
+	button(root,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh()).position=Vector2(640,496)
+	for data in [["装备",Vector2(16,108)],["额外装备 / 4个通用槽",Vector2(16,528)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
+		var caption:=Label.new();caption.text=data[0];caption.position=data[1];caption.add_theme_color_override("font_color",Color("a6aaa0"));root.add_child(caption)
 	grid = Control.new()
-	grid.custom_minimum_size = Vector2(800,400)
+	grid.position=Vector2(302,126);grid.size=Vector2(834,352)
 	body.add_child(grid)
 	grid.draw.connect(draw_grid)
 	grid.gui_input.connect(grid_input)
 	listing = VBoxContainer.new()
-	var detail_scroll:=ScrollContainer.new();detail_scroll.custom_minimum_size=Vector2(260,400);detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;body.add_child(detail_scroll);detail_scroll.add_child(listing);body.move_child(detail_scroll,0)
+	detail_scroll=ScrollContainer.new();detail_scroll.position=Vector2(302,458);detail_scroll.size=Vector2(302,100);detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;body.add_child(detail_scroll);detail_scroll.add_child(listing)
+	equipment_layout=Control.new();equipment_layout.position=Vector2(16,154);body.add_child(equipment_layout)
 	listing.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	var quick := HBoxContainer.new()
-	root.add_child(quick)
+	var quick := HBoxContainer.new();binding_row=quick
+	root.add_child(quick);quick.position=Vector2(302,570)
 	for n in range(6):
-		button(quick,str(n+1)+" 绑定选中",func():
+		button(quick,str(n+1)+" 绑定",func():
 			if accessible_item(selected): state.player.quick[n] = state.items[selected].definition_id
 			refresh())
 	dialog = ConfirmationDialog.new()
@@ -169,7 +185,12 @@ func refresh() -> void:
 	var counts: Array = []
 	for n in range(6): counts.append(str(n+1)+":"+str(inventory.quick_count(state,n)))
 	info.modulate = Color("#ef8d75") if inventory.weight(state,"bag") > state.containers.bag.maximum_weight * 0.8 else Color.WHITE
-	info.text = "背包重量 %.1f / %.1f   快捷数量 %s\n选中 %s   R旋转，拖拽放置，双击转移" % [inventory.weight(state,"bag"),state.containers.bag.maximum_weight,"  ".join(counts),display_name(selected)]
+	info.text = "负重  %.1f / %.1f kg" % [inventory.weight(state,"bag"),state.containers.bag.maximum_weight]
+	tabs.visible=selector_callback.is_valid()
+	binding_row.visible=not selected.is_empty()
+	weight_bar.max_value=state.containers.bag.maximum_weight;weight_bar.value=inventory.weight(state,"bag");weight_bar.size=Vector2(264,8)
+	detail_scroll.visible=not selected.is_empty() or selector_callback.is_valid() or not box_id.is_empty()
+	sort_bag_button.visible=not detail_scroll.visible
 	for location in tabs_by_source: tabs_by_source[location].visible=location!="warehouse" or at_base
 	detail_label=null
 	detail_id=""
@@ -182,7 +203,7 @@ func refresh() -> void:
 			slot_buttons[slot].text=slot_buttons[slot].text.split(":")[0]+": "+display_name(id)
 			slot_buttons[slot].icon=preload('res://scripts/art/fortress_art.gd').item_icon(state.items[id].definition_id) if state.items.has(id) else null
 			continue
-		var slot_button := button(listing,{"weapon_1":"武器一","weapon_2":"武器二","weapon_3":"武器三","armor":"护甲","backpack":"背包","extra_1":"额外一","extra_2":"额外二","extra_3":"额外三","extra_4":"额外四"}[slot]+": "+display_name(id),func():
+		var slot_button := button(equipment_layout,{"weapon_1":"武器一","weapon_2":"武器二","weapon_3":"武器三","armor":"护甲","backpack":"背包","extra_1":"额外一","extra_2":"额外二","extra_3":"额外三","extra_4":"额外四"}[slot]+": "+display_name(id),func():
 			if suppress_slot_click:
 				suppress_slot_click=false
 				return
@@ -248,13 +269,14 @@ func refresh() -> void:
 				refresh())
 			charge_button.disabled=plugin.energy>=plugin.capacity
 			row.button=charge_button
-	button(listing,"清除选择（用于卸下）",func(): selected=""; refresh())
+	if not selected.is_empty():button(listing,"清除选择",func(): selected=""; refresh())
 	if not box_id.is_empty() and exploration != null:
 		var box: Dictionary = exploration.box(state,box_id)
 		button(listing,"全部拾取已揭示",func(): exploration.take_all(state,box_id); refresh())
 		for id: String in box.get("revealed",[]):
 			if state.items.has(id) and state.items[id].container_id == box.container_id:
 				button(listing,"拾取 "+display_name(id),func(): exploration.pickup(state,box_id,id); refresh())
+	arrange_equipment()
 	grid.queue_redraw()
 func display_name(id: String) -> String:
 	if not state.items.has(id): return "空"
@@ -280,42 +302,42 @@ func visible_items(location: String) -> Array:
 	return result
 
 func item_rect(item: Dictionary, location: String, right: bool) -> Rect2:
-	var pos := Vector2(item.cell[0]-(warehouse_page if location=="warehouse" else 0),item.cell[1])*CELL
+	var pos := Vector2(item.cell[0]-(warehouse_page if location=="warehouse" else 0),item.cell[1])*cell_size(right)
 	if location == "equipment" or (right and not box_id.is_empty()):
 		var index: int = visible_items(location).find(item)
 		pos=Vector2((index%3)*132,(index/3)*100)
-	return Rect2(pos+Vector2(400 if right else 0,28),Vector2(inventory.dimensions(item))*CELL)
+	return Rect2(pos+Vector2(338 if right else 0,28),Vector2(inventory.dimensions(item))*cell_size(right))
 
 func draw_grid() -> void:
 	if state.is_empty(): return
 	for right in [false,true]:
 		var location: String = remote_location() if right else source
 		if location.is_empty(): continue
-		var origin := Vector2(400 if right else 0,28)
-		grid.draw_string(ThemeDB.fallback_font,origin-Vector2(0,8),"搜刮 · 已揭示物品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,18)
+		var origin := Vector2(338 if right else 0,28)
+		grid.draw_string(ThemeDB.fallback_font,origin-Vector2(0,32),"搜刮 · 已揭示物品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,18)
 		var c: Dictionary = state.containers.get(location,{"width":8,"height":8})
 		for y in range(mini(8,maxi(1,int(c.height)))):
-			for x in range(mini(8,maxi(1,int(c.width)))):
-				grid.draw_rect(Rect2(origin+Vector2(x,y)*CELL,Vector2.ONE*CELL),Color("#4b504b"),false)
+			for x in range(mini(12 if right else 8,maxi(1,int(c.width)))):
+				grid.draw_rect(Rect2(origin+Vector2(x,y)*cell_size(right),Vector2.ONE*cell_size(right)),Color("#4b504b"),false)
 		for item: Dictionary in visible_items(location):
 			var rect := item_rect(item,location,right)
-			if rect.position.x < origin.x or rect.position.x >= origin.x+352: continue
+			if rect.position.x < origin.x or rect.position.x >= origin.x+(480 if right else 336): continue
 			preload("res://scripts/ui/wasteland_theme.gd").box("slot_normal" if item.id!=selected else "slot_selected",4).draw(grid.get_canvas_item(),rect.grow(-2))
 			var icon:Texture2D=preload('res://scripts/art/fortress_art.gd').item_icon(item.definition_id)
 			if icon!=null:
 				grid.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
-				grid.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-20)*.5,15),Vector2(20,20)),false)
-			grid.draw_string(ThemeDB.fallback_font,rect.position+Vector2(3,12),display_name(item.id),HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-4,11)
-			grid.draw_string(ThemeDB.fallback_font,rect.position+Vector2(3,42),"×%s" % item.quantity,HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-4,10)
+				grid.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-32)*.5,8),Vector2(32,32)),false)
+
+			grid.draw_string(ThemeDB.fallback_font,rect.position+Vector2(3,42),str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else ""),HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-4,10)
 	if selected != "" and state.items.has(selected) and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		var point := grid.get_local_mouse_position()
-		var right: bool = point.x >= 400
+		var right: bool = point.x >= 338
 		var location: String = remote_location() if right else source
-		var cell := Vector2i((point-Vector2(400 if right else 0,28))/CELL)
+		var cell := Vector2i((point-Vector2(338 if right else 0,28))/cell_size(right))
 		var preview: Dictionary = state.items[selected].duplicate(true)
 		preview.rotated=rotated
 		var valid := not location.is_empty() and location != "equipment" and inventory.fits(state,preview,location,cell)
-		grid.draw_rect(Rect2(Vector2(cell)*CELL+Vector2(400 if right else 0,28),Vector2(inventory.dimensions(preview))*CELL),Color(0,1,0,0.3) if valid else Color(1,0,0,0.3))
+		grid.draw_rect(Rect2(Vector2(cell)*cell_size(right)+Vector2(338 if right else 0,28),Vector2(inventory.dimensions(preview))*cell_size(right)),Color(0,1,0,0.3) if valid else Color(1,0,0,0.3))
 
 func accessible_location(location: String) -> bool:
 	if not external_container.is_empty() and location==external_container:
@@ -406,7 +428,7 @@ func grid_input(event: InputEvent) -> void:
 		grid.queue_redraw()
 	if not event is InputEventMouseButton or event.button_index != MOUSE_BUTTON_LEFT: return
 	grid.accept_event()
-	var right: bool = event.position.x >= 400
+	var right: bool = event.position.x >= 338
 	var location: String = remote_location() if right else source
 	if event.pressed:
 		gesture.clear()
@@ -438,7 +460,7 @@ func grid_input(event: InputEvent) -> void:
 		# A changed/consumed item or a tab/location switch cancels stale drags.
 		if state.items[id].container_id != ended.source or state.items[id].cell != ended.cell: return
 		if not Rect2(Vector2.ZERO,grid.size).has_point(event.position): return
-		var cell := Vector2i((event.position-Vector2(400 if right else 0,28))/CELL)
+		var cell := Vector2i((event.position-Vector2(338 if right else 0,28))/cell_size(right))
 		if location=="warehouse": cell.x+=warehouse_page
 		if state.items[id].container_id != location:
 			transfer_item(id,location,cell,true)
@@ -484,3 +506,17 @@ func drop_equipment(id: String, slot: String, confirmed: bool = false) -> void:
 	refresh()
 
 
+
+func cell_size(right:bool)->int:return 40 if right else 44
+func arrange_equipment():
+	var keys=["weapon_1","weapon_2","weapon_3","armor","backpack","extra_1","extra_2","extra_3","extra_4"]
+	for i in range(keys.size()):
+		if not slot_buttons.has(keys[i]):continue
+		var b:Button=slot_buttons[keys[i]]
+		b.position=Vector2(0,i*68) if i<3 else (Vector2((i-3)*132,216) if i<5 else Vector2((i-5)*64,308))
+		b.custom_minimum_size=Vector2(258,60) if i<3 else (Vector2(124,76) if i<5 else Vector2(58,58))
+		b.clip_text=true
+		b.expand_icon=true;b.add_theme_constant_override("icon_max_width",48 if i<3 else 28)
+		if i>=5:b.text="" if b.icon!=null else "+"
+		elif i>=3:b.text="护甲" if i==3 else "背包"
+		b.size=b.custom_minimum_size

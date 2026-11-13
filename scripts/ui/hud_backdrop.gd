@@ -16,4 +16,4 @@ func _draw():
  if target is RichTextLabel:
   if target.text.is_empty():return
   dimensions.y=minf(dimensions.y,target.get_content_height()+4)
- style.draw(get_canvas_item(),Rect2(Vector2(-10,-8-extra_top),dimensions+Vector2(20,16+extra_top)))
+ style.draw(get_canvas_item(),target.get_meta("backdrop_rect",Rect2(Vector2(-10,-8-extra_top),dimensions+Vector2(20,16+extra_top))))

@@ -3,8 +3,8 @@ var arena:Node2D
 func _process(_dt):queue_redraw()
 func _draw():
  if arena==null:return
- draw_rect(Rect2(0,0,180,124),Color("151919"))
- draw_rect(Rect2(0,0,180,120),Color('4b504b'),false,2)
+ draw_rect(Rect2(0,0,200,126),Color("151919"))
+ draw_rect(Rect2(0,0,200,126),Color('4b504b'),false,2)
  draw_rect(Rect2(81,31,6,40),Color('869099'))
  draw_circle(arena.player.global_position/8,3,Color.CYAN)
  var viewport_rect:=get_viewport_rect()

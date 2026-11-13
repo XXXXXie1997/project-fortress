@@ -61,7 +61,7 @@ func _ready() -> void:
 	retry.pressed.connect(func():
 		if coordinator.shutdown().ok: save_notice.hide())
 	save_notice.hide()
-	phases = VBoxContainer.new(); phases.position = Vector2(1024, 440); overlay.add_child(phases)
+	phases = VBoxContainer.new(); phases.position = Vector2(1022, 438);phases.custom_minimum_size=Vector2(224,184); overlay.add_child(phases)
 	var shortcuts=preload("res://scripts/ui/action_shortcuts.gd").new();shortcuts.shell=self;overlay.add_child(shortcuts)
 	rows = VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 12)

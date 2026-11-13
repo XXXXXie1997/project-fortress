@@ -60,7 +60,7 @@ func run():
 	r.keycode=KEY_R;r.pressed=true
 	Input.parse_input_event(r)
 	await process_frame
-	await mouse(panel.grid.global_position+Vector2(400+3*44+10,28+44+10),false)
+	await mouse(panel.grid.global_position+Vector2(338+3*40+10,28+40+10),false)
 	assert(s.items[gun.id].container_id=="warehouse" and s.items[gun.id].cell==[3,1] and s.items[gun.id].rotated)
 	panel.queue_free()
 	await process_frame
