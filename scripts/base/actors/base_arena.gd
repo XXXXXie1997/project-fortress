@@ -246,9 +246,6 @@ func _draw():
    var poly:=grid.rect_polygon(Rect2(x*48,y*48,48,48))
    draw_colored_polygon(poly,Color('77734f') if (x+y)%2==0 else Color('6d6948'))
    draw_polyline(PackedVector2Array([poly[0],poly[1],poly[2],poly[3],poly[0]]),Color('585c46'),1)
- if building!=null and not running:
-  var poly:=placement_polygon(mouse_build_cell(),'turret')
-  draw_colored_polygon(poly,Color(0.2,0.8,0.8,0.35))
 
 func rebuild_base_navigation():
  base_navigation.clear()
