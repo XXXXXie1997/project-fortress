@@ -23,9 +23,9 @@ func _draw():
   for y in range(int(r.position.y),int(r.end.y),48):
    for x in range(int(r.position.x),int(r.end.x),48):ground_tile('road',Rect2(x,y,minf(48,r.end.x-x),minf(48,r.end.y-y)),Color(.55,.55,.45))
   if r.size.x>r.size.y:
-   for x in range(int(r.position.x)+24,int(r.end.x)-24,96):draw_line(projection.logical_to_world(Vector2(x,r.get_center().y)),projection.logical_to_world(Vector2(x+40,r.get_center().y)),Color('b9ac74'),2)
+   for x in range(int(r.position.x)+24,int(r.end.x)-24,96):draw_line(projection.logical_to_world(Vector2(x,r.get_center().y)),projection.logical_to_world(Vector2(x+40,r.get_center().y)),Color('847650'),2)
   else:
-   for y in range(int(r.position.y)+24,int(r.end.y)-24,96):draw_line(projection.logical_to_world(Vector2(r.get_center().x,y)),projection.logical_to_world(Vector2(r.get_center().x,y+40)),Color('b9ac74'),2)
+   for y in range(int(r.position.y)+24,int(r.end.y)-24,96):draw_line(projection.logical_to_world(Vector2(r.get_center().x,y)),projection.logical_to_world(Vector2(r.get_center().x,y+40)),Color('847650'),2)
  for room in content.rooms:
   var r:=rect(room.rect)
   for y in range(int(r.position.y),int(r.end.y),48):

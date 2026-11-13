@@ -1,0 +1,7 @@
+Environment dark palette v1 — 2026-11-13
+Terrain and trees derive from the existing ART104 adaptation of Kenney Tiny Town (CC0); original license included. The pre-edit pixels are retained in hidden Original layers.
+Surfaces and roof derive from existing project environment art; pre-edit pixels retained in hidden Original layers.
+Props: original project pixel artwork authored using Aseprite Lua; no external source images used.
+props.png: 384x192 RGBA, 4 columns x 2 rows, each cell 96x96, foot pivot (48,80). Nearest filtering. Order: broken_wall, dead_tree, rubble, oil_puddle, rust_barrels, barricade, lamp, burnt_car.
+Props are illustrative environment assets, not gameplay entities: collision, light emission, salvage and placement are not implied. Runtime maps currently use only the reworked existing terrain/trees/surfaces and visual colors.
+Source .aseprite files are editable, layered assets. Original layers are hidden and must remain hidden when exporting.

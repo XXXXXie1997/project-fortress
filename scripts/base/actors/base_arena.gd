@@ -244,8 +244,8 @@ func _draw():
  for y in range(int(area.position.y/48),int(area.end.y/48)):
   for x in range(int(area.position.x/48),int(area.end.x/48)+10):
    var poly:=grid.rect_polygon(Rect2(x*48,y*48,48,48))
-   draw_colored_polygon(poly,Color('77734f') if (x+y)%2==0 else Color('6d6948'))
-   draw_polyline(PackedVector2Array([poly[0],poly[1],poly[2],poly[3],poly[0]]),Color('585c46'),1)
+   draw_colored_polygon(poly,Color('303c3c') if (x+y)%2==0 else Color('2e393a'))
+   draw_polyline(PackedVector2Array([poly[0],poly[1],poly[2],poly[3],poly[0]]),Color('354241'),1)
 
 func rebuild_base_navigation():
  base_navigation.clear()

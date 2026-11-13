@@ -25,14 +25,14 @@ func _ready():
   if room.locked and not arena.state.world.exploration.doors.has(content.id+':'+room.id):doors[room.id]=solid(d,false,Color('c7a865'))
   var roof:=StructureArt.roof(projection,r,content.id);add_child(roof)
   roofs.append({'rect':r,'node':roof})
- for r in content.barriers:solid(rect(r),true,Color('8d9988'))
+ for r in content.barriers:solid(rect(r),true,Color('535f5b'))
  for p in content.trees:
   var pos:=Vector2(p[0],p[1]);var body:=solid(Rect2(pos-Vector2(8,8),Vector2(16,16)),false,Color('685343'))
   var tree:=Sprite2D.new();tree.texture=preload('res://scripts/art/art104_nature.gd').texture('tree',content.id,int(pos.x/48+pos.y/48)%4);tree.position=projection.logical_to_world(pos)-body.position;tree.offset=Vector2(0,-24);tree.scale=Vector2(3,3);tree.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;body.add_child(tree)
 func texture_uv_pixels(tex:AtlasTexture)->PackedVector2Array:
  var r:=tex.region
  return PackedVector2Array([r.position,r.position+Vector2(r.size.x,0),r.end,r.position+Vector2(0,r.size.y)])
-func solid(r:Rect2,low:=false,color:=Color('a0a9af'))->StaticBody2D:
+func solid(r:Rect2,low:=false,color:=Color('68736f'))->StaticBody2D:
  var points:=projection.rect_polygon(r)
  var body:=StaticBody2D.new();body.position=projection.logical_to_world(r.end);body.collision_layer=8 if low else 1;body.collision_mask=0
  var local:=PackedVector2Array()
