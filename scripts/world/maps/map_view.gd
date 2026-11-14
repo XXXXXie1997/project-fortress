@@ -25,7 +25,7 @@ func rect_shape(rect:Array)->PackedVector2Array:
 func _draw():
  labels.clear();label_rects.clear()
  recommended_regions.clear()
- draw_rect(Rect2(Vector2.ZERO,size),Color(.03,.06,.08,.94))
+ draw_rect(Rect2(Vector2.ZERO,size),Color('151919'))
  if not arena.state.expedition.get('active',false):return
  var id:String=arena.state.expedition.map_id;var content:Dictionary=arena.catalog[id]
  bounds=arena.projection.world_bounds(Rect2(Vector2.ZERO,Vector2(content.size[0],content.size[1])))
@@ -62,7 +62,7 @@ func _draw():
 
  if size.x>400:draw_labels()
 func draw_labels():
- var font:Font=ThemeDB.fallback_font
+ var font:Font=preload('res://scripts/ui/wasteland_theme.gd').get_theme().default_font
  var x:float=size.x-224
  draw_rect(Rect2(x-6,6,224,size.y-12),Color(.04,.08,.1,.98))
  draw_string(font,Vector2(x+5,27),'地点索引 · 引线对应地图点',HORIZONTAL_ALIGNMENT_LEFT,214,14,Color.WHITE)

@@ -5,10 +5,12 @@ var map_view:Control
 var full_map:=false
 var hint:=Label.new()
 var quest_list:=RichTextLabel.new()
+var map_title:=Label.new()
+var map_help:=Label.new()
 func _ready():
  super._ready()
  charge_title.hide()
- quest_list.position=Vector2(1050,200);quest_list.size=Vector2(210,400);quest_list.bbcode_enabled=true;quest_list.add_theme_font_size_override('normal_font_size',14);add_child(quest_list)
+ quest_list.position=Vector2(1048,224);quest_list.size=Vector2(192,84);quest_list.set_meta("backdrop_rect",Rect2(-16,-14,224,112));quest_list.bbcode_enabled=true;quest_list.add_theme_font_size_override('normal_font_size',14);add_child(quest_list)
  # 地图拥有自己的任务追踪，明确释放父HUD同类控件。
  if is_instance_valid(task_tracker):task_tracker.queue_free();task_tracker=null
  for child in get_children():
@@ -16,7 +18,9 @@ func _ready():
   if child.get_script()!=null and child.get_script().resource_path.ends_with('combat_minimap.gd'):child.queue_free()
  preload("res://scripts/ui/wasteland_theme.gd").apply(menu)
  menu.position=Vector2(300,100);menu.custom_minimum_size=Vector2(680,450);menu.add_child(choices);add_child(menu);menu.hide()
- map_view=load('res://scripts/world/maps/map_view.gd').new();map_view.arena=arena;map_view.position=Vector2(1050,20);map_view.size=Vector2(210,170);add_child(map_view)
+ map_view=load('res://scripts/world/maps/map_view.gd').new();map_view.arena=arena;map_view.position=Vector2(1044,36);map_view.size=Vector2(200,126);add_child(map_view);map_view.set_meta('backdrop_rect',Rect2(-12,-12,224,174));preload('res://scripts/ui/hud_backdrop.gd').attach(map_view)
+ map_title.position=Vector2(4,136);map_title.add_theme_color_override('font_color',Color('ddd9cc'));map_view.add_child(map_title)
+ map_help.position=Vector2(0,-48);map_help.text='[M] 关闭地图 / 世界仍在运行';map_help.hide();map_view.add_child(map_help)
  hint.position=Vector2(360,560);add_child(hint)
  preload("res://scripts/ui/hud_backdrop.gd").attach(hint)
  preload("res://scripts/ui/hud_backdrop.gd").attach(quest_list)
@@ -70,7 +74,7 @@ func _input(event):
  if progression!=null and progression.visible and event.is_action_pressed('interact'):
   get_viewport().set_input_as_handled();return
  if event.is_action_pressed('map'):
-  full_map=not full_map;map_view.position=Vector2(240,70) if full_map else Vector2(1050,20);map_view.size=Vector2(800,560) if full_map else Vector2(210,170);get_viewport().set_input_as_handled();return
+  full_map=not full_map;map_view.position=Vector2(80,164) if full_map else Vector2(1044,36);map_view.size=Vector2(1120,460) if full_map else Vector2(200,126);map_view.set_meta('backdrop_rect',Rect2(-24,-120,1168,632) if full_map else Rect2(-12,-12,224,174));map_title.position=Vector2(0,-96) if full_map else Vector2(4,136);map_title.add_theme_font_size_override('font_size',32 if full_map else 16);map_help.visible=full_map;get_viewport().set_input_as_handled();return
  if event.is_action_pressed('interact') and not opened and (inventory_panel==null or not inventory_panel.visible):arena.interact();get_viewport().set_input_as_handled();return
  if menu.visible:
   if event.is_action_pressed('cancel') and arena.state.expedition.get('active',false):close_menu()
@@ -78,9 +82,11 @@ func _input(event):
  super._input(event)
 func _process(dt):
  super._process(dt)
- label.text='生命 %.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
+ label.text='生命\n%.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
  var near:Dictionary=arena.nearby() if arena.ready_world else {}
  hint.text=('F '+near.get('label','')+'\n' if not near.is_empty() else '')+arena.message
+ hint.visible=not full_map
+ map_title.text=arena.catalog.get(arena.state.expedition.get('map_id',''),{}).get('title','区域地图')
  if not arena.state.expedition.get('active',false) and not menu.visible and not opened and (inventory_panel==null or not inventory_panel.visible):show_departure()
  var tracked:=QuestPresentation.tracker(arena.state,arena.services.quests)
  if quest_list.text!=tracked:quest_list.text=tracked

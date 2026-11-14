@@ -58,7 +58,7 @@ func _ready() -> void:
 	var root := Control.new()
 	add_child(root)
 	tabs = HBoxContainer.new()
-	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",26);root.add_child(heading);heading.position=Vector2(16,12)
+	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",32);root.add_child(heading);heading.position=Vector2(16,12)
 	root.add_child(tabs);tabs.position=Vector2(310,66)
 	for location in ["bag","warehouse","equipment"]:
 		tabs_by_source[location]=button(tabs,{"bag":"背包","warehouse":"仓库","equipment":"已装备"}[location],func():
@@ -112,6 +112,7 @@ func _ready() -> void:
 func button(parent: Node, text: String, callback: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
+	b.custom_minimum_size.y=36
 	parent.add_child(b)
 	b.pressed.connect(callback)
 	b.button_down.connect(func(): held_button=b)
@@ -314,7 +315,7 @@ func draw_grid() -> void:
 		var location: String = remote_location() if right else source
 		if location.is_empty(): continue
 		var origin := Vector2(338 if right else 0,28)
-		grid.draw_string(ThemeDB.fallback_font,origin-Vector2(0,32),"搜刮 · 已揭示物品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,18)
+		grid.draw_string(theme.default_font,origin-Vector2(0,32),"搜刮 · 已揭示物品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,18)
 		var c: Dictionary = state.containers.get(location,{"width":8,"height":8})
 		for y in range(mini(8,maxi(1,int(c.height)))):
 			for x in range(mini(12 if right else 8,maxi(1,int(c.width)))):
@@ -328,7 +329,7 @@ func draw_grid() -> void:
 				grid.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 				grid.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-32)*.5,8),Vector2(32,32)),false)
 
-			grid.draw_string(ThemeDB.fallback_font,rect.position+Vector2(3,42),str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else ""),HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-4,10)
+			grid.draw_string(theme.default_font,rect.position+Vector2(3,rect.size.y-6),str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else ""),HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-4,14)
 	if selected != "" and state.items.has(selected) and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		var point := grid.get_local_mouse_position()
 		var right: bool = point.x >= 338

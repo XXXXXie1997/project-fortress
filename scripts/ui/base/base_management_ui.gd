@@ -22,6 +22,7 @@ var buy_basket: Array = []
 var target := "warehouse"
 var confirmation: ConfirmationDialog
 var pending: Callable
+var selected_recipe := ""
 func bind_context(s: Dictionary, context: Dictionary) -> void:
 	state=s
 	services=context
@@ -32,10 +33,13 @@ func bind_context(s: Dictionary, context: Dictionary) -> void:
 func _ready() -> void:
 	root_panel=PanelContainer.new()
 	preload("res://scripts/ui/wasteland_theme.gd").apply(root_panel)
-	root_panel.position=Vector2(18,80)
-	root_panel.size=Vector2(390,570)
+	var frame=preload("res://scripts/ui/wasteland_theme.gd").box("panel_normal").duplicate()
+	for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:frame.set_content_margin(side,24)
+	root_panel.add_theme_stylebox_override("panel",frame)
+	root_panel.position=Vector2(56,44)
+	root_panel.size=Vector2(1120,584)
 	add_child(root_panel)
-	scroll=ScrollContainer.new();scroll.custom_minimum_size=Vector2(390,570);root_panel.add_child(scroll)
+	scroll=ScrollContainer.new();scroll.custom_minimum_size=Vector2(1120,584);root_panel.add_child(scroll)
 	content=VBoxContainer.new();content.size_flags_horizontal=Control.SIZE_EXPAND_FILL;scroll.add_child(content)
 	message=Label.new();message.position=Vector2(400,8);message.size=Vector2(380,60);message.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;add_child(message)
 	inventory_panel=InventoryPanel.new();inventory_panel.bind_state(state,services.inventory);add_child(inventory_panel)
@@ -54,15 +58,18 @@ func _ready() -> void:
 		if action.is_valid():action.call())
 	show_buildings()
 func button(label: String, callback: Callable, parent: Node = null) -> Button:
-	var b:=Button.new();b.text=label
+	var b:=Button.new();b.text=label;b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;b.custom_minimum_size.y=40
 	(parent if parent!=null else content).add_child(b);b.pressed.connect(callback);return b
 func clear(title: String) -> void:
+	root_panel.show()
+	content.remove_meta("reference_custom")
+	call_deferred("_arrange_reference",title)
 	activity_label=null
 	activity_id=""
 	activity_kind=""
 	scroll.set_deferred("scroll_vertical",0)
-	scroll.custom_minimum_size=Vector2(390,570)
-	root_panel.size=Vector2(390,570)
+	scroll.custom_minimum_size=Vector2(1120,584)
+	root_panel.size=Vector2(1120,584)
 	for child in content.get_children():content.remove_child(child);child.queue_free()
 	var label:=Label.new();label.text=title;content.add_child(label)
 	button("关闭面板 · 继续鼠标施工",func():root_panel.hide())
@@ -98,22 +105,38 @@ func inspect(id: String) -> void:
 func name_for(type: String) -> String:
 	return {"generator":"发电厂","turret":"炮塔","farm":"农田","warehouse":"仓库能源站","technology":"科技终端","quest":"任务终端","workstation":"工作站","trade":"贸易站"}.get(type,"设施")
 func show_production(id: String) -> void:
-	clear("工作站 · 阶段生产")
-	var quantity:=SpinBox.new();quantity.min_value=1;quantity.max_value=99;content.add_child(quantity)
-	for recipe: String in services.production.recipes:
-		var r: Dictionary=services.production.recipes[recipe]
-		var recipe_button:=button("制作 "+definition_name(r.output.keys()[0])+"\n每份材料："+cost_text(r.cost)+"\n每份能源："+str(r.energy),func():report(submit_order(id,recipe,int(quantity.value)),"已预付并下单",order_block_reason(id,recipe,int(quantity.value)));show_production(id))
-		recipe_button.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-	activity_id=id;activity_kind="production"
-	activity_label=Label.new();activity_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-	content.add_child(activity_label)
-	activity_label.text=production_status(id)
-	button("取消订单 · 退还未产部分",func():report(services.production.cancel(state,id),"已取消并退未产成本",cancel_block_reason(id));show_production(id))
-	button("查看已产成品（真实仓库）",func():
+	clear("工作站 / 制作")
+	content.set_meta("reference_custom",true)
+	var layout=preload("res://scripts/ui/reference_layout.gd")
+	var strip:=HBoxContainer.new();strip.add_theme_constant_override("separation",24);content.add_child(strip)
+	var recipes=layout.column(strip,296)
+	var recipe_rows:VBoxContainer=recipes
+	var detail=layout.column(strip,440)
+	var progress=layout.column(strip,312)
+	if not services.production.recipes.has(selected_recipe):selected_recipe=services.production.recipes.keys()[0]
+	for recipe:String in services.production.recipes:
+		var r:Dictionary=services.production.recipes[recipe]
+		var choice:=button(definition_name(r.output.keys()[0]),func():selected_recipe=recipe;show_production(id),recipe_rows)
+		choice.custom_minimum_size=Vector2(264,56)
+		if recipe==selected_recipe:choice.add_theme_stylebox_override("normal",preload("res://scripts/ui/wasteland_theme.gd").box("button_selected"))
+	var recipe_id:=selected_recipe
+	var r:Dictionary=services.production.recipes[recipe_id]
+	var name_label:=Label.new();name_label.text=definition_name(r.output.keys()[0]);name_label.add_theme_font_size_override("font_size",28);detail.add_child(name_label)
+	var art:=TextureRect.new();art.texture=preload("res://scripts/art/fortress_art.gd").item_icon(r.output.keys()[0]);art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;art.custom_minimum_size=Vector2(80,80);detail.add_child(art)
+	var quantity:=SpinBox.new();quantity.min_value=1;quantity.max_value=99;detail.add_child(quantity)
+	var cost:=Label.new();cost.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;detail.add_child(cost)
+	var update_cost=func(_v):cost.text="预付材料："+cost_text(r.cost)+" / 每份\n预付能源："+str(float(r.energy)*quantity.value)+"\n按阶段产能交付，取消返还未产部分。"
+	quantity.value_changed.connect(update_cost);update_cost.call(1)
+	var submit:=button("制作 "+name_label.text,func():report(submit_order(id,recipe_id,int(quantity.value)),"已预付并下单",order_block_reason(id,recipe_id,int(quantity.value)));show_production(id),detail)
+	submit.disabled=state.base.buildings[id].has("order")
+	if submit.disabled:submit.text="当前设施已有订单"
+	activity_id=id;activity_kind="production";activity_label=Label.new();activity_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;progress.add_child(activity_label);activity_label.text=production_status(id)
+	button("取消订单 · 退还未产部分",func():report(services.production.cancel(state,id),"已取消并退未产成本",cancel_block_reason(id));show_production(id),progress)
+	button("查看已产成品",func():
 		var products:Array=[]
-		for r: Dictionary in services.production.recipes.values():products.append_array(r.output.keys())
-		load("res://scripts/ui/inventory/consumer_adapters.gd").production(inventory_panel,products))
-	button("返回设施",func():inspect(id))
+		for definition:Dictionary in services.production.recipes.values():products.append_array(definition.output.keys())
+		load("res://scripts/ui/inventory/consumer_adapters.gd").production(inventory_panel,products),progress)
+	button("返回设施",func():inspect(id),progress)
 func show_farm(id: String) -> void:
 	clear("农田 · 独立批次")
 	for crop: String in services.farming.crops:
@@ -155,15 +178,15 @@ func show_workstation(id: String) -> void:
 	button("返回设施",func():inspect(id))
 func show_trade() -> void:
 	clear("贸易 · 双方放入交易篮后统一结算")
-	scroll.custom_minimum_size=Vector2(1050,570);root_panel.size=Vector2(1050,570)
+	scroll.custom_minimum_size=Vector2(1120,584);root_panel.size=Vector2(1120,584)
 	var columns:=HBoxContainer.new();content.add_child(columns)
 	var net:=0
 	for side in ["sell","buy"]:
-		var half:=VBoxContainer.new();half.custom_minimum_size.x=510;columns.add_child(half)
+		var half:=VBoxContainer.new();half.custom_minimum_size.x=548;columns.add_child(half)
 		var header:=Label.new();header.text="我方 · 出售" if side=="sell" else "商人 · 购买 / 当日回购";half.add_child(header)
 		var pair:=HBoxContainer.new();half.add_child(pair)
-		var available:=VBoxContainer.new();available.custom_minimum_size.x=245;pair.add_child(available)
-		var basket_view:=VBoxContainer.new();basket_view.custom_minimum_size.x=245;pair.add_child(basket_view)
+		var available:=trade_column(pair)
+		var basket_view:=trade_column(pair)
 		var label:=Label.new();label.text="可选物品（点击放入）";available.add_child(label)
 		var basket_title:=Label.new();basket_title.text="交易篮（点击撤回）";basket_view.add_child(basket_title)
 		var locations:Array=["bag","warehouse","equipment"] if side=="sell" else ["shop","buyback"]
@@ -184,10 +207,17 @@ func show_trade() -> void:
 				row.tooltip_text="品质%s · 耐久%s · 电量%s/%s\n%s" % [item.quality,item.durability,item.energy,item.capacity,"当日原价回购" if location=="buyback" else "价格不受电量影响"]
 				if item.id in basket:net+=price if side=="sell" else -price
 	var summary:=Label.new();summary.text="卖出 %d 件 / 买入 %d 件  净能源 %+d · 当前 %.0f / %.0f" % [sell_basket.size(),buy_basket.size(),net,state.base.energy_store.energy,state.base.energy_store.capacity];content.add_child(summary)
-	button("送到："+("仓库" if target=="warehouse" else "背包"),func():target="bag" if target=="warehouse" else "warehouse";show_trade())
-	button("统一成交",func():commit_trade(false))
-	button("清空两篮",func():sell_basket.clear();buy_basket.clear();show_trade())
-	button("返回建设",show_buildings)
+	var actions:=HBoxContainer.new();actions.add_theme_constant_override("separation",16);content.add_child(actions)
+	button("送到："+("仓库" if target=="warehouse" else "背包"),func():target="bag" if target=="warehouse" else "warehouse";show_trade(),actions)
+	button("统一成交",func():commit_trade(false),actions)
+	button("清空两篮",func():sell_basket.clear();buy_basket.clear();show_trade(),actions)
+	button("返回建设",show_buildings,actions)
+	for action:Control in actions.get_children():action.custom_minimum_size=Vector2(262,44)
+func trade_column(parent:Node)->VBoxContainer:
+	var frame:=PanelContainer.new();frame.custom_minimum_size=Vector2(262,360);frame.add_theme_stylebox_override("panel",preload("res://scripts/ui/wasteland_theme.gd").box("panel_inset"));parent.add_child(frame)
+	var list:=ScrollContainer.new();list.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;frame.add_child(list)
+	var rows:=VBoxContainer.new();rows.size_flags_horizontal=Control.SIZE_EXPAND_FILL;list.add_child(rows)
+	return rows
 func trade_price(id: String, selling: bool) -> int:
 	if not selling and state.items[id].container_id=="buyback":return int(state.trade.buyback_prices[id])
 	return services.trade.price(state,id,selling)
@@ -238,7 +268,7 @@ func _process(_dt: float) -> void:
 		if b.type=="warehouse":station_active=b.durability>0
 	resource_status.text="基地能源  %.0f / %.0f\n无线充能站 / %s" % [state.base.energy_store.energy,state.base.energy_store.capacity,"运行中" if station_active else "废墟停用"]
 	inventory_energy.text="基地能源 %.1f / %.0f · 仓库 %d×%d" % [state.base.energy_store.energy,state.base.energy_store.capacity,state.containers.warehouse.width,state.containers.warehouse.height]
-	resource_status.visible=not presentation_obscured and not inventory_panel.visible
+	resource_status.visible=not presentation_obscured and not inventory_panel.visible and not root_panel.visible
 	message.visible=not presentation_obscured and not feedback_obscured and not inventory_panel.visible
 
 func presentation_open() -> bool:
@@ -335,3 +365,6 @@ func cancel_block_reason(id:String) -> String:
 	var refund_energy:float=float(recipe.energy)*int(order.remaining)
 	if state.base.energy_store.energy+refund_energy>state.base.energy_store.capacity:return "无法取消：退回未产部分能源后将超过储能上限，请先腾出储能空间。"
 	return "无法取消：仓库放不下未产部分退料，请先腾出物品空间。"
+
+func _arrange_reference(title:String):
+	preload("res://scripts/ui/reference_layout.gd").management(content,title)

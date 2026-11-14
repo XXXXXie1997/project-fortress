@@ -16,6 +16,7 @@ var sprint_toggle:=false
 var toggle:=CheckButton.new()
 var health_bar:=ProgressBar.new()
 var weapon_title:=Label.new()
+var energy_caption:=Label.new()
 var weapon_icon:=Sprite2D.new()
 var tactical_icon:=Sprite2D.new()
 func _ready():
@@ -33,18 +34,20 @@ func _ready():
  panel.position=Vector2(390,180);panel.custom_minimum_size=Vector2(500,260);panel.add_child(text);add_child(panel);panel.hide()
  quick.position=Vector2(400,675);quick.add_theme_constant_override("separation",28);add_child(quick)
  for i in range(6):
-  var slot_label:=Label.new();slot_label.custom_minimum_size=Vector2(34,60);slot_label.add_theme_font_size_override("font_size",13);quick.add_child(slot_label);quick_slots.append(slot_label)
+  var slot_label:=Label.new();slot_label.custom_minimum_size=Vector2(34,60);slot_label.set_meta("backdrop_rect",Rect2(-10,-8,54,76));slot_label.add_theme_font_size_override("font_size",13);quick.add_child(slot_label);quick_slots.append(slot_label)
   preload("res://scripts/ui/hud_backdrop.gd").attach(slot_label)
   var icon:=TextureRect.new();icon.name='ArtIcon';icon.position=Vector2(7,16);icon.size=Vector2(26,26);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;slot_label.add_child(icon)
+  var amount:=Label.new();amount.name='Amount';amount.position=Vector2(0,44);amount.size=Vector2(34,16);amount.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;amount.add_theme_font_size_override('font_size',13);slot_label.add_child(amount)
  var minimap=load('res://scripts/ui/combat_minimap.gd').new();minimap.arena=arena;minimap.position=Vector2(1044,36);minimap.size=Vector2(200,126);minimap.set_meta("backdrop_rect",Rect2(-12,-12,224,174));add_child(minimap);preload("res://scripts/ui/hud_backdrop.gd").attach(minimap)
  var map_title:=Label.new();map_title.text="避难所";map_title.position=Vector2(4,136);map_title.add_theme_color_override("font_color",Color("a6aaa0"));minimap.add_child(map_title)
  quest_service=QuestService.new(arena.inventory)
- task_tracker.position=Vector2(1048,224);task_tracker.set_meta("backdrop_rect",Rect2(-16,-14,224,112));task_tracker.size=Vector2(210,255);task_tracker.bbcode_enabled=true;task_tracker.add_theme_font_size_override('normal_font_size',14);task_tracker.text='任务追踪：尚无任务';add_child(task_tracker)
+ task_tracker.position=Vector2(1048,224);task_tracker.set_meta("backdrop_rect",Rect2(-16,-14,224,112));task_tracker.size=Vector2(192,84);task_tracker.bbcode_enabled=true;task_tracker.add_theme_font_size_override('normal_font_size',16);task_tracker.text='任务追踪：尚无任务';add_child(task_tracker)
  charge_title.position=Vector2(980,640);charge_title.text='测试能源站：靠近无线充能\n靠近后 F 切换测试下挂\nV 开关灯 / 激光 / 发射器';add_child(charge_title)
  preload("res://scripts/ui/hud_backdrop.gd").attach(label)
  card.custom_minimum_size=Vector2(228,28)
  weapon_title.position=Vector2(94,-28);weapon_title.add_theme_font_size_override("font_size",16);weapon_title.add_theme_color_override("font_color",Color("a6aaa0"));card.add_child(weapon_title)
- card.add_theme_font_size_override("font_size",20)
+ energy_caption.text="电容 / 随身总电量  [R]";energy_caption.position=Vector2(6,40);energy_caption.add_theme_font_size_override("font_size",16);energy_caption.add_theme_color_override("font_color",Color("a6aaa0"));card.add_child(energy_caption)
+ card.add_theme_font_size_override("font_size",28)
  card.add_theme_color_override("font_color",Color("c5a065"))
  preload("res://scripts/ui/hud_backdrop.gd").attach(card,52)
  preload("res://scripts/ui/hud_backdrop.gd").attach(task_tracker)
@@ -97,9 +100,10 @@ func _process(_dt):
   if i.get('is_battery',false):energy+=i.energy
  for i in range(6):
   var count:int=arena.inventory.quick_count(arena.state,i)
-  quick_slots[i].text='[%d]\n\n     %s'%[i+1,str(count) if count>0 else '—']
+  quick_slots[i].text=str(i+1);quick_slots[i].vertical_alignment=VERTICAL_ALIGNMENT_TOP
+  quick_slots[i].get_node('Amount').text=str(count) if count>0 else '—'
   quick_slots[i].modulate=Color.WHITE
-  quick_slots[i].add_theme_color_override("font_color",Color.WHITE if count>0 else Color("75838b"))
+  quick_slots[i].add_theme_color_override("font_color",Color("ddd9cc") if count>0 else Color("75838b"))
   var icon:TextureRect=quick_slots[i].get_node('ArtIcon')
   var quick_id:String=arena.state.player.quick[i]
   icon.texture=preload('res://scripts/art/fortress_art.gd').item_icon(quick_id) if not quick_id.is_empty() else null
@@ -108,7 +112,7 @@ func _process(_dt):
  tactical_icon.texture=preload('res://scripts/art/fortress_art.gd').item_icon(tactical.definition_id) if not tactical.is_empty() else null;tactical_icon.visible=not tactical.is_empty()
  card.modulate=Color("e7c18a") if arena.state.player.combat.charging else Color.WHITE
  weapon_title.text=preload('res://scripts/content/catalog.gd').item_name(weapon.get('definition_id',''))
- card.text='                 %.0f / %.0f'%[weapon.get('energy',0),energy]
+ card.text='      %.0f / %.0f'%[weapon.get('energy',0),energy]
  layout_bottom_hud()
 
 

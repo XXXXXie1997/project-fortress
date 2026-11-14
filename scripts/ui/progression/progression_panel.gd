@@ -13,9 +13,12 @@ var revision:=''
 var names:Dictionary={'vitality':'体魄：生命上限','stamina':'耐力：体力上限','accuracy':'精准：基础散布','stealth':'潜行：视觉积累减速','hurt_speed':'应激：生命受伤后加速','storage':'仓储技术','agriculture':'稳定返种'}
 func _ready():
  layer=20
- box=PanelContainer.new();preload("res://scripts/ui/wasteland_theme.gd").apply(box);box.position=Vector2(180,70);box.size=Vector2(920,560);add_child(box)
- var scroll:=ScrollContainer.new();scroll.custom_minimum_size=Vector2(900,530);box.add_child(scroll)
+ box=PanelContainer.new();preload("res://scripts/ui/wasteland_theme.gd").apply(box);box.position=Vector2(56,44);box.size=Vector2(1168,632);add_child(box)
+ var scroll:=ScrollContainer.new();scroll.custom_minimum_size=Vector2(1120,584);box.add_child(scroll)
  rows=VBoxContainer.new();rows.size_flags_horizontal=Control.SIZE_EXPAND_FILL;scroll.add_child(rows)
+ var frame=preload("res://scripts/ui/wasteland_theme.gd").box("panel_normal").duplicate()
+ for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:frame.set_content_margin(side,24)
+ box.add_theme_stylebox_override("panel",frame)
  visible=false
 func at_base()->bool:
  if permission.is_valid():return permission.call()
@@ -59,22 +62,23 @@ func refresh():
  var s:Dictionary=actor.arena.state
  var inv:InventoryService=actor.arena.inventory
  var growth:PlayerGrowth=actor.growth_bridge.growth
- label('成长与基地终端')
- button('关闭 [Esc]',close)
+ var heading=label({'talents':'个人天赋','technology':'科技终端','quests':'任务记录'}.get(mode,'成长与基地终端'));heading.add_theme_font_size_override('font_size',32)
+ var close_button=button('关闭 [Esc]',close);close_button.size_flags_horizontal=Control.SIZE_SHRINK_END;close_button.custom_minimum_size=Vector2(100,36)
+ preload('res://scripts/ui/reference_layout.gd').header(rows,heading,close_button,'世界仍在运行 / '+{'talents':'分配天赋点','technology':'基地科技与升级','quests':'主线与每日委托'}.get(mode,''))
  if mode=='talents':
   var g:=growth.snapshot(s);label('等级 %d   累计经验 %d   可用点 %d'%[g.level,g.xp,g.points])
-  var surface:=Control.new();surface.custom_minimum_size=Vector2(850,250);rows.add_child(surface)
-  var positions:Dictionary={'vitality':Vector2(20,10),'stamina':Vector2(290,10),'accuracy':Vector2(560,10),'hurt_speed':Vector2(290,150),'stealth':Vector2(560,150)}
+  var surface:=Control.new();surface.custom_minimum_size=Vector2(1120,340);rows.add_child(surface)
+  var positions:Dictionary={'vitality':Vector2(36,24),'stamina':Vector2(388,24),'accuracy':Vector2(740,24),'hurt_speed':Vector2(388,228),'stealth':Vector2(740,228)}
   for id in growth.config.nodes:
    var node:Dictionary=growth.config.nodes[id]
    for required in node.requires:
-    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(115,65),positions[id]+Vector2(115,0)]);line.width=3;line.default_color=Color("c5a065");surface.add_child(line)
-   var item:=Button.new();item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(245,65);item.text='%s\n%d / %d'%[names[id],g.ranks.get(id,0),node.max_rank];bind_button(item,invest.bind(id));surface.add_child(item)
+    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(160,100),positions[id]+Vector2(160,0)]);line.width=3;line.default_color=Color("c5a065");surface.add_child(line)
+   var item:=Button.new();item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(320,100);item.text='%s\n%d / %d'%[names[id],g.ranks.get(id,0),node.max_rank];bind_button(item,invest.bind(id));surface.add_child(item)
   label('潜行只减警觉积累；应激只在实际生命损失后触发，重复刷新不叠加。')
   var reset_button=button('基地洗点：预览费用',func():
    var quote:=growth.preview_reset(s,at_base())
    if not quote.ok:result(false);return
-   var dialog:=ConfirmationDialog.new();reset_dialog=dialog;dialog.dialog_text='消耗能源 %s、材料 %s，返还天赋点。'%[quote.cost.energy,materials(quote.cost.materials)];add_child(dialog)
+   var dialog:=ConfirmationDialog.new();dialog.theme=preload('res://scripts/ui/wasteland_theme.gd').get_theme();reset_dialog=dialog;dialog.dialog_text='消耗能源 %s、材料 %s，返还天赋点。'%[quote.cost.energy,materials(quote.cost.materials)];add_child(dialog)
    dialog.confirmed.connect(func():result(actor.growth_bridge.reset(s,inv,quote,at_base()));dialog.queue_free())
    dialog.canceled.connect(dialog.queue_free);dialog.popup_centered())
   reset_button.disabled=not at_base()
@@ -129,6 +133,10 @@ func refresh():
   for pending in s.quests.pending_stages:label('阶段%s将在第%s天生效'%[pending.stage,pending.effective_day])
   if s.quests.ending!='':label('已恢复外界联系，可以继续游玩')
  feedback=Label.new();rows.add_child(feedback)
+ var contents:=rows.get_children().slice(2)
+ var viewport:=ScrollContainer.new();viewport.custom_minimum_size=Vector2(1120,492);viewport.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;rows.add_child(viewport)
+ var body:=VBoxContainer.new();body.size_flags_horizontal=Control.SIZE_EXPAND_FILL;viewport.add_child(body)
+ for child in contents:child.reparent(body)
 
 
 func materials(cost:Dictionary)->String:
