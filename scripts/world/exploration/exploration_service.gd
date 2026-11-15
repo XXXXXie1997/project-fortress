@@ -113,6 +113,26 @@ func box(s: Dictionary, id: String) -> Dictionary:
  return s.expedition.maps[s.expedition.map_id].containers.get(id,{})
 func open_search(s: Dictionary, id: String) -> bool:
  if box(s,id).is_empty(): return false
+ # Older containers are unbounded lists with every item at [0,0]. Assign
+ # persistent cells once, retaining IDs, quantities and revealed state.
+ var cid: String = box(s,id).container_id
+ var container: Dictionary = s.containers[cid]
+ if int(container.width)==0 and int(container.height)==0:
+  var contents := inventory.items_in(s,cid)
+  var rows := 0
+  var columns := 12
+  for item: Dictionary in contents:
+   var size := inventory.dimensions(item)
+   columns=maxi(columns,size.x);rows+=size.y
+  container.width=columns;container.height=maxi(8,rows)
+  for item: Dictionary in contents:item.container_id="pending_loot_layout"
+  for item: Dictionary in contents:
+   for y in range(container.height):
+    var placed := false
+    for x in range(container.width):
+     if inventory.fits(s,item,cid,Vector2i(x,y)):
+      item.container_id=cid;item.cell=[x,y];placed=true;break
+    if placed:break
  s.expedition.search = {"box_id":id,"elapsed":0.0}
  return true
 func close_search(s: Dictionary) -> void:

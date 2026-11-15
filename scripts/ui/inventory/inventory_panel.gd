@@ -33,6 +33,7 @@ var info: Label
 var listing: VBoxContainer
 var equipment_layout:Control
 var weight_bar:ProgressBar
+var sort_warehouse_button:Button
 var sort_bag_button:Button
 var binding_row:HBoxContainer
 var tabs:HBoxContainer
@@ -86,7 +87,7 @@ func _ready() -> void:
 		var line:=ColorRect.new();line.position=line_rect.position;line.size=line_rect.size;line.color=Color("4b504b");line.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(line)
 	button(root,"关闭",close_panel).position=Vector2(1072,10)
 	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(442,458)
-	button(root,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh()).position=Vector2(640,496)
+	sort_warehouse_button=button(root,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh());sort_warehouse_button.position=Vector2(640,496)
 	for data in [["装备",Vector2(16,108)],["额外装备 / 4个通用槽",Vector2(16,528)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
 		var caption:=Label.new();caption.text=data[0];caption.position=data[1];caption.add_theme_color_override("font_color",Color("a6aaa0"));root.add_child(caption)
 	grid = Control.new()
@@ -159,6 +160,7 @@ func _process(dt: float) -> void:
 		var revealed_before: int = exploration.box(state,box_id).get("revealed",[]).size()
 		exploration.tick_search(state,dt,get_tree().paused)
 		if exploration.box(state,box_id).get("revealed",[]).size() != revealed_before: refresh()
+		grid.queue_redraw()
 
 # Mutate existing presentation nodes only. Charging must not replace a button
 # under a held pointer or disrupt focus, drag state, or selection callbacks.
@@ -192,6 +194,7 @@ func refresh() -> void:
 	weight_bar.max_value=state.containers.bag.maximum_weight;weight_bar.value=inventory.weight(state,"bag");weight_bar.size=Vector2(264,8)
 	detail_scroll.visible=not selected.is_empty() or selector_callback.is_valid() or not box_id.is_empty()
 	sort_bag_button.visible=not detail_scroll.visible
+	sort_warehouse_button.visible=at_base and box_id.is_empty()
 	for location in tabs_by_source: tabs_by_source[location].visible=location!="warehouse" or at_base
 	detail_label=null
 	detail_id=""
@@ -302,9 +305,30 @@ func visible_items(location: String) -> Array:
 		result = result.filter(func(item: Dictionary): return item.id in revealed)
 	return result
 
+# Concealed loot exposes only footprint; input continues to use visible_items.
+func displayed_items(location: String) -> Array:
+	if not box_id.is_empty() and location == remote_location() and accessible_location(location):
+		return inventory.items_in(state,location)
+	return visible_items(location)
+
+func concealed_item(id: String) -> bool:
+	return not box_id.is_empty() and state.items.has(id) and state.items[id].container_id == remote_location() and not id in exploration.box(state,box_id).get("revealed",[])
+
+func draw_concealed(rect: Rect2, searching: bool) -> void:
+	grid.draw_rect(rect.grow(-2),Color("303634"))
+	grid.draw_rect(rect.grow(-2),Color("c5a065") if searching else Color("656c65"),false,1)
+	var center := rect.get_center()
+	if searching:
+		var box: Dictionary = exploration.box(state,box_id)
+		var progress := clampf(float(state.expedition.search.get("elapsed",0.0))/maxf(0.01,box.get("search_seconds",0.5)),0.0,1.0)
+		grid.draw_arc(center,9,0,TAU,24,Color("656c65"),2)
+		if progress>0: grid.draw_arc(center,9,-PI/2,-PI/2+TAU*progress,24,Color("c5a065"),2)
+	else:
+		grid.draw_string(theme.default_font,center+Vector2(-5,6),"?",HORIZONTAL_ALIGNMENT_LEFT,16,18,Color("a6aaa0"))
+
 func item_rect(item: Dictionary, location: String, right: bool) -> Rect2:
 	var pos := Vector2(item.cell[0]-(warehouse_page if location=="warehouse" else 0),item.cell[1])*cell_size(right)
-	if location == "equipment" or (right and not box_id.is_empty()):
+	if location == "equipment":
 		var index: int = visible_items(location).find(item)
 		pos=Vector2((index%3)*132,(index/3)*100)
 	return Rect2(pos+Vector2(338 if right else 0,28),Vector2(inventory.dimensions(item))*cell_size(right))
@@ -315,14 +339,19 @@ func draw_grid() -> void:
 		var location: String = remote_location() if right else source
 		if location.is_empty(): continue
 		var origin := Vector2(338 if right else 0,28)
-		grid.draw_string(theme.default_font,origin-Vector2(0,32),"搜刮 · 已揭示物品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,18)
+		grid.draw_string(theme.default_font,origin-Vector2(0,32),"搜刮 · 逐件搜索" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,18)
 		var c: Dictionary = state.containers.get(location,{"width":8,"height":8})
 		for y in range(mini(8,maxi(1,int(c.height)))):
 			for x in range(mini(12 if right else 8,maxi(1,int(c.width)))):
 				grid.draw_rect(Rect2(origin+Vector2(x,y)*cell_size(right),Vector2.ONE*cell_size(right)),Color("#4b504b"),false)
-		for item: Dictionary in visible_items(location):
+		var search_started := false
+		for item: Dictionary in displayed_items(location):
 			var rect := item_rect(item,location,right)
 			if rect.position.x < origin.x or rect.position.x >= origin.x+(480 if right else 336): continue
+			if concealed_item(item.id):
+				draw_concealed(rect,not search_started)
+				search_started=true
+				continue
 			preload("res://scripts/ui/wasteland_theme.gd").box("slot_normal" if item.id!=selected else "slot_selected",4).draw(grid.get_canvas_item(),rect.grow(-2))
 			var icon:Texture2D=preload('res://scripts/art/fortress_art.gd').item_icon(item.definition_id)
 			if icon!=null:
