@@ -20,7 +20,7 @@ func _input(event):
 func _process(delta):
 	super._process(delta)
 	var covered:bool=arena.session_context.shell.interface_open() or menu.visible
-	for element in [label,card,quick,weapon_icon,tactical_icon,hint,weapon_slots]:element.visible=not covered
+	for element in [label,card,quick,weapon_icon,tactical_icon,hint]:element.visible=not covered
 	map_view.visible=not covered
 	quest_list.visible = not arena.session_context.shell.interface_open() and not menu.visible and not full_map
 	var phase: String = {"morning":"清晨","day":"白天","dusk":"黄昏","night":"夜晚"}.get(arena.state.phase,"当前阶段")

@@ -22,7 +22,6 @@ var weapon_title:=Label.new()
 var energy_caption:=Label.new()
 var weapon_icon:=Sprite2D.new()
 var tactical_icon:=Sprite2D.new()
-var weapon_slots:=VBoxContainer.new()
 func _ready():
  process_mode=Node.PROCESS_MODE_ALWAYS
  hud_scale=preload("res://scripts/ui/pixel_layout.gd").ui_scale(get_viewport().get_visible_rect().size)
@@ -69,24 +68,6 @@ func _ready():
  energy_caption.position=Vector2(0,76)
  for slot_label in quick_slots:
   slot_label.set_meta("backdrop_rect",Rect2(-10,-8,54,88))
-func update_weapon_slots():
- var viewport_size:=get_viewport().get_visible_rect().size / hud_scale
- weapon_slots.position=Vector2(32,viewport_size.y-292)
- weapon_slots.visible=label.visible
- if weapon_slots.get_parent()==null:
-  add_child(weapon_slots)
-  preload("res://scripts/ui/keeper_theme.gd").apply(weapon_slots)
-  for i in range(3):
-   var row:=HBoxContainer.new();weapon_slots.add_child(row)
-   var icon:=TextureRect.new();icon.custom_minimum_size=Vector2(56,40);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;row.add_child(icon)
-   var caption:=Label.new();caption.custom_minimum_size=Vector2(100,40);row.add_child(caption)
- for i in range(3):
-  var row=weapon_slots.get_child(i)
-  var id:String=arena.state.player.equipment['weapon_'+str(i+1)]
-  var item:Dictionary=arena.state.items.get(id,{})
-  row.get_child(0).texture=preload('res://scripts/art/fortress_art.gd').item_icon(item.get('definition_id','')) if not item.is_empty() else null
-  row.get_child(1).text=('%d  ·  %d'%[i+1,item.get('energy',0)]) if not item.is_empty() else '%d  —'%(i+1)
-  row.modulate=Color.WHITE if arena.player.slot==i+1 else Color("8c9599")
 func _input(event):
  var management=arena.get('management')
  if management!=null and management.has_method('is_modal_open') and management.is_modal_open():
@@ -153,7 +134,6 @@ func _process(_dt):
  weapon_energy_bar.max_value=maxf(1,weapon.get('capacity',0));weapon_energy_bar.value=weapon.get('energy',0)
  energy_caption.text='电池 %.0f · [R] 充电'%energy
  layout_bottom_hud()
- update_weapon_slots()
 
 
 
@@ -177,15 +157,15 @@ func open_inventory(box_id:String=""):
 
 func layout_bottom_hud():
  var viewport_size:=get_viewport().get_visible_rect().size / hud_scale
- label.position=Vector2(68,viewport_size.y-88)
+ label.position=Vector2(84,38)
  label.set_meta("minimal_hud",true)
  card.set_meta("minimal_hud",true)
- card.position=Vector2(viewport_size.x-300,viewport_size.y-132);card.set_meta("backdrop_rect",Rect2(-16,-52,300,172))
- weapon_icon.position=card.position+Vector2(0,-36);weapon_icon.scale=Vector2(2,2)
- tactical_icon.position=card.position+Vector2(220,-28)
+ card.position=Vector2(34,viewport_size.y-120);card.set_meta("backdrop_rect",Rect2(-16,-52,300,172))
+ weapon_icon.position=Vector2(60,card.position.y-28);weapon_icon.scale=Vector2(2,2)
+ tactical_icon.position=Vector2(236,card.position.y-26)
  quick.position=Vector2((viewport_size.x-356)*0.5,viewport_size.y-104)
  for widget in [label,card,weapon_title,energy_caption]:
   widget.add_theme_color_override("font_shadow_color",Color.BLACK);widget.add_theme_constant_override("shadow_offset_x",1);widget.add_theme_constant_override("shadow_offset_y",1)
- if is_instance_valid(mini_widget):mini_widget.position=Vector2(32,32)
- if is_instance_valid(task_tracker):task_tracker.position=Vector2(32,224);task_tracker.size.x=300;task_tracker.set_meta('backdrop_rect',Rect2(-8,-8,316,112))
- charge_title.position=Vector2(viewport_size.x-320,240)
+ if is_instance_valid(mini_widget):mini_widget.position=Vector2(viewport_size.x-236,36)
+ if is_instance_valid(task_tracker):task_tracker.position=Vector2(viewport_size.x-232,224);task_tracker.size.x=208;task_tracker.set_meta('backdrop_rect',Rect2(-8,-8,224,112))
+ charge_title.position=Vector2(maxf(20,viewport_size.x-20-charge_title.get_combined_minimum_size().x),viewport_size.y-76-charge_title.get_combined_minimum_size().y)
