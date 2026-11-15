@@ -21,6 +21,8 @@ var selected := ""
 var rotated := false
 var loot_panel: Panel
 var loot_take: Button
+var usage_caption: Label
+var footer_line: ColorRect
 var left_panel: Panel
 var grid: Control
 var source := "bag"
@@ -90,13 +92,15 @@ func _ready() -> void:
 	root.add_child(feedback);feedback.position=Vector2(16,570)
 	var body := Control.new()
 	root.add_child(body)
-	for line_rect in [Rect2(16,64,584,1),Rect2(16,106,240,1),Rect2(302,106,290,1),Rect2(16,552,584,1)]:
+	for line_rect in [Rect2(16,64,584,1),Rect2(16,106,240,1),Rect2(302,106,290,1),Rect2(16,480,584,1)]:
 		var line:=ColorRect.new();line.position=line_rect.position;line.size=line_rect.size;line.color=Color("4b504b");line.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(line)
+		if line_rect.position.y==480:footer_line=line
 	button(root,"关闭",close_panel).position=Vector2(540,10)
-	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(442,458)
+	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(506,66);sort_bag_button.custom_minimum_size.y=28;sort_bag_button.size=Vector2(90,28)
 	sort_warehouse_button=button(root,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh());sort_warehouse_button.position=Vector2(640,496)
-	for data in [["装备",Vector2(16,76)],["额外装备 / 4个通用槽",Vector2(16,528)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
+	for data in [["装备",Vector2(16,76)],["额外装备 / 4个通用槽",Vector2(16,450)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
 		var caption:=Label.new();caption.text=data[0];caption.position=data[1];caption.add_theme_color_override("font_color",Color("a6aaa0"));root.add_child(caption)
+		if data[0].begins_with("双击"):usage_caption=caption
 	grid = Control.new()
 	grid.position=Vector2(302,94);grid.size=Vector2(834,384)
 	body.add_child(grid)
@@ -109,7 +113,7 @@ func _ready() -> void:
 	var quick := HBoxContainer.new();binding_row=quick
 	root.add_child(quick);quick.position=Vector2(302,570)
 	for n in range(6):
-		button(quick,str(n+1)+" 绑定",func():
+		button(quick,str(n+1),func():
 			if accessible_item(selected): state.player.quick[n] = state.items[selected].definition_id
 			refresh())
 	dialog = ConfirmationDialog.new()
@@ -200,7 +204,7 @@ func refresh() -> void:
 	binding_row.visible=not selected.is_empty()
 	weight_bar.max_value=state.containers.bag.maximum_weight;weight_bar.value=inventory.weight(state,"bag");weight_bar.size=Vector2(264,8)
 	detail_scroll.visible=not selected.is_empty() or selector_callback.is_valid()
-	sort_bag_button.visible=not detail_scroll.visible
+	sort_bag_button.visible=not selector_callback.is_valid()
 	sort_warehouse_button.visible=at_base and box_id.is_empty()
 	for location in tabs_by_source: tabs_by_source[location].visible=location!="warehouse" or at_base
 	detail_label=null
@@ -289,6 +293,7 @@ func refresh() -> void:
 		loot_take.custom_minimum_size.y=28
 		loot_take.position=Vector2(loot_panel.size.x-116,2)
 		loot_take.size=Vector2(104,28)
+	layout_inventory_content()
 	arrange_equipment()
 	grid.queue_redraw()
 func display_name(id: String) -> String:
@@ -399,7 +404,9 @@ func accessible_item(id: String) -> bool:
 # Explicit drag runs the entire move and requested cell on a private trial.
 func fail_transfer(reason: String) -> bool:
 	last_feedback=reason
-	if feedback!=null: feedback.text=reason
+	if feedback!=null:
+		feedback.text=reason
+		layout_inventory_content()
 	return false
 
 func transfer_item(id: String, destination: String, cell: Vector2i = Vector2i(-1,-1), explicit: bool = false, confirmed: bool = false) -> bool:
@@ -546,14 +553,37 @@ func drop_equipment(id: String, slot: String, confirmed: bool = false) -> void:
 
 
 
-func cell_size(right:bool)->int:return 40 if right else 44
+func cell_size(right:bool)->int:
+	if right:return 40
+	return mini(48,int(296.0/maxi(1,int(state.containers.get(source,{"width":6}).width))))
+
+func layout_inventory_content():
+	var rows:int=mini(8,int(state.containers.get(source,{"height":4}).height))
+	var grid_bottom:float=grid.position.y+28+rows*cell_size(false)
+	info.position.y=grid_bottom+14
+	weight_bar.position.y=grid_bottom+40
+	weight_bar.size.x=mini(296,int(state.containers.get(source,{"width":6}).width)*cell_size(false))
+	usage_caption.position.y=grid_bottom+56
+	detail_scroll.position=Vector2(302,grid_bottom+86)
+	detail_scroll.size.y=100
+	binding_row.position=Vector2(302,grid_bottom+192)
+	for i in binding_row.get_child_count():
+		binding_row.get_child(i).custom_minimum_size.x=40
+		binding_row.get_child(i).tooltip_text="绑定到快捷栏 %d" % (i+1)
+	var bottom:float=maxf(480,grid_bottom+88)
+	if detail_scroll.visible:bottom=maxf(bottom,grid_bottom+238)
+	feedback.visible=not feedback.text.is_empty()
+	feedback.position=Vector2(16,bottom+8)
+	footer_line.position.y=bottom
+	left_panel.size.y=bottom+(44 if feedback.visible else 16)
+
 func arrange_equipment():
 	var keys=["weapon_1","weapon_2","weapon_3","armor","backpack","extra_1","extra_2","extra_3","extra_4"]
 	for i in range(keys.size()):
 		if not slot_buttons.has(keys[i]):continue
 		var b:Button=slot_buttons[keys[i]]
-		b.position=Vector2(0,i*68) if i<3 else (Vector2((i-3)*132,216) if i<5 else Vector2((i-5)*64,308))
-		b.custom_minimum_size=Vector2(258,60) if i<3 else (Vector2(124,76) if i<5 else Vector2(58,58))
+		b.position=Vector2(0,i*58) if i<3 else (Vector2((i-3)*132,182) if i<5 else Vector2((i-5)*64,266))
+		b.custom_minimum_size=Vector2(258,50) if i<3 else (Vector2(124,64) if i<5 else Vector2(58,48))
 		b.clip_text=true
 		b.expand_icon=true;b.add_theme_constant_override("icon_max_width",48 if i<3 else 28)
 		if i>=5:b.text="" if b.icon!=null else "+"
