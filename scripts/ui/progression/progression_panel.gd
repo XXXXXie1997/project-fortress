@@ -81,6 +81,7 @@ func refresh():
    var quote:=growth.preview_reset(s,at_base())
    if not quote.ok:result(false);return
    var dialog:=ConfirmationDialog.new();dialog.theme=preload('res://scripts/ui/wasteland_theme.gd').get_theme();reset_dialog=dialog;dialog.dialog_text='消耗能源 %s、材料 %s，返还天赋点。'%[quote.cost.energy,materials(quote.cost.materials)];add_child(dialog)
+   preload('res://scripts/ui/keeper_theme.gd').configure_dialog(dialog)
    dialog.confirmed.connect(func():result(actor.growth_bridge.reset(s,inv,quote,at_base()));dialog.queue_free())
    dialog.canceled.connect(dialog.queue_free);dialog.popup_centered())
   reset_button.disabled=not at_base()

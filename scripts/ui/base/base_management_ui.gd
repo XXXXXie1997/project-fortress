@@ -51,6 +51,7 @@ func _ready() -> void:
 	preload("res://scripts/ui/keeper_backdrop.gd").attach(resource_status)
 	var energy_icon:=TextureRect.new();energy_icon.texture=load("res://assets/runtime/ui/wasteland/icon_energy.png");energy_icon.position=Vector2(-44,2);energy_icon.size=Vector2(32,32);energy_icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;energy_icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;resource_status.add_child(energy_icon)
 	confirmation=ConfirmationDialog.new();confirmation.theme=preload("res://scripts/ui/wasteland_theme.gd").get_theme();add_child(confirmation)
+	preload("res://scripts/ui/keeper_theme.gd").configure_dialog(confirmation)
 	confirmation.canceled.connect(func():pending=Callable())
 	confirmation.confirmed.connect(func():
 		var action:=pending
@@ -264,6 +265,8 @@ func _process(_dt: float) -> void:
 	var ui_scale:=preload("res://scripts/ui/pixel_layout.gd").ui_scale(get_viewport().get_visible_rect().size)
 	root_panel.scale=Vector2.ONE*ui_scale;root_panel.position=Vector2(56,44)*ui_scale
 	resource_status.scale=Vector2.ONE*ui_scale;resource_status.position=Vector2(360,38)*ui_scale
+	message.scale=Vector2.ONE*ui_scale
+	message.position=Vector2((get_viewport().get_visible_rect().size.x-message.size.x*ui_scale)*0.5,8*ui_scale)
 	if is_instance_valid(activity_label) and state.base.buildings.has(activity_id):
 		activity_label.text=production_status(activity_id) if activity_kind=="production" else farm_status(activity_id)
 	var station_active:=false

@@ -1,6 +1,8 @@
 Pixel UI components
 Original project artwork authored in Aseprite. Editable source:
 assets/source/ui009/components.aseprite (192x64, named 32x32 slices).
+assets/source/ui009/controls.aseprite (80x16, five named 16x16 slices:
+unchecked, checked, arrow, thumb, spin). Original project control artwork.
 PNG components use an 8px nine-slice margin in the existing 1280 UI coordinate grid.
 Reference game UI was used only for visual direction; no reference-game pixels or fonts are included.
 

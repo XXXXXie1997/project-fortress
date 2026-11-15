@@ -131,6 +131,7 @@ func _ready() -> void:
 			if accessible_item(selected): state.player.quick[n] = state.items[selected].definition_id
 			refresh())
 	dialog = ConfirmationDialog.new()
+	preload("res://scripts/ui/keeper_theme.gd").configure_dialog(dialog)
 	dialog.theme=preload("res://scripts/ui/keeper_theme.gd").get_theme()
 	add_child(dialog)
 	dialog.confirmed.connect(func(): pending.call(); refresh())

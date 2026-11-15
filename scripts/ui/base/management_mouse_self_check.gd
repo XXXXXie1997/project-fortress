@@ -3,9 +3,9 @@ var arena
 var ui:BaseManagementUI
 func _initialize():call_deferred("run")
 func mouse(pos:Vector2,down:bool):
-	var motion:=InputEventMouseMotion.new();motion.position=pos;Input.parse_input_event(motion)
+	var motion:=InputEventMouseMotion.new();motion.position=pos;root.push_input(motion,true)
 	var e:=InputEventMouseButton.new();e.button_index=MOUSE_BUTTON_LEFT;e.position=pos;e.pressed=down
-	Input.parse_input_event(e)
+	root.push_input(e,true)
 	await process_frame
 func tap(pos:Vector2):
 	await mouse(pos,true)
@@ -23,7 +23,7 @@ func click(text:String):
 	assert(b!=null,"Missing "+text)
 	ui.scroll.ensure_control_visible(b)
 	await process_frame
-	await tap(b.get_global_rect().get_center())
+	await tap(b.get_global_transform_with_canvas()*(b.size*.5))
 func world_tap(cell:Vector2i):
 	await tap(arena.get_canvas_transform()*arena.grid.cell_to_world(cell))
 func run():
@@ -31,6 +31,7 @@ func run():
 	arena=load("res://scenes/ui/base/base_management_arena.tscn").instantiate();root.add_child(arena)
 	while arena.management==null:await process_frame
 	ui=arena.management
+	ui.show_buildings()
 	await create_timer(0.5).timeout
 	var count:int=arena.state.base.buildings.size()
 	await click("建造发电厂")

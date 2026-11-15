@@ -4,7 +4,7 @@ const ThemeStyle=preload("res://scripts/ui/wasteland_theme.gd")
 static func column(parent:Node, width:float)->VBoxContainer:
  var frame:=PanelContainer.new();frame.custom_minimum_size=Vector2(width,400)
  frame.add_theme_stylebox_override("panel",ThemeStyle.box("panel_inset"));parent.add_child(frame)
- var scroll:=ScrollContainer.new();scroll.custom_minimum_size.x=width-16;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;frame.add_child(scroll)
+ var scroll:=ScrollContainer.new();scroll.custom_minimum_size.x=width-20;scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;frame.add_child(scroll)
  var rows:=VBoxContainer.new();rows.size_flags_horizontal=Control.SIZE_EXPAND_FILL;rows.add_theme_constant_override("separation",preload("res://scripts/ui/wasteland_theme.gd").GAP);scroll.add_child(rows)
  return rows
 
@@ -20,7 +20,7 @@ static func move(node:Control,to:Node):
  if node is Label:
   node.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
  if node is Button:
-  node.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT;node.custom_minimum_size.x=maxf(120,to.get_parent().custom_minimum_size.x-16);node.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+  node.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT;node.custom_minimum_size.x=0;node.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 
 static func management(rows:VBoxContainer,title:String):
  if not is_instance_valid(rows) or rows.get_child_count()<2:return

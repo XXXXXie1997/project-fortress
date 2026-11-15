@@ -110,6 +110,9 @@ func show_start() -> void:
 	get_tree().paused = true
 	clear("幸存者基地")
 	slot_picker = OptionButton.new()
+	slot_picker.get_popup().content_scale_mode=Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	slot_picker.get_popup().content_scale_factor=0.5
+	slot_picker.get_popup().canvas_item_default_texture_filter=Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 	for n in 3: slot_picker.add_item("存档栏位 %d" % (n + 1))
 	slot_picker.select(clampi(int(selected_slot.trim_prefix("slot_")) - 1, 0, 2))
 	slot_picker.item_selected.connect(func(index: int): selected_slot = "slot_%d" % (index + 1))
@@ -203,6 +206,8 @@ func _notification(what: int) -> void:
 func _process(delta: float) -> void:
 	var hud_factor:=preload("res://scripts/ui/pixel_layout.gd").ui_scale(get_viewport().get_visible_rect().size)
 	panel.scale=Vector2.ONE*hud_factor
+	save_notice.scale=Vector2.ONE*hud_factor
+	save_notice.position=Vector2((get_viewport().get_visible_rect().size.x-save_notice.size.x*hud_factor)*0.5,16*hud_factor)
 	panel.position=(Vector2(56,44) if overlay_mode!="start" else Vector2(390,70))*hud_factor
 	phases.scale=Vector2.ONE*hud_factor
 	phases.position=Vector2(get_viewport().get_visible_rect().size.x-(phases.size.x+34)*hud_factor,get_viewport().get_visible_rect().size.y-(phases.size.y+88)*hud_factor)

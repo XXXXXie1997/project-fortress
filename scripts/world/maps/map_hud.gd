@@ -1,6 +1,7 @@
 extends "res://scripts/ui/combat_hud.gd"
 var menu:=PanelContainer.new()
 var choices:=VBoxContainer.new()
+var menu_scroll:=ScrollContainer.new()
 var map_view:Control
 var full_map:=false
 var hint:=Label.new()
@@ -17,7 +18,11 @@ func _ready():
   if child is Label and child.text.begins_with('任务追踪：'):child.queue_free()
   if child.get_script()!=null and child.get_script().resource_path.ends_with('combat_minimap.gd'):child.queue_free()
  preload("res://scripts/ui/keeper_theme.gd").apply(menu)
- menu.position=Vector2(300,100);menu.custom_minimum_size=Vector2(680,450);menu.add_child(choices);add_child(menu);menu.hide()
+ menu.position=Vector2(300,100);menu.custom_minimum_size=Vector2(680,450)
+ menu_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+ menu.add_child(menu_scroll);menu_scroll.add_child(choices)
+ choices.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+ add_child(menu);menu.hide()
  map_view=load('res://scripts/world/maps/map_view.gd').new();map_view.arena=arena;map_view.position=Vector2(1044,36);map_view.size=Vector2(200,126);add_child(map_view);map_view.set_meta('backdrop_rect',Rect2(-12,-12,224,174));preload('res://scripts/ui/keeper_backdrop.gd').attach(map_view)
  map_title.position=Vector2(4,136);map_title.add_theme_color_override('font_color',preload("res://scripts/ui/keeper_theme.gd").TEXT);map_view.add_child(map_title)
  map_help.position=Vector2(0,-48);map_help.text='[M] 关闭地图 / 世界仍在运行';map_help.hide();map_view.add_child(map_help)
@@ -26,10 +31,11 @@ func _ready():
  preload("res://scripts/ui/keeper_backdrop.gd").attach(quest_list)
 func clear_choices(title:String):
  for child in choices.get_children():choices.remove_child(child);child.queue_free()
- var heading:=Label.new();heading.text=title;choices.add_child(heading)
+ var heading:=Label.new();heading.text=title;heading.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;choices.add_child(heading)
+ menu_scroll.set_deferred('scroll_vertical',0)
  menu.show();opened=true
 func option(text_value:String,callback:Callable):
- var b:=Button.new();b.text=text_value;choices.add_child(b);b.pressed.connect(callback)
+ var b:=Button.new();b.text=text_value;b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;b.custom_minimum_size.y=preload('res://scripts/ui/keeper_theme.gd').BUTTON_HEIGHT;choices.add_child(b);b.pressed.connect(callback)
 func close_menu():menu.hide();opened=false
 func show_departure():
  clear_choices('避难所出发终端 · 第 %d 天 · %s'%[arena.state.day,arena.state.phase])
@@ -82,6 +88,11 @@ func _input(event):
  super._input(event)
 func _process(dt):
  super._process(dt)
+ menu.position=Vector2((get_viewport().get_visible_rect().size.x/hud_scale-680)*.5,100)
+ menu.size=Vector2(680,450)
+ hint.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+ hint.size.x=minf(560,get_viewport().get_visible_rect().size.x/hud_scale-80)
+ hint.position.x=(get_viewport().get_visible_rect().size.x/hud_scale-hint.size.x)*.5
  label.text='生命\n%.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
  var near:Dictionary=arena.nearby() if arena.ready_world else {}
  hint.text=('F '+near.get('label','')+'\n' if not near.is_empty() else '')+arena.message

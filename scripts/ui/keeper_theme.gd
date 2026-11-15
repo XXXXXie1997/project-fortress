@@ -39,11 +39,39 @@ static func get_theme()->Theme:
  cached=Theme.new();cached.default_font_size=16
  var font:=pixel_font()
  cached.default_font=font
- for type in ['Label','Button','RichTextLabel','CheckButton','OptionButton']:
+ for role in ['normal_font','bold_font','italics_font','bold_italics_font','mono_font']:cached.set_font(role,'RichTextLabel',font)
+ cached.set_stylebox('panel','TooltipPanel',box('panel'))
+ cached.set_color('font_color','TooltipLabel',TEXT)
+ cached.set_stylebox('hover','PopupMenu',box('hover'))
+ for type in ['CheckButton','CheckBox','PopupMenu']:
+  for state in ['checked','unchecked']:
+   var icon:Texture2D=load('res://assets/runtime/ui/keeper/'+state+'.png')
+   cached.set_icon(state,type,icon);cached.set_icon(state+'_disabled',type,icon)
+ cached.set_icon('arrow','OptionButton',load('res://assets/runtime/ui/keeper/arrow.png'))
+ cached.set_icon('updown','SpinBox',load('res://assets/runtime/ui/keeper/spin.png'))
+ for type in ['Label','Button','RichTextLabel','CheckButton','OptionButton','LineEdit','TextEdit','PopupMenu','SpinBox']:
   cached.set_color('font_color',type,TEXT);cached.set_color('default_color',type,TEXT)
   cached.set_color('font_hover_color',type,TEXT);cached.set_color('font_pressed_color',type,TEXT)
   cached.set_color('font_focus_color',type,ACCENT);cached.set_color('font_disabled_color',type,DISABLED)
- for type in ['Panel','PanelContainer','PopupPanel']:cached.set_stylebox('panel',type,box('panel'))
+ for type in ['Panel','PanelContainer','PopupPanel','PopupMenu','Window','AcceptDialog','ConfirmationDialog']:
+  cached.set_stylebox('panel',type,box('panel'))
+  cached.set_stylebox('embedded_border',type,box('panel'))
+ for type in ['LineEdit','TextEdit']:
+  cached.set_stylebox('normal',type,box('inset'))
+  cached.set_stylebox('focus',type,box('focus'))
+  cached.set_stylebox('read_only',type,box('disabled'))
+  cached.set_color('caret_color',type,TEXT)
+  cached.set_color('selection_color',type,Color('28535e'))
+ for type in ['HSlider','VSlider']:
+  cached.set_stylebox('slider',type,box('bar'))
+  cached.set_stylebox('grabber_area',type,box('energy'))
+  cached.set_stylebox('grabber_area_highlight',type,box('energy'))
+  for state in ['grabber','grabber_highlight','grabber_disabled']:cached.set_icon(state,type,load('res://assets/runtime/ui/keeper/thumb.png'))
+ for type in ['HScrollBar','VScrollBar']:
+  cached.set_stylebox('scroll',type,box('bar'))
+  for state in ['grabber','grabber_highlight','grabber_pressed']:cached.set_stylebox(state,type,box('hover'))
+ for type in ['GridContainer','HFlowContainer','VFlowContainer']:
+  for axis in ['h_separation','v_separation']:cached.set_constant(axis,type,GAP_SMALL)
  for type in ['Button','OptionButton','CheckButton']:
   for state in {'normal':'button','hover':'hover','pressed':'pressed','hover_pressed':'pressed','focus':'focus','disabled':'disabled'}:
    var mapping={'normal':'button','hover':'hover','pressed':'pressed','hover_pressed':'pressed','focus':'focus','disabled':'disabled'}
@@ -68,6 +96,14 @@ static func compact_button(button:Button):
  button.custom_minimum_size.y=COMPACT_HEIGHT
 static func apply(control:Control):
  control.theme=get_theme();control.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
+static func configure_dialog(dialog:ConfirmationDialog):
+ dialog.theme=get_theme()
+ dialog.title='确认操作'
+ dialog.ok_button_text='确认'
+ dialog.cancel_button_text='取消'
+ dialog.content_scale_mode=Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+ dialog.content_scale_factor=0.5
+ dialog.canvas_item_default_texture_filter=Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 static func meter(bar:ProgressBar,kind:String):
  bar.show_percentage=false;bar.mouse_filter=Control.MOUSE_FILTER_IGNORE
  bar.add_theme_stylebox_override('background',box('bar'))

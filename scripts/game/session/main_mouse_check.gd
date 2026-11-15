@@ -8,14 +8,16 @@ func find_button(node: Node, prefix: String) -> Button:
 		if result != null: return result
 	return null
 func click(prefix: String) -> void:
-	await process_frame
+	for frame in 4:await process_frame
 	var button := find_button(shell, prefix)
 	assert(button != null, prefix)
-	var point := button.get_global_rect().get_center()
+	var point := button.get_global_transform_with_canvas()*(button.size*.5)
+	var motion:=InputEventMouseMotion.new();motion.position=point
+	root.push_input(motion,true)
 	for pressed in [true, false]:
 		var event := InputEventMouseButton.new()
 		event.button_index = MOUSE_BUTTON_LEFT; event.position = point; event.global_position = point; event.pressed = pressed
-		Input.parse_input_event(event)
+		root.push_input(event,true)
 		await process_frame
 	await process_frame
 func mounted() -> void:
