@@ -30,7 +30,7 @@ func _ready():
  var heart:=TextureRect.new();heart.texture=load("res://assets/runtime/ui/wasteland/icon_health.png");heart.position=Vector2(-44,2);heart.size=Vector2(32,32);heart.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;heart.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;label.add_child(heart)
  label.position=Vector2(84,38);label.set_meta("backdrop_rect",Rect2(-60,-14,232,74));label.custom_minimum_size=Vector2(212,58);add_child(label)
  card.position=Vector2(20,625);add_child(card)
- health_bar.position=Vector2(-44,48);health_bar.size=Vector2(190,6);health_bar.show_percentage=false;health_bar.mouse_filter=Control.MOUSE_FILTER_IGNORE;label.add_child(health_bar)
+ health_bar.position=Vector2(-44,76);health_bar.size=Vector2(190,6);health_bar.show_percentage=false;health_bar.mouse_filter=Control.MOUSE_FILTER_IGNORE;label.add_child(health_bar)
  var health_fill:=StyleBoxFlat.new();health_fill.bg_color=Color("9a6558");health_fill.content_margin_top=0;health_fill.content_margin_bottom=0;health_bar.add_theme_stylebox_override("fill",health_fill)
  var health_empty:=StyleBoxFlat.new();health_empty.bg_color=Color("101314");health_empty.content_margin_top=0;health_empty.content_margin_bottom=0;health_bar.add_theme_stylebox_override("background",health_empty)
  toggle.text='冲刺：按一下切换（默认按住）';toggle.position=Vector2(410,460);toggle.toggled.connect(func(value):sprint_toggle=value);add_child(toggle);toggle.hide()
@@ -62,12 +62,12 @@ func _ready():
  preload("res://scripts/ui/keeper_theme.gd").meter(health_bar,"health")
  preload("res://scripts/ui/keeper_theme.gd").meter(weapon_energy_bar,"energy")
  card.add_child(weapon_energy_bar)
- weapon_energy_bar.position=Vector2(0,26);weapon_energy_bar.size=Vector2(220,18)
- label.custom_minimum_size=Vector2(180,44);label.set_meta("backdrop_rect",Rect2(-60,-14,264,100))
- health_bar.position=Vector2(-44,48)
- energy_caption.position=Vector2(0,48)
+ weapon_energy_bar.position=Vector2(0,36);weapon_energy_bar.size=Vector2(220,18)
+ label.custom_minimum_size=Vector2(180,44);label.set_meta("backdrop_rect",Rect2(-60,-14,264,132))
+ health_bar.position=Vector2(-44,76)
+ energy_caption.position=Vector2(0,64)
  for slot_label in quick_slots:
-  slot_label.set_meta("backdrop_rect",Rect2(-10,-8,54,68))
+  slot_label.set_meta("backdrop_rect",Rect2(-10,-8,54,88))
 func _input(event):
  var management=arena.get('management')
  if management!=null and management.has_method('is_modal_open') and management.is_modal_open():
@@ -157,11 +157,11 @@ func open_inventory(box_id:String=""):
 
 func layout_bottom_hud():
  var viewport_size:=get_viewport().get_visible_rect().size / hud_scale
- card.position=Vector2(34,viewport_size.y-104);card.set_meta("backdrop_rect",Rect2(-14,-52,264,136))
+ card.position=Vector2(34,viewport_size.y-120);card.set_meta("backdrop_rect",Rect2(-14,-52,360,160))
  weapon_icon.position=Vector2(60,card.position.y-28)
  weapon_icon.scale=Vector2(2.5,2.5)
  tactical_icon.position=Vector2(236,card.position.y-26)
- quick.position=Vector2((viewport_size.x-356)*0.5,viewport_size.y-80)
+ quick.position=Vector2((viewport_size.x-356)*0.5,viewport_size.y-104)
  if is_instance_valid(mini_widget):mini_widget.position.x=viewport_size.x-236
  if is_instance_valid(task_tracker):task_tracker.position.x=viewport_size.x-232
  charge_title.position=Vector2(maxf(20,viewport_size.x-20-charge_title.get_combined_minimum_size().x),viewport_size.y-76-charge_title.get_combined_minimum_size().y)

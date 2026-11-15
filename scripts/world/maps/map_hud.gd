@@ -93,6 +93,7 @@ func _process(dt):
  hint.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
  hint.size.x=minf(560,get_viewport().get_visible_rect().size.x/hud_scale-80)
  hint.position.x=(get_viewport().get_visible_rect().size.x/hud_scale-hint.size.x)*.5
+ hint.position.y=get_viewport().get_visible_rect().size.y/hud_scale-260
  label.text='生命\n%.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
  var near:Dictionary=arena.nearby() if arena.ready_world else {}
  hint.text=('F '+near.get('label','')+'\n' if not near.is_empty() else '')+arena.message
@@ -102,6 +103,6 @@ func _process(dt):
  var tracked:=QuestPresentation.tracker(arena.state,arena.services.quests)
  if quest_list.text!=tracked:quest_list.text=tracked
  if not full_map:map_view.position.x=get_viewport().get_visible_rect().size.x/hud_scale-236
- map_title.add_theme_font_override('font',preload('res://scripts/ui/keeper_theme.gd').pixel_font(12 if full_map else 8))
+ map_title.add_theme_font_override('font',preload('res://scripts/ui/keeper_theme.gd').pixel_font(12))
  quest_list.position.x=get_viewport().get_visible_rect().size.x/hud_scale-232
  map_view.queue_redraw()
