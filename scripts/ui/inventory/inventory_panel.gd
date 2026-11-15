@@ -184,7 +184,17 @@ func close_panel() -> void:
 	transition=create_tween();transition.tween_property(self,"modulate:a",0.0,0.08)
 	transition.tween_callback(func():hide();closing=false)
 	movement_lock_changed.emit(false)
+# Button.button_up may not fire when an equipment drag releases outside it.
+# Settle after GUI dispatch so the drop/click transaction runs before refresh.
+func finish_pointer_release() -> void:
+	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):return
+	held_button=null
+	suppress_slot_click=false
+	flush_refresh()
+
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and not event.pressed:
+		finish_pointer_release.call_deferred()
 	if not visible or closing: return
 	if event.is_action_pressed("ui_cancel"):
 		close_panel()
