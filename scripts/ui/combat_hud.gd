@@ -76,9 +76,6 @@ func _input(event):
  if inventory_panel!=null and inventory_panel.visible:
   if event.is_action_pressed('cancel') or event.is_action_pressed('inventory'):
    inventory_panel.close_panel();get_viewport().set_input_as_handled()
-  elif event is InputEventKey and event.pressed and event.keycode>=KEY_1 and event.keycode<=KEY_6:
-   if inventory_panel.accessible_item(inventory_panel.selected):arena.state.player.quick[event.keycode-KEY_1]=arena.state.items[inventory_panel.selected].definition_id
-   inventory_panel.refresh();get_viewport().set_input_as_handled()
   return
  if arena.player.get('progression_panel')!=null and (event.is_action_pressed('talents') or event.is_action_pressed('quests') or (event.is_action_pressed('cancel') and arena.player.progression_panel.visible)):
   arena.player.progression_panel.handle_input(event);return

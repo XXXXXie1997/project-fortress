@@ -55,6 +55,8 @@ var grid_hscroll:Array[HScrollBar]=[]
 var grid_vscroll:Array[VScrollBar]=[]
 const ReferenceLayout=preload("res://scripts/ui/inventory/extraction_layout.gd")
 var gesture: Dictionary = {}
+var drag_pointer:=Vector2.ZERO
+var drag_preview:Control
 const DRAG_THRESHOLD := 6.0
 var dialog: ConfirmationDialog
 var hover_id := ""
@@ -129,12 +131,10 @@ func _ready() -> void:
 	detail_scroll=ScrollContainer.new();detail_scroll.position=Vector2(302,458);detail_scroll.size=Vector2(302,100);detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;body.add_child(detail_scroll);detail_scroll.add_child(listing)
 	equipment_layout=Control.new();equipment_layout.position=Vector2(16,122);body.add_child(equipment_layout)
 	listing.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	var quick := GridContainer.new();quick.columns=3;binding_row=quick
+	var quick := GridContainer.new();quick.columns=6;binding_row=quick
 	root.add_child(quick);quick.position=Vector2(302,570)
 	for n in range(6):
-		button(quick,str(n+1),func():
-			if accessible_item(selected): state.player.quick[n] = state.items[selected].definition_id
-			refresh())
+		button(quick,str(n+1),func():pass)
 	dialog = ConfirmationDialog.new()
 	preload("res://scripts/ui/keeper_theme.gd").configure_dialog(dialog)
 	dialog.theme=preload("res://scripts/ui/keeper_theme.gd").get_theme()
@@ -142,6 +142,8 @@ func _ready() -> void:
 	dialog.confirmed.connect(func(): pending.call(); refresh())
 	setup_pixel_tip()
 	ReferenceLayout.setup(self)
+	drag_preview=preload("res://scripts/ui/inventory/drag_preview.gd").new();drag_preview.panel=self
+	var drag_layer:=CanvasLayer.new();drag_layer.layer=61;add_child(drag_layer);drag_layer.add_child(drag_preview)
 	hide()
 func button(parent: Node, text: String, callback: Callable) -> Button:
 	var b := Button.new()
@@ -197,17 +199,29 @@ func finish_pointer_release() -> void:
 	held_button=null
 	suppress_slot_click=false
 	flush_refresh()
+	if visible:layout_inventory_content()
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and not event.pressed:
 		finish_pointer_release.call_deferred()
 	if not visible or closing: return
+	if event is InputEventMouse:drag_pointer=event.position
+	if not gesture.is_empty():
+		if event is InputEventMouseMotion:
+			var point:Vector2=grid.get_global_transform_with_canvas().affine_inverse()*event.position
+			if point.distance_to(gesture.start)>=DRAG_THRESHOLD:gesture.dragging=true
+		if event is InputEventMouseButton:
+			if event.button_index==MOUSE_BUTTON_RIGHT and event.pressed and gesture.get("dragging",false):
+				rotated=not rotated
+				get_viewport().set_input_as_handled();return
+			if event.button_index==MOUSE_BUTTON_LEFT and not event.pressed and gesture.get("dragging",false):
+				suppress_slot_click=true
+				var released:InputEventMouseButton=event.duplicate()
+				released.position=grid.get_global_transform_with_canvas().affine_inverse()*event.position
+				grid_input(released)
+				get_viewport().set_input_as_handled();return
 	if event.is_action_pressed("ui_cancel"):
 		close_panel()
-		get_viewport().set_input_as_handled()
-	elif event is InputEventKey and event.pressed and event.keycode == KEY_R:
-		rotated=not rotated
-		grid.queue_redraw()
 		get_viewport().set_input_as_handled()
 func _process(dt: float) -> void:
 	fit_viewport()
@@ -426,7 +440,13 @@ func draw_grid_side(right:bool,paint:Control) -> void:
 			paint.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 			var extent:=Vector2(minf(48,rect.size.x-8),minf(40,rect.size.y-24))
 			var icon_size:=Vector2(extent.x,minf(extent.y,extent.x*icon.get_height()/icon.get_width()))
-			paint.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-icon_size.x)*.5,22),icon_size),false)
+			if item.rotated:
+				var center:Vector2=rect.position+Vector2(rect.size.x*.5,22+icon_size.y*.5)
+				paint.draw_set_transform(center-grid_origin(right),PI*.5)
+				paint.draw_texture_rect(icon,Rect2(-icon_size*.5,icon_size),false)
+				paint.draw_set_transform(-grid_origin(right))
+			else:
+				paint.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-icon_size.x)*.5,22),icon_size),false)
 
 		var item_font:int=preload("res://scripts/ui/pixel_layout.gd").readable_size(paint,14)
 		var title:String=display_name(item.id)
@@ -439,7 +459,7 @@ func draw_grid_side(right:bool,paint:Control) -> void:
 			paint.draw_string(theme.default_font,rect.end-Vector2(tw+4,6),amount,HORIZONTAL_ALIGNMENT_LEFT,tw+2,item_font,preload("res://scripts/ui/keeper_theme.gd").TEXT)
 
 	if not gesture.is_empty() and gesture.get("dragging",false) and accessible_item(gesture.id):
-		var pointer:=grid.get_local_mouse_position()
+		var pointer:Vector2=grid.get_global_transform_with_canvas().affine_inverse()*drag_pointer
 		if Rect2(grid_origin(right),paint.size).has_point(pointer):
 			var cell:=Vector2i((pointer-origin)/cell_size(right))
 			var preview:Dictionary=state.items[gesture.id].duplicate(true);preview.rotated=rotated
@@ -562,12 +582,20 @@ func grid_input(event: InputEvent) -> void:
 		gesture.clear()
 		if ended.is_empty(): return
 		var id: String = ended.id
+		var moved: bool = ended.dragging or event.position.distance_to(ended.start)>=DRAG_THRESHOLD
+		if not accessible_item(id) or state.items[id].container_id!=ended.source or state.items[id].cell!=ended.cell:return
+		if moved and binding_row.is_visible_in_tree() and not selector_callback.is_valid():
+			var pointer:Vector2=grid.get_global_transform_with_canvas()*event.position
+			for index in range(binding_row.get_child_count()):
+				var target:Control=binding_row.get_child(index)
+				if (target.get_global_transform_with_canvas()*Rect2(Vector2.ZERO,target.size)).has_point(pointer):
+					state.player.quick[index]=state.items[id].definition_id
+					refresh();return
 		if accessible_item(id):
 			for slot in slot_buttons:
 				if slot_buttons[slot].get_global_rect().has_point(grid.get_global_transform() * event.position):
 					if ended.source!="equipment": drop_equipment(id,slot)
 					return
-		var moved: bool = ended.dragging or event.position.distance_to(ended.start)>=DRAG_THRESHOLD
 		if not Rect2(grid_origin(right),grid_surfaces[int(right)].size).has_point(event.position):return
 		if not moved or not accessible_location(location) or location=="equipment" or not accessible_item(id): return
 		# A changed/consumed item or a tab/location switch cancels stale drags.

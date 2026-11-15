@@ -275,7 +275,7 @@ func _process(_dt: float) -> void:
 	resource_status.text="基地能源  %.0f / %.0f\n无线充能站 / %s" % [state.base.energy_store.energy,state.base.energy_store.capacity,"运行中" if station_active else "废墟停用"]
 	inventory_energy.position=Vector2(-360,-52)
 	inventory_energy.size=Vector2(360,40);inventory_energy.clip_text=true
-	inventory_energy.visible=inventory_panel.remote_location()=="warehouse"
+	inventory_energy.visible=false
 	inventory_energy.text="能源 %.0f / %.0f" % [state.base.energy_store.energy,state.base.energy_store.capacity]
 	resource_status.visible=not presentation_obscured and not inventory_panel.visible and not root_panel.visible
 	message.visible=not presentation_obscured and not feedback_obscured and not inventory_panel.visible
