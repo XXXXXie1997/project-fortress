@@ -10,8 +10,6 @@ func _process(_dt):
 func _draw():
  if panel==null or panel.state.is_empty():return
  var item:Dictionary=panel.state.items.get(panel.state.player.equipment.get(slot,''),{})
- if slot.begins_with('weapon_'):
-  for x in [64,128]:draw_line(Vector2(x,1),Vector2(x,size.y-1),Color('343d46'),1)
  if not item.is_empty():
   preload('res://scripts/ui/inventory/item_visual.gd').draw_icon(self,preload('res://scripts/art/fortress_art.gd').item_icon(item.definition_id),size*.5,item.rotated)
  elif not slot.begins_with('weapon_'):
