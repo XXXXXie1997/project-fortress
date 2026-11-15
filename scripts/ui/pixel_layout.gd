@@ -11,6 +11,7 @@ func _ready():
  resize()
 func _process(_dt):
  if get_window().size!=previous_size:resize()
+ fit_readable_text(get_tree().root)
 func resize():
  var window:=get_window()
  var requested:=window.size
@@ -34,3 +35,21 @@ static func ui_scale(viewport_size:Vector2)->float:
 static func world_scale()->float:
  var tree:=Engine.get_main_loop() as SceneTree
  return ui_scale(tree.root.get_visible_rect().size) if tree!=null and tree.root.get_meta('pixel_layout',false) else 1.0
+
+# Keep reference-sized typography at normal resolutions; clamp only tiny windows.
+static func readable_size(control:CanvasItem,requested:int)->int:
+ var physical:Transform2D=control.get_viewport().get_stretch_transform()*control.get_global_transform_with_canvas()
+ return maxi(requested,ceili(10.0/maxf(.01,physical.get_scale().y)))
+static func fit_readable_text(node:Node):
+ if node is CanvasItem and not node.is_visible_in_tree():return
+ if node is Control and node.is_visible_in_tree() and (node is Label or node is Button or node is RichTextLabel):
+  var roles:Array=['normal_font_size','bold_font_size','italics_font_size','mono_font_size'] if node is RichTextLabel else ['font_size']
+  for role:String in roles:
+   var current:int=node.get_theme_font_size(role)
+   var key:String='readable_'+role
+   var previous:Vector2i=node.get_meta(key,Vector2i(current,current))
+   var requested:int=previous.x if current==previous.y else current
+   var adjusted:int=readable_size(node,requested)
+   if current!=adjusted:node.add_theme_font_size_override(role,adjusted)
+   if previous!=Vector2i(requested,adjusted) or not node.has_meta(key):node.set_meta(key,Vector2i(requested,adjusted))
+ for child in node.get_children():fit_readable_text(child)

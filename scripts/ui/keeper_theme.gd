@@ -1,9 +1,9 @@
 extends RefCounted
-const FONT_TITLE=24
-const FONT_SECTION=24
-const FONT_BODY=24
-const FONT_CAPTION=24
-const FONT_NUMBER=24
+const FONT_TITLE=20
+const FONT_SECTION=16
+const FONT_BODY=16
+const FONT_CAPTION=14
+const FONT_NUMBER=20
 const GAP_SMALL=8
 const BUTTON_HEIGHT=48
 const COMPACT_HEIGHT=44
@@ -54,7 +54,7 @@ static func box(asset:String,margin:int=8)->StyleBoxFlat:
  return style
 static func get_theme()->Theme:
  if cached!=null:return cached
- cached=Theme.new();cached.default_font_size=24
+ cached=Theme.new();cached.default_font_size=FONT_BODY
  var font:=pixel_font()
  cached.default_font=font
  for role in ['normal_font','bold_font','italics_font','bold_italics_font','mono_font']:cached.set_font(role,'RichTextLabel',font)
@@ -95,7 +95,7 @@ static func get_theme()->Theme:
    var mapping={'normal':'button','hover':'hover','pressed':'pressed','hover_pressed':'pressed','focus':'focus','disabled':'disabled'}
    cached.set_stylebox(state,type,button_box(mapping[state]))
  for type in ['HBoxContainer','VBoxContainer']:cached.set_constant('separation',type,GAP_SMALL)
- for role in ['normal_font_size','bold_font_size','italics_font_size','mono_font_size']:cached.set_font_size(role,'RichTextLabel',24)
+ for role in ['normal_font_size','bold_font_size','italics_font_size','mono_font_size']:cached.set_font_size(role,'RichTextLabel',FONT_BODY)
  cached.set_constant('line_spacing','Label',4)
  return cached
 static func button_box(asset:String,compact:bool=false)->StyleBoxFlat:

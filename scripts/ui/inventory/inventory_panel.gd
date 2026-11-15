@@ -428,14 +428,15 @@ func draw_grid_side(right:bool,paint:Control) -> void:
 			var icon_size:=Vector2(extent.x,minf(extent.y,extent.x*icon.get_height()/icon.get_width()))
 			paint.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-icon_size.x)*.5,22),icon_size),false)
 
+		var item_font:int=preload("res://scripts/ui/pixel_layout.gd").readable_size(paint,14)
 		var title:String=display_name(item.id)
-		while title.length()>1 and theme.default_font.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,20).x>rect.size.x-8:title=title.left(title.length()-2)+"…"
-		paint.draw_string(theme.default_font,rect.position+Vector2(4,20),title,HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-8,20,Color("c5cdcf"))
+		while title.length()>1 and theme.default_font.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,item_font).x>rect.size.x-8:title=title.left(title.length()-2)+"…"
+		paint.draw_string(theme.default_font,rect.position+Vector2(4,20),title,HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-8,item_font,Color("c5cdcf"))
 		var amount:=str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else "")
 		if not amount.is_empty():
-			var tw:=theme.default_font.get_string_size(amount,HORIZONTAL_ALIGNMENT_LEFT,-1,20).x
+			var tw:=theme.default_font.get_string_size(amount,HORIZONTAL_ALIGNMENT_LEFT,-1,item_font).x
 			paint.draw_rect(Rect2(rect.end-Vector2(tw+6,24),Vector2(tw+4,22)),Color("171c23"))
-			paint.draw_string(theme.default_font,rect.end-Vector2(tw+4,6),amount,HORIZONTAL_ALIGNMENT_LEFT,tw+2,20,preload("res://scripts/ui/keeper_theme.gd").TEXT)
+			paint.draw_string(theme.default_font,rect.end-Vector2(tw+4,6),amount,HORIZONTAL_ALIGNMENT_LEFT,tw+2,item_font,preload("res://scripts/ui/keeper_theme.gd").TEXT)
 
 	if not gesture.is_empty() and gesture.get("dragging",false) and accessible_item(gesture.id):
 		var pointer:=grid.get_local_mouse_position()
@@ -643,7 +644,7 @@ func setup_pixel_tip():
 	preload("res://scripts/ui/keeper_theme.gd").apply(tip)
 	tip_text=Label.new();tip_text.mouse_filter=Control.MOUSE_FILTER_IGNORE;tip.add_child(tip_text);tip.hide()
 	tip_text.add_theme_font_override("font",preload("res://scripts/ui/keeper_theme.gd").pixel_font(12))
-	tip_text.add_theme_font_size_override("font_size",24)
+	tip_text.add_theme_font_size_override("font_size",16)
 
 func update_pixel_tip():
 	if tip==null:return

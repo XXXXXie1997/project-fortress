@@ -11,6 +11,7 @@ static func setup(p):
  p.reference_ui.scrim=ColorRect.new();p.reference_ui.scrim.position=Vector2(-16,-16);p.reference_ui.scrim.size=Vector2(1280,720);p.reference_ui.scrim.color=Color('0c1119');p.reference_ui.scrim.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(p.reference_ui.scrim);root.move_child(p.reference_ui.scrim,0)
  var top:=Panel.new();top.position=Vector2(-16,-16);top.size=Vector2(1280,72);top.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(top);root.move_child(top,1)
  p.reference_ui.header=caption(root,'物资管理',Vector2(16,12))
+ p.reference_ui.header.add_theme_font_size_override('font_size',ThemeStyle.FONT_TITLE)
  caption(root,'装备',Vector2(16,300))
  p.reference_ui.left_title=caption(root,'背包',Vector2(16,404))
  p.reference_ui.right_title=caption(root,'仓库',Vector2(832,76))
@@ -101,7 +102,7 @@ static func weapon_modules(p,weapon:Button,index:int):
   var card:Panel=weapon.get_node_or_null(name)
   if card==null:
    card=Panel.new();card.name=name;card.mouse_filter=Control.MOUSE_FILTER_IGNORE;weapon.add_child(card)
-   var label:=Label.new();label.name='Name';label.position=Vector2(4,4);label.add_theme_font_size_override('font_size',20);label.mouse_filter=Control.MOUSE_FILTER_IGNORE;card.add_child(label)
+   var label:=Label.new();label.name='Name';label.position=Vector2(4,4);label.add_theme_font_size_override('font_size',14);label.mouse_filter=Control.MOUSE_FILTER_IGNORE;card.add_child(label)
    var icon:=TextureRect.new();icon.name='Icon';icon.position=Vector2(8,8);icon.size=Vector2(44,36);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;card.add_child(icon)
   card.position=Vector2(128+i*64,0);card.size=Vector2(60,52)
   var installed:Dictionary=p.state.items.get(item.get('plugins',{}).get(slots[i],''),{})
