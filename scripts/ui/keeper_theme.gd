@@ -6,7 +6,8 @@ const FONT_CAPTION=16
 const FONT_NUMBER=24
 const GAP_SMALL=8
 const BUTTON_HEIGHT=36
-const COMPACT_HEIGHT=28
+const COMPACT_HEIGHT=32
+const PANEL_PADDING=16
 const TEXT=Color('e9e2cc')
 const MUTED=Color('a7b0aa')
 const DISABLED=Color('727d82')
@@ -46,10 +47,25 @@ static func get_theme()->Theme:
  for type in ['Button','OptionButton','CheckButton']:
   for state in {'normal':'button','hover':'hover','pressed':'pressed','hover_pressed':'pressed','focus':'focus','disabled':'disabled'}:
    var mapping={'normal':'button','hover':'hover','pressed':'pressed','hover_pressed':'pressed','focus':'focus','disabled':'disabled'}
-   cached.set_stylebox(state,type,box(mapping[state]))
+   cached.set_stylebox(state,type,button_box(mapping[state]))
+ for type in ['HBoxContainer','VBoxContainer']:cached.set_constant('separation',type,GAP_SMALL)
  for role in ['normal_font_size','bold_font_size','italics_font_size','mono_font_size']:cached.set_font_size(role,'RichTextLabel',16)
  cached.set_constant('line_spacing','Label',4)
  return cached
+static func button_box(asset:String,compact:bool=false)->StyleBoxTexture:
+ var key:=asset+('_compact' if compact else '_button')
+ if boxes.has(key):return boxes[key]
+ var style:=box(asset).duplicate() as StyleBoxTexture
+ var padding:=4 if compact else 6
+ style.content_margin_top=padding+(2 if asset=='pressed' else 0)
+ style.content_margin_bottom=padding-(2 if asset=='pressed' else 0)
+ boxes[key]=style
+ return style
+static func compact_button(button:Button):
+ for state in {'normal':'button','hover':'hover','pressed':'pressed','hover_pressed':'pressed','focus':'focus','disabled':'disabled'}:
+  var mapping={'normal':'button','hover':'hover','pressed':'pressed','hover_pressed':'pressed','focus':'focus','disabled':'disabled'}
+  button.add_theme_stylebox_override(state,button_box(mapping[state],true))
+ button.custom_minimum_size.y=COMPACT_HEIGHT
 static func apply(control:Control):
  control.theme=get_theme();control.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 static func meter(bar:ProgressBar,kind:String):

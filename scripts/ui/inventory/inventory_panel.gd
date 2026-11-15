@@ -102,9 +102,14 @@ func _ready() -> void:
 	for line_rect in [Rect2(16,64,584,1),Rect2(16,106,240,1),Rect2(302,106,290,1),Rect2(16,480,584,1)]:
 		var line:=ColorRect.new();line.position=line_rect.position;line.size=line_rect.size;line.color=Color("4b504b");line.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(line)
 		if line_rect.position.y==480:footer_line=line
-	button(root,"关闭",close_panel).position=Vector2(540,24)
-	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(506,66);sort_bag_button.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT;sort_bag_button.size=Vector2(90,28)
-	sort_warehouse_button=button(loot_panel,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh());sort_warehouse_button.position=Vector2(640,496)
+	var close_button:=button(root,"关闭",close_panel)
+	close_button.position=Vector2(540,24);close_button.size=Vector2(64,36)
+	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh())
+	sort_warehouse_button=button(loot_panel,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh())
+	for compact in [sort_bag_button,sort_warehouse_button,loot_take]:preload("res://scripts/ui/keeper_theme.gd").compact_button(compact)
+	sort_bag_button.position=Vector2(508,72);sort_bag_button.size=Vector2(96,32)
+	for tab in tabs.get_children():
+		if tab is Button:preload("res://scripts/ui/keeper_theme.gd").compact_button(tab)
 	for data in [["装备",Vector2(16,76)],["额外装备 / 4个通用槽",Vector2(16,450)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
 		var caption:=Label.new();caption.text=data[0];caption.position=data[1];caption.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").MUTED);root.add_child(caption)
 		caption.add_theme_font_size_override("font_size",preload("res://scripts/ui/keeper_theme.gd").FONT_SECTION if data[0]=="装备" else preload("res://scripts/ui/keeper_theme.gd").FONT_CAPTION)
@@ -135,6 +140,10 @@ func button(parent: Node, text: String, callback: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").BUTTON_HEIGHT
+	if parent==listing:
+		b.clip_text=true
+		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+		b.tooltip_text=text
 	parent.add_child(b)
 	b.pressed.connect(callback)
 	b.button_down.connect(func(): held_button=b)
@@ -313,12 +322,13 @@ func refresh() -> void:
 		var c:Dictionary=state.containers.get(remote_location(),{"width":6,"height":4})
 		loot_panel.size=Vector2(maxi(280,int(c.width)*40+24),mini(8,int(c.height))*40+(114 if remote_location()=="warehouse" else 82))
 		loot_take.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT
-		loot_take.position=Vector2(loot_panel.size.x-116,2)
-		loot_take.size=Vector2(104,28)
+		loot_take.position=Vector2(loot_panel.size.x-120,16)
+		loot_take.size=Vector2(104,preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT)
 		sort_warehouse_button.position=loot_take.position
 		sort_warehouse_button.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT
 		sort_warehouse_button.size=loot_take.size
 	layout_inventory_content()
+	layout_inventory_content.call_deferred()
 	arrange_equipment()
 	grid.queue_redraw()
 func display_name(id: String) -> String:
@@ -599,13 +609,18 @@ func layout_inventory_content():
 	weight_bar.size.x=mini(296,int(state.containers.get(source,{"width":6}).width)*cell_size(false))
 	usage_caption.position.y=grid_bottom+56
 	detail_scroll.position=Vector2(302,grid_bottom+86)
-	detail_scroll.size.y=100
-	binding_row.position=Vector2(302,grid_bottom+192)
+	# Reserve the binding row and panel padding before allocating scrollable actions.
+	var binding_height:=36.0 if binding_row.visible else 0.0
+	var bottom_padding:=44.0 if not feedback.text.is_empty() else float(preload("res://scripts/ui/keeper_theme.gd").PANEL_PADDING)
+	var remaining:=648.0-detail_scroll.position.y-binding_height-8.0-bottom_padding
+	detail_scroll.size=Vector2(302,minf(maxf(96,listing.get_combined_minimum_size().y),maxf(36,remaining)))
+	binding_row.position=Vector2(302,detail_scroll.position.y+detail_scroll.size.y+8)
 	for i in binding_row.get_child_count():
 		binding_row.get_child(i).custom_minimum_size.x=40
 		binding_row.get_child(i).tooltip_text="绑定到快捷栏 %d" % (i+1)
 	var bottom:float=maxf(480,grid_bottom+88)
-	if detail_scroll.visible:bottom=maxf(bottom,grid_bottom+238)
+	if detail_scroll.visible:bottom=maxf(bottom,detail_scroll.position.y+detail_scroll.size.y+8)
+	if binding_row.visible:bottom=maxf(bottom,binding_row.position.y+binding_height)
 	feedback.visible=not feedback.text.is_empty()
 	feedback.position=Vector2(16,bottom+8)
 	footer_line.position.y=bottom
@@ -616,7 +631,7 @@ func arrange_equipment():
 	for i in range(keys.size()):
 		if not slot_buttons.has(keys[i]):continue
 		var b:Button=slot_buttons[keys[i]]
-		b.position=Vector2(0,i*58) if i<3 else (Vector2((i-3)*132,182) if i<5 else Vector2((i-5)*64,266))
+		b.position=Vector2(0,i*58) if i<3 else (Vector2((i-3)*132,182) if i<5 else Vector2((i-5)*66,266))
 		b.custom_minimum_size=Vector2(258,50) if i<3 else (Vector2(124,64) if i<5 else Vector2(58,48))
 		b.clip_text=true
 		b.expand_icon=true;b.add_theme_constant_override("icon_max_width",48 if i<3 else 28)
