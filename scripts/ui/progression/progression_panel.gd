@@ -38,7 +38,9 @@ func handle_input(event):
   close();get_viewport().set_input_as_handled()
 func open_view(selected:String,is_terminal:bool=false):
  mode=selected;terminal=is_terminal and at_base();visible=true;actor.progression_ui_blocked=true;refresh()
+ preload('res://scripts/ui/panel_transition.gd').reveal(box)
 func close():
+ preload('res://scripts/ui/panel_transition.gd').dismiss(box)
  visible=false;actor.progression_ui_blocked=false
  actor.progression_pointer_guard=Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 func _process(_dt):

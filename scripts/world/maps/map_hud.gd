@@ -33,10 +33,10 @@ func clear_choices(title:String):
  for child in choices.get_children():choices.remove_child(child);child.queue_free()
  var heading:=Label.new();heading.text=title;heading.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;choices.add_child(heading)
  menu_scroll.set_deferred('scroll_vertical',0)
- menu.show();opened=true
+ preload("res://scripts/ui/panel_transition.gd").reveal(menu);opened=true
 func option(text_value:String,callback:Callable):
  var b:=Button.new();b.text=text_value;b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;b.custom_minimum_size.y=preload('res://scripts/ui/keeper_theme.gd').BUTTON_HEIGHT;choices.add_child(b);b.pressed.connect(callback)
-func close_menu():menu.hide();opened=false
+func close_menu():preload("res://scripts/ui/panel_transition.gd").dismiss(menu);opened=false
 func show_departure():
  clear_choices('避难所出发终端 · 第 %d 天 · %s'%[arena.state.day,arena.state.phase])
  if arena.state.cycle.failed:
@@ -105,5 +105,3 @@ func _process(dt):
  map_title.add_theme_font_override('font',preload('res://scripts/ui/keeper_theme.gd').pixel_font(12 if full_map else 8))
  quest_list.position.x=get_viewport().get_visible_rect().size.x/hud_scale-232
  map_view.queue_redraw()
-
-

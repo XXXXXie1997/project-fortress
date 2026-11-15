@@ -85,7 +85,7 @@ func clear(title: String) -> void:
 	for child in rows.get_children():
 		rows.remove_child(child)
 		child.queue_free()
-	panel.show()
+	preload("res://scripts/ui/panel_transition.gd").reveal(panel)
 	if is_instance_valid(arena) and is_instance_valid(arena.player): arena.player.progression_ui_blocked = true
 	var label := Label.new()
 	label.text = title
@@ -135,7 +135,7 @@ func confirm_new() -> void:
 func _world_replaced() -> void:
 	if mount_world.is_valid():
 		mount_world.call()
-		panel.hide()
+		preload("res://scripts/ui/panel_transition.gd").dismiss(panel)
 		get_tree().paused = false
 	else:
 		# Keep a truthful development boundary until the shared lifecycle is installed.
@@ -149,7 +149,7 @@ func show_pause() -> void:
 	overlay_mode = "pause"
 	get_tree().paused = true
 	clear("游戏已暂停")
-	button("继续游戏", func(): panel.hide(); get_tree().paused = false)
+	button("继续游戏", func(): preload("res://scripts/ui/panel_transition.gd").dismiss(panel); get_tree().paused = false)
 	button("保存进度", func(): report(coordinator.shutdown()))
 	button("设置与帮助", show_settings)
 	button("保存并退出", request_exit)
@@ -233,7 +233,7 @@ func _process(delta: float) -> void:
 			overlay_mode = "stage"
 			clear("已恢复与外界的联系")
 			var ending := Label.new(); ending.text = "信号已成功发出。你仍可继续经营基地、探索与守夜。"; ending.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; ending.custom_minimum_size.x=450; rows.add_child(ending)
-			button("继续生存", func():panel.hide())
+			button("继续生存", func():preload("res://scripts/ui/panel_transition.gd").dismiss(panel))
 			message_line()
 			coordinator.request_save()
 	phases.visible = not interface_open() and not mounting and not coordinator.state.is_empty() and coordinator.state.session.location == "base" and coordinator.state.phase in ["morning", "dusk"]
@@ -293,7 +293,7 @@ func mount_current() -> void:
 	arena.player.progression_panel.committed.connect(func(_revision): coordinator.request_save())
 	mounting = false
 	phase_signature = ""
-	panel.hide()
+	preload("res://scripts/ui/panel_transition.gd").dismiss(panel)
 	get_tree().paused = false
 	coordinator.request_save()
 	audio_manager.resume_audio()
@@ -347,7 +347,7 @@ func show_departures(night: bool) -> void:
 			button("%s · %s" % [map.title, map.points[point].get("label", point)], func():
 				if night: confirm_night("explore", id, point)
 				elif coordinator.depart(id, point).ok: queue_mount())
-	button("取消", func(): panel.hide())
+	button("取消", func(): preload("res://scripts/ui/panel_transition.gd").dismiss(panel))
 	message_line()
 
 func confirm_night(mode: String, map_id := "", point := "") -> void:
@@ -361,7 +361,7 @@ func confirm_night(mode: String, map_id := "", point := "") -> void:
 		if result.ok and mode == "rest": result = coordinator.finish_night()
 		if result.ok: queue_mount()
 		else: report(result))
-	button("取消", func(): panel.hide())
+	button("取消", func(): preload("res://scripts/ui/panel_transition.gd").dismiss(panel))
 	message_line()
 
 func _overlay_visibility() -> void:
@@ -376,7 +376,7 @@ func _overlay_visibility() -> void:
 
 func cancel_overlay() -> void:
 	if overlay_mode in ["stage", "pause", "player"]:
-		panel.hide()
+		preload("res://scripts/ui/panel_transition.gd").dismiss(panel)
 		get_tree().paused = false
 
 func mount_error(reason: String) -> void:
@@ -407,12 +407,12 @@ func show_base_containers() -> void:
 		if id != "ground" and not id.begins_with("relics_"): continue
 		var count: int = coordinator.services.inventory.items_in(coordinator.state,id).size()
 		button(("前代幸存者遗物" if id.begins_with("relics_") else "基地地面箱") + " · %d 件" % count, func():
-			panel.hide()
+			preload("res://scripts/ui/panel_transition.gd").dismiss(panel)
 			var inventory: InventoryPanel = arena.management.inventory_panel
 			inventory.at_base = true
 			inventory.bind_external_container(id, func(): return coordinator.state.session.location == "base")
 			inventory.open_panel())
-	button("关闭", func(): panel.hide())
+	button("关闭", func(): preload("res://scripts/ui/panel_transition.gd").dismiss(panel))
 	message_line()
 
 func show_night_loot() -> void:
@@ -423,7 +423,7 @@ func show_night_loot() -> void:
 			var result: Dictionary = coordinator.transact(func(trial: Dictionary) -> Dictionary: return {"ok": coordinator.services.cycle.claim_loot(trial,id)})
 			if result.ok: show_night_loot()
 			else: status.text = "仓库空间不足，战利品仍保留，可腾出空间后再领。")
-	button("关闭", func(): panel.hide())
+	button("关闭", func(): preload("res://scripts/ui/panel_transition.gd").dismiss(panel))
 	message_line()
 
 func near_candidate() -> String:
@@ -445,10 +445,10 @@ func show_candidate(id: String) -> void:
 		if near_candidate() != id: status.text = "请靠近这位幸存者再交谈。"; return
 		var result: Dictionary = coordinator.transact(func(trial: Dictionary) -> Dictionary: return coordinator.services.recruitment.accept(trial,id,coordinator.services.inventory))
 		if result.ok:
-			panel.hide()
+			preload("res://scripts/ui/panel_transition.gd").dismiss(panel)
 			if coordinator.state.session.location == "base": queue_mount()
 		else: status.text = "基地满员或此人已加入，未重复招募。")
-	button("暂不邀请", func(): panel.hide())
+	button("暂不邀请", func(): preload("res://scripts/ui/panel_transition.gd").dismiss(panel))
 	message_line()
 
 func show_settings() -> void:
@@ -504,7 +504,7 @@ func finish_tutorial() -> void:
 	var result: Dictionary = coordinator.saver.save_tutorial(completed)
 	if not result.ok: report(result); return
 	if tutorial_return == "settings": tutorial_return = "game"; show_settings()
-	else: panel.hide(); get_tree().paused = false
+	else: preload("res://scripts/ui/panel_transition.gd").dismiss(panel); get_tree().paused = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if panel.visible and event.is_action_pressed("ui_cancel"):

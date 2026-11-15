@@ -62,7 +62,7 @@ func button(label: String, callback: Callable, parent: Node = null) -> Button:
 	var b:=Button.new();b.text=label;b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;b.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT
 	(parent if parent!=null else content).add_child(b);b.pressed.connect(callback);return b
 func clear(title: String) -> void:
-	root_panel.show()
+	preload("res://scripts/ui/panel_transition.gd").reveal(root_panel)
 	content.remove_meta("reference_custom")
 	call_deferred("_arrange_reference",title)
 	activity_label=null
@@ -73,26 +73,26 @@ func clear(title: String) -> void:
 	root_panel.size=Vector2(1120,584)
 	for child in content.get_children():content.remove_child(child);child.queue_free()
 	var label:=Label.new();label.text=title;content.add_child(label)
-	button("关闭面板 · 继续鼠标施工",func():root_panel.hide())
+	button("关闭面板 · 继续鼠标施工",func():preload("res://scripts/ui/panel_transition.gd").dismiss(root_panel))
 func report(ok: bool, success: String, failure: String = "操作被拒绝：请检查阶段、设施状态、材料及容量。") -> void:
 	message.text=success if ok else failure
 	if ok and services.has("farming"): services.farming.collect_ready(state)
 	if ok:world_changed.emit()
 func show_buildings() -> void:
-	root_panel.show();clear("基地建设")
+	preload("res://scripts/ui/panel_transition.gd").reveal(root_panel);clear("基地建设")
 	for type: String in ["generator","turret","farm"]:
-		button({"generator":"建造发电厂","turret":"建造炮塔","farm":"开垦农田"}[type],func():placement_requested.emit(type,"");root_panel.hide())
+		button({"generator":"建造发电厂","turret":"建造炮塔","farm":"开垦农田"}[type],func():placement_requested.emit(type,"");preload("res://scripts/ui/panel_transition.gd").dismiss(root_panel))
 	button("扩建区域 / 居民位",func():report(services.building.expand(state),"扩建完成"))
 	button("打开仓库与装备",func():inventory_panel.open_panel())
 	var storage:=Label.new();storage.text="仓库等级 %d · 能源 %.0f / %.0f
 格子 %d × %d" % [state.base.get("station_level",1),state.base.energy_store.energy,state.base.energy_store.capacity,state.containers.warehouse.width,state.containers.warehouse.height];content.add_child(storage)
 func inspect(id: String) -> void:
 	if not state.base.buildings.has(id):return
-	selected_building=id;root_panel.show()
+	selected_building=id;preload("res://scripts/ui/panel_transition.gd").reveal(root_panel)
 	var b: Dictionary=state.base.buildings[id]
 	clear("设施：%s  等级%s
 耐久 %.0f / %.0f" % [name_for(b.type),b.level,b.durability,b.maximum])
-	button("移动（免费）",func():placement_requested.emit(b.type,id);root_panel.hide())
+	button("移动（免费）",func():placement_requested.emit(b.type,id);preload("res://scripts/ui/panel_transition.gd").dismiss(root_panel))
 	button("维修 / 原位重建",func():report(services.building.repair(state,id),"设施修复完成");inspect(id))
 	button("升级",func():report(upgrade_building(id),"设施升级完成");inspect(id))
 	button("拆除并返还材料",func():report(services.building.demolish(state,id),"拆除完成","无法拆除：预置设施、未清订单/作物或退款空间不足。");show_buildings())
