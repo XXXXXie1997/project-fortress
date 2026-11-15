@@ -71,6 +71,16 @@ func _physics_process(_dt):
    if item.get('definition_id','')=='nightvision' and item.get('energy',0)>0:view_brightness=maxf(view_brightness,0.6)
  darkness.color=Color(view_brightness,view_brightness,view_brightness)
  if exploration==null:return
+ sync_map_enemies()
+ if loaded_map.is_empty():return
+ buckets.clear()
+ for enemy in targets:
+  if enemy.get_meta('hp')<=0:continue
+  var cell:=Vector2i(enemy.position/72)
+  if not buckets.has(cell):buckets[cell]=[]
+  buckets[cell].append(enemy)
+# Reconcile synchronously before a map rebuild yields to audio/render callbacks.
+func sync_map_enemies():
  var current_map:String=state.expedition.get('map_id','') if state.expedition.get('active',false) else ''
  var session:String=str(state.expedition.get('id',''))
  if current_map!=loaded_map or session!=loaded_session:
@@ -81,17 +91,10 @@ func _physics_process(_dt):
     var saved:Dictionary=departed.get(enemy.enemy_id,{})
     if enemy.spec.get('boss',false) and not saved.get('dead',false) and saved.has('ai'):
      enemy.reset_boss(saved.ai)
-  for enemy in targets:enemy.set_physics_process(false);enemy.set_process(false);enemy.queue_free()
-  targets.clear();loaded_map=current_map;loaded_session=session
+  for enemy in targets:enemy.process_mode=Node.PROCESS_MODE_DISABLED;enemy.hide();enemy.queue_free()
+  targets.clear();buckets.clear();loaded_map=current_map;loaded_session=session
   if not current_map.is_empty():
    for definition in state.expedition.maps[current_map].enemies.values():spawn_enemy(definition)
- if current_map.is_empty():return
- buckets.clear()
- for enemy in targets:
-  if enemy.get_meta('hp')<=0:continue
-  var cell:=Vector2i(enemy.position/72)
-  if not buckets.has(cell):buckets[cell]=[]
-  buckets[cell].append(enemy)
 func separation(enemy:Node2D)->Vector2:
  var force:=Vector2.ZERO
  var cell:=Vector2i(enemy.position/72)

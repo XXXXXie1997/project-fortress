@@ -49,6 +49,7 @@ func depart(map_id:String,spawn_id:String,night:=false,confirmed:=false)->bool:
  else:message='当前阶段不能出发，或该时段已探索过'
  return ok
 func rebuild_map():
+ sync_map_enemies()
  if geometry!=null:
   for child in geometry.get_children():
    if child is StaticBody2D:child.collision_layer=0
