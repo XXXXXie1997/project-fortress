@@ -1,11 +1,11 @@
 extends RefCounted
 # Compatibility API: all screens share the approved pixel component theme.
 const PixelTheme=preload("res://scripts/ui/keeper_theme.gd")
-const FONT_TITLE=32
-const FONT_SECTION=16
-const FONT_BODY=16
-const FONT_CAPTION=16
-const FONT_NUMBER=32
+const FONT_TITLE=24
+const FONT_SECTION=24
+const FONT_BODY=24
+const FONT_CAPTION=24
+const FONT_NUMBER=24
 const TEXT=PixelTheme.TEXT
 const MUTED=PixelTheme.MUTED
 const DISABLED=PixelTheme.DISABLED

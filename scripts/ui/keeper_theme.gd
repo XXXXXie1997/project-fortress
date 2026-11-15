@@ -1,12 +1,12 @@
 extends RefCounted
 const FONT_TITLE=24
-const FONT_SECTION=16
-const FONT_BODY=16
-const FONT_CAPTION=16
+const FONT_SECTION=24
+const FONT_BODY=24
+const FONT_CAPTION=24
 const FONT_NUMBER=24
 const GAP_SMALL=8
-const BUTTON_HEIGHT=36
-const COMPACT_HEIGHT=32
+const BUTTON_HEIGHT=44
+const COMPACT_HEIGHT=40
 const PANEL_PADDING=16
 const TEXT=Color('e9e2cc')
 const MUTED=Color('a7b0aa')
@@ -17,7 +17,7 @@ const WARNING=Color('d6b776')
 const DANGER=Color('df7378')
 static var cached:Theme
 static var boxes:Dictionary={}
-static func pixel_font(pixels:int=8)->FontFile:
+static func pixel_font(pixels:int=12)->FontFile:
  var font:FontFile=load('res://assets/runtime/ui/keeper/fusion-pixel-%dpx-proportional-zh_hans.otf'%pixels)
  font.antialiasing=TextServer.FONT_ANTIALIASING_NONE
  font.subpixel_positioning=TextServer.SUBPIXEL_POSITIONING_DISABLED
@@ -36,7 +36,7 @@ static func box(asset:String,margin:int=8)->StyleBoxTexture:
  return s
 static func get_theme()->Theme:
  if cached!=null:return cached
- cached=Theme.new();cached.default_font_size=16
+ cached=Theme.new();cached.default_font_size=24
  var font:=pixel_font()
  cached.default_font=font
  for role in ['normal_font','bold_font','italics_font','bold_italics_font','mono_font']:cached.set_font(role,'RichTextLabel',font)
@@ -77,7 +77,7 @@ static func get_theme()->Theme:
    var mapping={'normal':'button','hover':'hover','pressed':'pressed','hover_pressed':'pressed','focus':'focus','disabled':'disabled'}
    cached.set_stylebox(state,type,button_box(mapping[state]))
  for type in ['HBoxContainer','VBoxContainer']:cached.set_constant('separation',type,GAP_SMALL)
- for role in ['normal_font_size','bold_font_size','italics_font_size','mono_font_size']:cached.set_font_size(role,'RichTextLabel',16)
+ for role in ['normal_font_size','bold_font_size','italics_font_size','mono_font_size']:cached.set_font_size(role,'RichTextLabel',24)
  cached.set_constant('line_spacing','Label',4)
  return cached
 static func button_box(asset:String,compact:bool=false)->StyleBoxTexture:

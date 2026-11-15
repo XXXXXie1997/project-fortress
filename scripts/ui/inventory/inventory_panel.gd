@@ -103,11 +103,11 @@ func _ready() -> void:
 		var line:=ColorRect.new();line.position=line_rect.position;line.size=line_rect.size;line.color=Color("4b504b");line.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(line)
 		if line_rect.position.y==480:footer_line=line
 	var close_button:=button(root,"关闭",close_panel)
-	close_button.position=Vector2(540,24);close_button.size=Vector2(64,36)
+	close_button.position=Vector2(524,24);close_button.size=Vector2(80,44)
 	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh())
 	sort_warehouse_button=button(loot_panel,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh())
 	for compact in [sort_bag_button,sort_warehouse_button,loot_take]:preload("res://scripts/ui/keeper_theme.gd").compact_button(compact)
-	sort_bag_button.position=Vector2(508,72);sort_bag_button.size=Vector2(96,32)
+	sort_bag_button.position=Vector2(476,76);sort_bag_button.size=Vector2(128,40)
 	for tab in tabs.get_children():
 		if tab is Button:preload("res://scripts/ui/keeper_theme.gd").compact_button(tab)
 	for data in [["装备",Vector2(16,76)],["额外装备 / 4个通用槽",Vector2(16,450)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
@@ -232,7 +232,7 @@ func refresh() -> void:
 	info.text = "负重  %.1f / %.1f kg" % [inventory.weight(state,"bag"),state.containers.bag.maximum_weight]
 	tabs.visible=selector_callback.is_valid()
 	for child in tabs.get_children():child.visible=child in tabs_by_source.values() or (child is Button and child.text=="翻页" and source=="warehouse" and int(state.containers.warehouse.width)>12)
-	tabs.position=Vector2(302,66)
+	tabs.position=Vector2(302,76)
 	binding_row.visible=not selected.is_empty()
 	weight_bar.max_value=state.containers.bag.maximum_weight;weight_bar.value=inventory.weight(state,"bag");weight_bar.size=Vector2(264,8)
 	detail_scroll.visible=not selected.is_empty() or selector_callback.is_valid()
@@ -323,8 +323,8 @@ func refresh() -> void:
 		var c:Dictionary=state.containers.get(remote_location(),{"width":6,"height":4})
 		loot_panel.size=Vector2(maxi(280,int(c.width)*40+24),mini(8,int(c.height))*40+(114 if remote_location()=="warehouse" else 82))
 		loot_take.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT
-		loot_take.position=Vector2(loot_panel.size.x-120,16)
-		loot_take.size=Vector2(104,preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT)
+		loot_take.position=Vector2(loot_panel.size.x-144,16)
+		loot_take.size=Vector2(128,preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT)
 		sort_warehouse_button.position=loot_take.position
 		sort_warehouse_button.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT
 		sort_warehouse_button.size=loot_take.size
@@ -611,7 +611,7 @@ func layout_inventory_content():
 	usage_caption.position.y=grid_bottom+56
 	detail_scroll.position=Vector2(302,grid_bottom+86)
 	# Reserve the binding row and panel padding before allocating scrollable actions.
-	var binding_height:=36.0 if binding_row.visible else 0.0
+	var binding_height:=44.0 if binding_row.visible else 0.0
 	var bottom_padding:=44.0 if not feedback.text.is_empty() else float(preload("res://scripts/ui/keeper_theme.gd").PANEL_PADDING)
 	var remaining:=648.0-detail_scroll.position.y-binding_height-8.0-bottom_padding
 	detail_scroll.size=Vector2(302,minf(maxf(96,listing.get_combined_minimum_size().y),maxf(36,remaining)))
