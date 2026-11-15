@@ -53,6 +53,7 @@ func _ready() -> void:
 	overlay.add_child(panel)
 	panel.visibility_changed.connect(_overlay_visibility)
 	save_notice = HBoxContainer.new()
+	preload("res://scripts/ui/wasteland_theme.gd").apply(save_notice)
 	save_notice.position = Vector2(250, 20)
 	overlay.add_child(save_notice)
 	save_notice.visibility_changed.connect(_overlay_visibility)
@@ -61,10 +62,10 @@ func _ready() -> void:
 	retry.pressed.connect(func():
 		if coordinator.shutdown().ok: save_notice.hide())
 	save_notice.hide()
-	phases = VBoxContainer.new(); phases.position = Vector2(1022, 438);phases.custom_minimum_size=Vector2(224,184); overlay.add_child(phases)
+	phases = VBoxContainer.new();preload("res://scripts/ui/wasteland_theme.gd").apply(phases); phases.position = Vector2(1022, 438);phases.custom_minimum_size=Vector2(224,184); overlay.add_child(phases)
 	var shortcuts=preload("res://scripts/ui/action_shortcuts.gd").new();shortcuts.shell=self;overlay.add_child(shortcuts)
 	rows = VBoxContainer.new()
-	rows.add_theme_constant_override("separation", 12)
+	rows.add_theme_constant_override("separation", preload("res://scripts/ui/wasteland_theme.gd").GAP)
 	panel.add_child(rows)
 	show_start()
 	get_tree().auto_accept_quit = false
@@ -74,11 +75,11 @@ func clear(title: String) -> void:
 	panel.custom_minimum_size=Vector2(1168,632) if overlay_mode!="start" else Vector2(480,480)
 	panel.size=panel.custom_minimum_size
 	call_deferred("_arrange_reference_overlay")
-	panel.theme=preload("res://scripts/ui/wasteland_theme.gd").get_theme() if overlay_mode!="start" else null
+	panel.theme=preload("res://scripts/ui/wasteland_theme.gd").get_theme()
 	panel.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST if overlay_mode!="start" else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 	if overlay_mode!="start":
 		var frame=preload("res://scripts/ui/wasteland_theme.gd").box("panel_normal").duplicate()
-		for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:frame.set_content_margin(side,24)
+		for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:frame.set_content_margin(side,preload("res://scripts/ui/wasteland_theme.gd").PANEL_PADDING)
 		panel.add_theme_stylebox_override("panel",frame)
 	else:panel.remove_theme_stylebox_override("panel")
 	for child in rows.get_children():
@@ -88,7 +89,7 @@ func clear(title: String) -> void:
 	if is_instance_valid(arena) and is_instance_valid(arena.player): arena.player.progression_ui_blocked = true
 	var label := Label.new()
 	label.text = title
-	label.add_theme_font_size_override("font_size", 28)
+	label.add_theme_font_size_override("font_size", preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE)
 	rows.add_child(label)
 
 func button(label: String, action: Callable) -> void:
@@ -150,7 +151,7 @@ func show_pause() -> void:
 	button("设置与帮助", show_settings)
 	button("保存并退出", request_exit)
 	var options:=VBoxContainer.new();rows.add_child(options)
-	var settings_title:=Label.new();settings_title.text="操作与声音";settings_title.add_theme_font_size_override("font_size",28);options.add_child(settings_title)
+	var settings_title:=Label.new();settings_title.text="操作与声音";settings_title.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE);options.add_child(settings_title)
 	var sprint:=CheckButton.new();sprint.text="Shift冲刺：切换式";sprint.button_pressed=bool(preferences.get_value("controls","sprint_toggle",false));options.add_child(sprint)
 	sprint.toggled.connect(func(enabled):preferences.set_value("controls","sprint_toggle",enabled);arena.hud.sprint_toggle=enabled;save_preferences())
 	for key in audio_manager.levels:
@@ -303,7 +304,7 @@ func phase_button(label: String, action: Callable) -> void:
 		phase_actions.append(action)
 		var icon:=TextureRect.new();var atlas:=AtlasTexture.new();atlas.atlas=load("res://assets/runtime/ui/action_icons.png");atlas.region=Rect2(120,0,24,24)
 		icon.visible=false;icon.texture=atlas;icon.custom_minimum_size=Vector2(24,24);icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(icon)
-	var caption:=Label.new();caption.text=("[F%d] "%phase_actions.size() if phases.get_child_count()>0 else "")+label;caption.add_theme_font_size_override("font_size",16);row.custom_minimum_size.y=24;caption.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(caption)
+	var caption:=Label.new();caption.text=("[F%d] "%phase_actions.size() if phases.get_child_count()>0 else "")+label;caption.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_BODY);row.custom_minimum_size.y=24;caption.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(caption)
 	phases.add_child(row)
 
 func refresh_phase_controls() -> void:

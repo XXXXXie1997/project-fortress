@@ -65,7 +65,7 @@ func draw_labels():
  var font:Font=preload('res://scripts/ui/wasteland_theme.gd').get_theme().default_font
  var x:float=size.x-224
  draw_rect(Rect2(x-6,6,224,size.y-12),Color(.04,.08,.1,.98))
- draw_string(font,Vector2(x+5,27),'地点索引 · 引线对应地图点',HORIZONTAL_ALIGNMENT_LEFT,214,14,Color.WHITE)
+ draw_string(font,Vector2(x+5,27),'地点索引 · 引线对应地图点',HORIZONTAL_ALIGNMENT_LEFT,214,preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION,preload("res://scripts/ui/wasteland_theme.gd").TEXT)
  for i in range(labels.size()):
   var entry:Dictionary=labels[i]
   var y:float=42+i*36
@@ -75,14 +75,14 @@ func draw_labels():
   var pos:Vector2=entry.point
   draw_line(pos,Vector2(x-10,y+15),Color(entry.color,.65),1)
   draw_circle(pos,3,entry.color)
-  draw_string(font,Vector2(x+5,y+20),number+'  '+entry.text,HORIZONTAL_ALIGNMENT_LEFT,204,14,entry.color)
+  draw_string(font,Vector2(x+5,y+20),number+'  '+entry.text,HORIZONTAL_ALIGNMENT_LEFT,204,preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION,preload("res://scripts/ui/wasteland_theme.gd").TEXT)
  if not recommended_regions.is_empty():
   var top:float=size.y-18-recommended_regions.size()*48-26
-  draw_string(font,Vector2(x+5,top+18),'委托推荐区域',HORIZONTAL_ALIGNMENT_LEFT,204,14,Color('7edbc8'))
+  draw_string(font,Vector2(x+5,top+18),'委托推荐区域',HORIZONTAL_ALIGNMENT_LEFT,204,preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION,preload("res://scripts/ui/wasteland_theme.gd").ACCENT)
   for i in range(recommended_regions.size()):
    var region:Dictionary=recommended_regions[i]
    var y:float=top+26+i*48
    draw_rect(Rect2(x,y,214,44),Color(.08,.22,.19))
-   draw_string(font,Vector2(x+5,y+18),'%s · %d项委托'%[region.name,region.count],HORIZONTAL_ALIGNMENT_LEFT,204,14,Color('7edbc8'))
-   draw_string(font,Vector2(x+5,y+36),'范围：整片区域，无精确目标点',HORIZONTAL_ALIGNMENT_LEFT,204,12,Color.WHITE)
+   draw_string(font,Vector2(x+5,y+18),'%s · %d项委托'%[region.name,region.count],HORIZONTAL_ALIGNMENT_LEFT,204,preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION,preload("res://scripts/ui/wasteland_theme.gd").ACCENT)
+   draw_string(font,Vector2(x+5,y+36),'范围：整片区域，无精确目标点',HORIZONTAL_ALIGNMENT_LEFT,204,preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION,preload("res://scripts/ui/wasteland_theme.gd").MUTED)
 

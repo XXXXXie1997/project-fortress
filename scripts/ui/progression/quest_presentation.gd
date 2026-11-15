@@ -1,9 +1,9 @@
 extends RefCounted
 
-const NORMAL := Color("#ffffff")
-const MAIN := Color("#9edce8")
-const URGENT := Color("#ffbd70")
-const EXPIRED := Color("#ff8787")
+const NORMAL := preload("res://scripts/ui/wasteland_theme.gd").TEXT
+const MAIN := preload("res://scripts/ui/wasteland_theme.gd").ACCENT
+const URGENT := preload("res://scripts/ui/wasteland_theme.gd").WARNING
+const EXPIRED := preload("res://scripts/ui/wasteland_theme.gd").DANGER
 
 static func title(definition: String) -> String:
 	return {"main_1":"调查郊区中继", "main_2":"恢复外界通信", "daily_kill":"清理感染者", "daily_scrap":"提交废料"}.get(definition, "委托")

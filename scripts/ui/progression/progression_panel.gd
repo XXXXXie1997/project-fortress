@@ -17,7 +17,7 @@ func _ready():
  var scroll:=ScrollContainer.new();scroll.custom_minimum_size=Vector2(1120,584);box.add_child(scroll)
  rows=VBoxContainer.new();rows.size_flags_horizontal=Control.SIZE_EXPAND_FILL;scroll.add_child(rows)
  var frame=preload("res://scripts/ui/wasteland_theme.gd").box("panel_normal").duplicate()
- for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:frame.set_content_margin(side,24)
+ for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:frame.set_content_margin(side,preload("res://scripts/ui/wasteland_theme.gd").PANEL_PADDING)
  box.add_theme_stylebox_override("panel",frame)
  visible=false
 func at_base()->bool:
@@ -50,7 +50,7 @@ func _process(_dt):
 func label(text:String)->Label:
  var item:=Label.new();item.text=text;rows.add_child(item);return item
 func button(text:String,callback:Callable):
- var item:=Button.new();item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.text=text;bind_button(item,callback);rows.add_child(item);return item
+ var item:=Button.new();item.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT;item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.text=text;bind_button(item,callback);rows.add_child(item);return item
 func result(ok:bool):
  refresh();feedback.text='已提交' if ok else '条件不足或状态已变化，未提交'
  if ok:
@@ -62,7 +62,7 @@ func refresh():
  var s:Dictionary=actor.arena.state
  var inv:InventoryService=actor.arena.inventory
  var growth:PlayerGrowth=actor.growth_bridge.growth
- var heading=label({'talents':'个人天赋','technology':'科技终端','quests':'任务记录'}.get(mode,'成长与基地终端'));heading.add_theme_font_size_override('font_size',32)
+ var heading=label({'talents':'个人天赋','technology':'科技终端','quests':'任务记录'}.get(mode,'成长与基地终端'));heading.add_theme_font_size_override('font_size',preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE)
  var close_button=button('关闭 [Esc]',close);close_button.size_flags_horizontal=Control.SIZE_SHRINK_END;close_button.custom_minimum_size=Vector2(100,36)
  preload('res://scripts/ui/reference_layout.gd').header(rows,heading,close_button,'世界仍在运行 / '+{'talents':'分配天赋点','technology':'基地科技与升级','quests':'主线与每日委托'}.get(mode,''))
  if mode=='talents':
@@ -72,8 +72,8 @@ func refresh():
   for id in growth.config.nodes:
    var node:Dictionary=growth.config.nodes[id]
    for required in node.requires:
-    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(160,100),positions[id]+Vector2(160,0)]);line.width=3;line.default_color=Color("c5a065");surface.add_child(line)
-   var item:=Button.new();item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(320,100);item.text='%s\n%d / %d'%[names[id],g.ranks.get(id,0),node.max_rank];bind_button(item,invest.bind(id));surface.add_child(item)
+    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(160,100),positions[id]+Vector2(160,0)]);line.width=3;line.default_color=preload("res://scripts/ui/wasteland_theme.gd").ACCENT;surface.add_child(line)
+   var item:=Button.new();item.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT;item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(320,100);item.text='%s\n%d / %d'%[names[id],g.ranks.get(id,0),node.max_rank];bind_button(item,invest.bind(id));surface.add_child(item)
   label('潜行只减警觉积累；应激只在实际生命损失后触发，重复刷新不叠加。')
   var reset_button=button('基地洗点：预览费用',func():
    var quote:=growth.preview_reset(s,at_base())
@@ -89,8 +89,8 @@ func refresh():
   for id in tech.config.nodes:
    var node:Dictionary=tech.config.nodes[id]
    for required in node.requires:
-    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(160,70),positions[id]+Vector2(160,0)]);line.width=3;line.default_color=Color("c5a065");surface.add_child(line)
-   var item:=Button.new();item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(330,80)
+    var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(160,70),positions[id]+Vector2(160,0)]);line.width=3;line.default_color=preload("res://scripts/ui/wasteland_theme.gd").ACCENT;surface.add_child(line)
+   var item:=Button.new();item.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT;item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(330,80)
    item.text='%s\n能源%s · %s\n%s'%[names.get(id,id),node.energy,materials(node.materials),'已解锁' if s.base.get('technology',{}).has(id) else '解锁']
    bind_button(item,unlock.bind(id));surface.add_child(item)
   var building_config:Dictionary=JSON.parse_string(FileAccess.get_file_as_string('res://data/buildings.json'))

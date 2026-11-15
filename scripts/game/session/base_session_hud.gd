@@ -10,8 +10,8 @@ func _ready():
 	loss_warning.size=Vector2(550,60)
 	loss_warning.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	loss_warning.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	loss_warning.add_theme_color_override("font_color",Color("#ffb07b"))
-	loss_warning.add_theme_font_size_override("font_size",22)
+	loss_warning.add_theme_color_override("font_color",preload("res://scripts/ui/wasteland_theme.gd").WARNING)
+	loss_warning.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_SECTION)
 	loss_warning.add_theme_color_override("font_shadow_color",Color.BLACK)
 	loss_warning.add_theme_constant_override("shadow_offset_x",2)
 	loss_warning.add_theme_constant_override("shadow_offset_y",2)

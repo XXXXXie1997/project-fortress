@@ -34,19 +34,19 @@ func _ready() -> void:
 	root_panel=PanelContainer.new()
 	preload("res://scripts/ui/wasteland_theme.gd").apply(root_panel)
 	var frame=preload("res://scripts/ui/wasteland_theme.gd").box("panel_normal").duplicate()
-	for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:frame.set_content_margin(side,24)
+	for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:frame.set_content_margin(side,preload("res://scripts/ui/wasteland_theme.gd").PANEL_PADDING)
 	root_panel.add_theme_stylebox_override("panel",frame)
 	root_panel.position=Vector2(56,44)
 	root_panel.size=Vector2(1120,584)
 	add_child(root_panel)
 	scroll=ScrollContainer.new();scroll.custom_minimum_size=Vector2(1120,584);root_panel.add_child(scroll)
 	content=VBoxContainer.new();content.size_flags_horizontal=Control.SIZE_EXPAND_FILL;scroll.add_child(content)
-	message=Label.new();message.position=Vector2(400,8);message.size=Vector2(380,60);message.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;add_child(message)
+	message=Label.new();preload("res://scripts/ui/wasteland_theme.gd").apply(message);message.position=Vector2(400,8);message.size=Vector2(380,60);message.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;add_child(message)
 	inventory_panel=InventoryPanel.new();inventory_panel.bind_state(state,services.inventory);add_child(inventory_panel)
 	inventory_energy=Label.new()
 	inventory_energy.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	var inventory_content:Node=inventory_panel.get_child(0)
-	inventory_content.add_child(inventory_energy);inventory_content.move_child(inventory_energy,1);inventory_energy.position=Vector2(16,56)
+	var inventory_content:Node=inventory_panel.loot_panel
+	inventory_content.add_child(inventory_energy);inventory_energy.position=Vector2(12,12)
 	resource_status=Label.new();resource_status.position=Vector2(340,38);resource_status.set_meta("backdrop_rect",Rect2(-60,-14,300,62));add_child(resource_status)
 	preload("res://scripts/ui/hud_backdrop.gd").attach(resource_status)
 	var energy_icon:=TextureRect.new();energy_icon.texture=load("res://assets/runtime/ui/wasteland/icon_energy.png");energy_icon.position=Vector2(-44,2);energy_icon.size=Vector2(32,32);energy_icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;energy_icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;resource_status.add_child(energy_icon)
@@ -58,7 +58,7 @@ func _ready() -> void:
 		if action.is_valid():action.call())
 	show_buildings()
 func button(label: String, callback: Callable, parent: Node = null) -> Button:
-	var b:=Button.new();b.text=label;b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;b.custom_minimum_size.y=40
+	var b:=Button.new();b.text=label;b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;b.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT
 	(parent if parent!=null else content).add_child(b);b.pressed.connect(callback);return b
 func clear(title: String) -> void:
 	root_panel.show()
@@ -108,7 +108,7 @@ func show_production(id: String) -> void:
 	clear("工作站 / 制作")
 	content.set_meta("reference_custom",true)
 	var layout=preload("res://scripts/ui/reference_layout.gd")
-	var strip:=HBoxContainer.new();strip.add_theme_constant_override("separation",24);content.add_child(strip)
+	var strip:=HBoxContainer.new();strip.add_theme_constant_override("separation",preload("res://scripts/ui/wasteland_theme.gd").GAP_SECTION);content.add_child(strip)
 	var recipes=layout.column(strip,296)
 	var recipe_rows:VBoxContainer=recipes
 	var detail=layout.column(strip,440)
@@ -121,7 +121,7 @@ func show_production(id: String) -> void:
 		if recipe==selected_recipe:choice.add_theme_stylebox_override("normal",preload("res://scripts/ui/wasteland_theme.gd").box("button_selected"))
 	var recipe_id:=selected_recipe
 	var r:Dictionary=services.production.recipes[recipe_id]
-	var name_label:=Label.new();name_label.text=definition_name(r.output.keys()[0]);name_label.add_theme_font_size_override("font_size",28);detail.add_child(name_label)
+	var name_label:=Label.new();name_label.text=definition_name(r.output.keys()[0]);name_label.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_SECTION);detail.add_child(name_label)
 	var art:=TextureRect.new();art.texture=preload("res://scripts/art/fortress_art.gd").item_icon(r.output.keys()[0]);art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;art.custom_minimum_size=Vector2(80,80);detail.add_child(art)
 	var quantity:=SpinBox.new();quantity.min_value=1;quantity.max_value=99;detail.add_child(quantity)
 	var cost:=Label.new();cost.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;detail.add_child(cost)
@@ -183,7 +183,7 @@ func show_trade() -> void:
 	var net:=0
 	for side in ["sell","buy"]:
 		var half:=VBoxContainer.new();half.custom_minimum_size.x=548;columns.add_child(half)
-		var header:=Label.new();header.text="我方 · 出售" if side=="sell" else "商人 · 购买 / 当日回购";half.add_child(header)
+		var header:=Label.new();header.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_SECTION);header.text="我方 · 出售" if side=="sell" else "商人 · 购买 / 当日回购";half.add_child(header)
 		var pair:=HBoxContainer.new();half.add_child(pair)
 		var available:=trade_column(pair)
 		var basket_view:=trade_column(pair)
@@ -207,7 +207,7 @@ func show_trade() -> void:
 				row.tooltip_text="品质%s · 耐久%s · 电量%s/%s\n%s" % [item.quality,item.durability,item.energy,item.capacity,"当日原价回购" if location=="buyback" else "价格不受电量影响"]
 				if item.id in basket:net+=price if side=="sell" else -price
 	var summary:=Label.new();summary.text="卖出 %d 件 / 买入 %d 件  净能源 %+d · 当前 %.0f / %.0f" % [sell_basket.size(),buy_basket.size(),net,state.base.energy_store.energy,state.base.energy_store.capacity];content.add_child(summary)
-	var actions:=HBoxContainer.new();actions.add_theme_constant_override("separation",16);content.add_child(actions)
+	var actions:=HBoxContainer.new();actions.add_theme_constant_override("separation",preload("res://scripts/ui/wasteland_theme.gd").GAP);content.add_child(actions)
 	button("送到："+("仓库" if target=="warehouse" else "背包"),func():target="bag" if target=="warehouse" else "warehouse";show_trade(),actions)
 	button("统一成交",func():commit_trade(false),actions)
 	button("清空两篮",func():sell_basket.clear();buy_basket.clear();show_trade(),actions)
@@ -267,6 +267,8 @@ func _process(_dt: float) -> void:
 	for b:Dictionary in state.base.buildings.values():
 		if b.type=="warehouse":station_active=b.durability>0
 	resource_status.text="基地能源  %.0f / %.0f\n无线充能站 / %s" % [state.base.energy_store.energy,state.base.energy_store.capacity,"运行中" if station_active else "废墟停用"]
+	inventory_energy.position=Vector2(12,inventory_panel.loot_panel.size.y-32)
+	inventory_energy.visible=inventory_panel.remote_location()=="warehouse"
 	inventory_energy.text="基地能源 %.1f / %.0f · 仓库 %d×%d" % [state.base.energy_store.energy,state.base.energy_store.capacity,state.containers.warehouse.width,state.containers.warehouse.height]
 	resource_status.visible=not presentation_obscured and not inventory_panel.visible and not root_panel.visible
 	message.visible=not presentation_obscured and not feedback_obscured and not inventory_panel.visible

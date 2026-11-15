@@ -68,7 +68,7 @@ func _ready() -> void:
 	loot_panel=Panel.new();loot_panel.position=Vector2(628,64);loot_panel.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(loot_panel)
 	loot_take=button(loot_panel,"全部拾取",func():exploration.take_all(state,box_id);refresh())
 	tabs = HBoxContainer.new()
-	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",32);root.add_child(heading);heading.position=Vector2(16,12)
+	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE);root.add_child(heading);heading.position=Vector2(24,24)
 	root.add_child(tabs);tabs.position=Vector2(310,66)
 	for location in ["bag","warehouse","equipment"]:
 		tabs_by_source[location]=button(tabs,{"bag":"背包","warehouse":"仓库","equipment":"已装备"}[location],func():
@@ -81,25 +81,27 @@ func _ready() -> void:
 				refresh())
 	button(tabs,"整理",func(): inventory.sort_container(state,source); refresh())
 	button(tabs,"旋转选中 (R)",func(): rotated=not rotated; refresh())
-	button(tabs,"仓库左右分页",func(): warehouse_page=12 if warehouse_page==0 else 0; refresh())
+	button(tabs,"翻页",func(): warehouse_page=12 if warehouse_page==0 else 0; refresh())
 	button(tabs,"关闭 Esc",close_panel)
 	info = Label.new()
 	root.add_child(info);info.position=Vector2(302,350)
 	weight_bar=ProgressBar.new();weight_bar.position=Vector2(302,376);weight_bar.show_percentage=false;weight_bar.size=Vector2(264,8);root.add_child(weight_bar)
-	var fill:=StyleBoxFlat.new();fill.bg_color=Color("c5a065");weight_bar.add_theme_stylebox_override("fill",fill)
+	var fill:=StyleBoxFlat.new();fill.bg_color=preload("res://scripts/ui/wasteland_theme.gd").ACCENT;weight_bar.add_theme_stylebox_override("fill",fill)
 	feedback=Label.new()
-	feedback.modulate=Color("#f0ba7a")
+	feedback.add_theme_color_override("font_color",preload("res://scripts/ui/wasteland_theme.gd").WARNING)
 	root.add_child(feedback);feedback.position=Vector2(16,570)
 	var body := Control.new()
 	root.add_child(body)
 	for line_rect in [Rect2(16,64,584,1),Rect2(16,106,240,1),Rect2(302,106,290,1),Rect2(16,480,584,1)]:
 		var line:=ColorRect.new();line.position=line_rect.position;line.size=line_rect.size;line.color=Color("4b504b");line.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(line)
 		if line_rect.position.y==480:footer_line=line
-	button(root,"关闭",close_panel).position=Vector2(540,10)
-	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(506,66);sort_bag_button.custom_minimum_size.y=28;sort_bag_button.size=Vector2(90,28)
-	sort_warehouse_button=button(root,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh());sort_warehouse_button.position=Vector2(640,496)
+	button(root,"关闭",close_panel).position=Vector2(540,24)
+	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(506,66);sort_bag_button.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").COMPACT_HEIGHT;sort_bag_button.size=Vector2(90,28)
+	sort_warehouse_button=button(loot_panel,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh());sort_warehouse_button.position=Vector2(640,496)
 	for data in [["装备",Vector2(16,76)],["额外装备 / 4个通用槽",Vector2(16,450)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
-		var caption:=Label.new();caption.text=data[0];caption.position=data[1];caption.add_theme_color_override("font_color",Color("a6aaa0"));root.add_child(caption)
+		var caption:=Label.new();caption.text=data[0];caption.position=data[1];caption.add_theme_color_override("font_color",preload("res://scripts/ui/wasteland_theme.gd").MUTED);root.add_child(caption)
+		caption.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_SECTION if data[0]=="装备" else preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION)
+		if data[0]=="装备":caption.add_theme_color_override("font_color",preload("res://scripts/ui/wasteland_theme.gd").TEXT)
 		if data[0].begins_with("双击"):usage_caption=caption
 	grid = Control.new()
 	grid.position=Vector2(302,94);grid.size=Vector2(834,384)
@@ -124,7 +126,7 @@ func _ready() -> void:
 func button(parent: Node, text: String, callback: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y=36
+	b.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT
 	parent.add_child(b)
 	b.pressed.connect(callback)
 	b.button_down.connect(func(): held_button=b)
@@ -198,9 +200,11 @@ func refresh() -> void:
 		return
 	var counts: Array = []
 	for n in range(6): counts.append(str(n+1)+":"+str(inventory.quick_count(state,n)))
-	info.modulate = Color("#ef8d75") if inventory.weight(state,"bag") > state.containers.bag.maximum_weight * 0.8 else Color.WHITE
+	info.add_theme_color_override("font_color",preload("res://scripts/ui/wasteland_theme.gd").WARNING if inventory.weight(state,"bag") > state.containers.bag.maximum_weight * 0.8 else preload("res://scripts/ui/wasteland_theme.gd").TEXT)
 	info.text = "负重  %.1f / %.1f kg" % [inventory.weight(state,"bag"),state.containers.bag.maximum_weight]
 	tabs.visible=selector_callback.is_valid()
+	for child in tabs.get_children():child.visible=child in tabs_by_source.values() or (child is Button and child.text=="翻页" and source=="warehouse" and int(state.containers.warehouse.width)>12)
+	tabs.position=Vector2(302,66)
 	binding_row.visible=not selected.is_empty()
 	weight_bar.max_value=state.containers.bag.maximum_weight;weight_bar.value=inventory.weight(state,"bag");weight_bar.size=Vector2(264,8)
 	detail_scroll.visible=not selected.is_empty() or selector_callback.is_valid()
@@ -289,10 +293,13 @@ func refresh() -> void:
 	loot_take.visible=not box_id.is_empty()
 	if loot_panel.visible:
 		var c:Dictionary=state.containers.get(remote_location(),{"width":6,"height":4})
-		loot_panel.size=Vector2(maxi(280,int(c.width)*40+24),mini(8,int(c.height))*40+82)
-		loot_take.custom_minimum_size.y=28
+		loot_panel.size=Vector2(maxi(280,int(c.width)*40+24),mini(8,int(c.height))*40+(114 if remote_location()=="warehouse" else 82))
+		loot_take.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").COMPACT_HEIGHT
 		loot_take.position=Vector2(loot_panel.size.x-116,2)
 		loot_take.size=Vector2(104,28)
+		sort_warehouse_button.position=loot_take.position
+		sort_warehouse_button.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").COMPACT_HEIGHT
+		sort_warehouse_button.size=loot_take.size
 	layout_inventory_content()
 	arrange_equipment()
 	grid.queue_redraw()
@@ -302,6 +309,7 @@ func display_name(id: String) -> String:
 	return {"rifle_basic":"步枪","medical_needle":"医疗针","battery_basic":"电池","backpack_small":"小背包","knife_basic":"短刀","armor_basic":"护甲","scrap":"废料","nightvision":"夜视镜","exoskeleton":"外骨骼","aim_assist":"辅助瞄准"}.get(d,inventory.definitions[d].get("display_name","物资"))
 
 func remote_location() -> String:
+	if selector_callback.is_valid():return ""
 	if not external_container.is_empty(): return external_container
 	if not box_id.is_empty() and exploration != null: return exploration.box(state,box_id).get("container_id","")
 	return "warehouse" if at_base else ""
@@ -330,21 +338,22 @@ func concealed_item(id: String) -> bool:
 
 func draw_concealed(rect: Rect2, searching: bool) -> void:
 	grid.draw_rect(rect.grow(-2),Color("303634"))
-	grid.draw_rect(rect.grow(-2),Color("c5a065") if searching else Color("656c65"),false,1)
+	grid.draw_rect(rect.grow(-2),preload("res://scripts/ui/wasteland_theme.gd").ACCENT if searching else Color("656c65"),false,1)
 	var center := rect.get_center()
 	if searching:
 		var box: Dictionary = exploration.box(state,box_id)
 		var progress := clampf(float(state.expedition.search.get("elapsed",0.0))/maxf(0.01,box.get("search_seconds",0.5)),0.0,1.0)
 		grid.draw_arc(center,9,0,TAU,24,Color("656c65"),2)
-		if progress>0: grid.draw_arc(center,9,-PI/2,-PI/2+TAU*progress,24,Color("c5a065"),2)
+		if progress>0: grid.draw_arc(center,9,-PI/2,-PI/2+TAU*progress,24,preload("res://scripts/ui/wasteland_theme.gd").ACCENT,2)
 	else:
-		grid.draw_string(theme.default_font,center+Vector2(-5,6),"?",HORIZONTAL_ALIGNMENT_LEFT,16,18,Color("a6aaa0"))
+		grid.draw_string(theme.default_font,center+Vector2(-5,6),"?",HORIZONTAL_ALIGNMENT_LEFT,16,preload("res://scripts/ui/wasteland_theme.gd").FONT_BODY,preload("res://scripts/ui/wasteland_theme.gd").MUTED)
 
 func item_rect(item: Dictionary, location: String, right: bool) -> Rect2:
 	var pos := Vector2(item.cell[0]-(warehouse_page if location=="warehouse" else 0),item.cell[1])*cell_size(right)
 	if location == "equipment":
 		var index: int = visible_items(location).find(item)
-		pos=Vector2((index%3)*132,(index/3)*100)
+		pos=Vector2((index%3)*100,int(index/3)*80)
+		return Rect2(pos+Vector2(338 if right else 0,28),Vector2(92,72))
 	return Rect2(pos+Vector2(338 if right else 0,28),Vector2(inventory.dimensions(item))*cell_size(right))
 
 func draw_grid() -> void:
@@ -353,10 +362,11 @@ func draw_grid() -> void:
 		var location: String = remote_location() if right else source
 		if location.is_empty(): continue
 		var origin := Vector2(338 if right else 0,28)
-		grid.draw_string(theme.default_font,origin-Vector2(0,32),"战利品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,18)
+		if not (selector_callback.is_valid() and not right):
+			grid.draw_string(theme.default_font,origin-Vector2(0,32),"战利品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,preload("res://scripts/ui/wasteland_theme.gd").FONT_SECTION,preload("res://scripts/ui/wasteland_theme.gd").TEXT)
 		var c: Dictionary = state.containers.get(location,{"width":8,"height":8})
-		for y in range(mini(8,maxi(1,int(c.height)))):
-			for x in range(mini(12 if right else 8,maxi(1,int(c.width)))):
+		for y in range(0 if location=="equipment" else mini(8,maxi(1,int(c.height)))):
+			for x in range(mini(12,maxi(1,int(c.width)))):
 				grid.draw_rect(Rect2(origin+Vector2(x,y)*cell_size(right),Vector2.ONE*cell_size(right)),Color("#4b504b"),false)
 		var search_started := false
 		for item: Dictionary in displayed_items(location):
@@ -372,7 +382,7 @@ func draw_grid() -> void:
 				grid.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 				grid.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-32)*.5,8),Vector2(32,32)),false)
 
-			grid.draw_string(theme.default_font,rect.position+Vector2(3,rect.size.y-6),str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else ""),HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-4,14)
+			grid.draw_string(theme.default_font,rect.position+Vector2(3,rect.size.y-6),str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else ""),HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-4,preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION,preload("res://scripts/ui/wasteland_theme.gd").TEXT)
 	if selected != "" and state.items.has(selected) and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		var point := grid.get_local_mouse_position()
 		var right: bool = point.x >= 338
@@ -555,11 +565,11 @@ func drop_equipment(id: String, slot: String, confirmed: bool = false) -> void:
 
 func cell_size(right:bool)->int:
 	if right:return 40
-	return mini(48,int(296.0/maxi(1,int(state.containers.get(source,{"width":6}).width))))
+	return mini(48,int(296.0/clampi(int(state.containers.get(source,{"width":6}).width),1,12)))
 
 func layout_inventory_content():
 	var rows:int=mini(8,int(state.containers.get(source,{"height":4}).height))
-	var grid_bottom:float=grid.position.y+28+rows*cell_size(false)
+	var grid_bottom:float=grid.position.y+28+(ceili(visible_items(source).size()/3.0)*80 if source=="equipment" else rows*cell_size(false))
 	info.position.y=grid_bottom+14
 	weight_bar.position.y=grid_bottom+40
 	weight_bar.size.x=mini(296,int(state.containers.get(source,{"width":6}).width)*cell_size(false))

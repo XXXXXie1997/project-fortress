@@ -3,6 +3,7 @@ var arena: Node2D
 var candidate_id := ""
 var label := Label.new()
 func _ready():
+	preload("res://scripts/ui/wasteland_theme.gd").apply(label)
 	var visual = load("res://scripts/art/survivor_visual.gd").new()
 	visual.scale = Vector2(2,2); add_child(visual)
 	label.position = Vector2(-45,-65); add_child(label)
