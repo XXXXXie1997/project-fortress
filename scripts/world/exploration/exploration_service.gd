@@ -117,14 +117,17 @@ func open_search(s: Dictionary, id: String) -> bool:
  # persistent cells once, retaining IDs, quantities and revealed state.
  var cid: String = box(s,id).container_id
  var container: Dictionary = s.containers[cid]
- if int(container.width)==0 and int(container.height)==0:
+ if box(s,id).get("grid_layout_version",0)<2:
   var contents := inventory.items_in(s,cid)
   var rows := 0
-  var columns := 12
+  var dimensions := [6,4]
+  for definition: Dictionary in maps[s.expedition.map_id].get("containers",[]):
+   if definition.id==id:dimensions=definition.get("grid_size",dimensions);break
+  var columns := int(dimensions[0])
   for item: Dictionary in contents:
    var size := inventory.dimensions(item)
    columns=maxi(columns,size.x);rows+=size.y
-  container.width=columns;container.height=maxi(8,rows)
+  container.width=columns;container.height=maxi(int(dimensions[1]),rows)
   for item: Dictionary in contents:item.container_id="pending_loot_layout"
   for item: Dictionary in contents:
    for y in range(container.height):
@@ -133,6 +136,10 @@ func open_search(s: Dictionary, id: String) -> bool:
      if inventory.fits(s,item,cid,Vector2i(x,y)):
       item.container_id=cid;item.cell=[x,y];placed=true;break
     if placed:break
+  var used_rows := int(dimensions[1])
+  for item: Dictionary in contents:used_rows=maxi(used_rows,int(item.cell[1])+inventory.dimensions(item).y)
+  container.height=used_rows
+  box(s,id).grid_layout_version=2
  s.expedition.search = {"box_id":id,"elapsed":0.0}
  return true
 func close_search(s: Dictionary) -> void:

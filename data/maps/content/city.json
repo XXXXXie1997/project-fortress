@@ -356,7 +356,11 @@
           "quantity": 1
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        6,
+        4
+      ]
     },
     {
       "id": "market_stock",
@@ -370,7 +374,11 @@
           "quantity": 15
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        6,
+        4
+      ]
     },
     {
       "id": "apartment_key",
@@ -385,7 +393,11 @@
           "door_key": "city:radio"
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        4,
+        3
+      ]
     },
     {
       "id": "garage_stock",
@@ -403,7 +415,11 @@
           "quantity": 2
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        6,
+        4
+      ]
     },
     {
       "id": "radio_vault",
@@ -421,7 +437,11 @@
           "quantity": 3
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        8,
+        6
+      ]
     },
     {
       "id": "botanical_lab",
@@ -439,7 +459,11 @@
           "quantity": 2
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        6,
+        4
+      ]
     },
     {
       "id": "market_seeds",
@@ -453,7 +477,11 @@
           "quantity": 4
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        6,
+        4
+      ]
     }
   ],
   "doors": {

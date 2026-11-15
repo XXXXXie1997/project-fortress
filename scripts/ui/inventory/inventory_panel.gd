@@ -19,6 +19,9 @@ var exploration: ExplorationService
 var box_id := ""
 var selected := ""
 var rotated := false
+var loot_panel: Panel
+var loot_take: Button
+var left_panel: Panel
 var grid: Control
 var source := "bag"
 var at_base := true:
@@ -58,6 +61,10 @@ func _ready() -> void:
 	size = Vector2(1168,632)
 	var root := Control.new()
 	add_child(root)
+	add_theme_stylebox_override("panel",StyleBoxEmpty.new())
+	left_panel=Panel.new();left_panel.size=Vector2(620,632);left_panel.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(left_panel)
+	loot_panel=Panel.new();loot_panel.position=Vector2(628,64);loot_panel.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(loot_panel)
+	loot_take=button(loot_panel,"全部拾取",func():exploration.take_all(state,box_id);refresh())
 	tabs = HBoxContainer.new()
 	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",32);root.add_child(heading);heading.position=Vector2(16,12)
 	root.add_child(tabs);tabs.position=Vector2(310,66)
@@ -83,21 +90,21 @@ func _ready() -> void:
 	root.add_child(feedback);feedback.position=Vector2(16,570)
 	var body := Control.new()
 	root.add_child(body)
-	for line_rect in [Rect2(16,88,1120,1),Rect2(16,138,240,1),Rect2(302,138,240,1),Rect2(640,138,240,1),Rect2(16,552,1120,1)]:
+	for line_rect in [Rect2(16,64,584,1),Rect2(16,106,240,1),Rect2(302,106,290,1),Rect2(16,552,584,1)]:
 		var line:=ColorRect.new();line.position=line_rect.position;line.size=line_rect.size;line.color=Color("4b504b");line.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(line)
-	button(root,"关闭",close_panel).position=Vector2(1072,10)
+	button(root,"关闭",close_panel).position=Vector2(540,10)
 	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(442,458)
 	sort_warehouse_button=button(root,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh());sort_warehouse_button.position=Vector2(640,496)
-	for data in [["装备",Vector2(16,108)],["额外装备 / 4个通用槽",Vector2(16,528)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
+	for data in [["装备",Vector2(16,76)],["额外装备 / 4个通用槽",Vector2(16,528)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
 		var caption:=Label.new();caption.text=data[0];caption.position=data[1];caption.add_theme_color_override("font_color",Color("a6aaa0"));root.add_child(caption)
 	grid = Control.new()
-	grid.position=Vector2(302,126);grid.size=Vector2(834,352)
+	grid.position=Vector2(302,94);grid.size=Vector2(834,384)
 	body.add_child(grid)
 	grid.draw.connect(draw_grid)
 	grid.gui_input.connect(grid_input)
 	listing = VBoxContainer.new()
 	detail_scroll=ScrollContainer.new();detail_scroll.position=Vector2(302,458);detail_scroll.size=Vector2(302,100);detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;body.add_child(detail_scroll);detail_scroll.add_child(listing)
-	equipment_layout=Control.new();equipment_layout.position=Vector2(16,154);body.add_child(equipment_layout)
+	equipment_layout=Control.new();equipment_layout.position=Vector2(16,122);body.add_child(equipment_layout)
 	listing.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var quick := HBoxContainer.new();binding_row=quick
 	root.add_child(quick);quick.position=Vector2(302,570)
@@ -192,7 +199,7 @@ func refresh() -> void:
 	tabs.visible=selector_callback.is_valid()
 	binding_row.visible=not selected.is_empty()
 	weight_bar.max_value=state.containers.bag.maximum_weight;weight_bar.value=inventory.weight(state,"bag");weight_bar.size=Vector2(264,8)
-	detail_scroll.visible=not selected.is_empty() or selector_callback.is_valid() or not box_id.is_empty()
+	detail_scroll.visible=not selected.is_empty() or selector_callback.is_valid()
 	sort_bag_button.visible=not detail_scroll.visible
 	sort_warehouse_button.visible=at_base and box_id.is_empty()
 	for location in tabs_by_source: tabs_by_source[location].visible=location!="warehouse" or at_base
@@ -274,12 +281,14 @@ func refresh() -> void:
 			charge_button.disabled=plugin.energy>=plugin.capacity
 			row.button=charge_button
 	if not selected.is_empty():button(listing,"清除选择",func(): selected=""; refresh())
-	if not box_id.is_empty() and exploration != null:
-		var box: Dictionary = exploration.box(state,box_id)
-		button(listing,"全部拾取已揭示",func(): exploration.take_all(state,box_id); refresh())
-		for id: String in box.get("revealed",[]):
-			if state.items.has(id) and state.items[id].container_id == box.container_id:
-				button(listing,"拾取 "+display_name(id),func(): exploration.pickup(state,box_id,id); refresh())
+	loot_panel.visible=not remote_location().is_empty()
+	loot_take.visible=not box_id.is_empty()
+	if loot_panel.visible:
+		var c:Dictionary=state.containers.get(remote_location(),{"width":6,"height":4})
+		loot_panel.size=Vector2(maxi(280,int(c.width)*40+24),mini(8,int(c.height))*40+82)
+		loot_take.custom_minimum_size.y=28
+		loot_take.position=Vector2(loot_panel.size.x-116,2)
+		loot_take.size=Vector2(104,28)
 	arrange_equipment()
 	grid.queue_redraw()
 func display_name(id: String) -> String:
@@ -339,7 +348,7 @@ func draw_grid() -> void:
 		var location: String = remote_location() if right else source
 		if location.is_empty(): continue
 		var origin := Vector2(338 if right else 0,28)
-		grid.draw_string(theme.default_font,origin-Vector2(0,32),"搜刮 · 逐件搜索" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,18)
+		grid.draw_string(theme.default_font,origin-Vector2(0,32),"战利品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,18)
 		var c: Dictionary = state.containers.get(location,{"width":8,"height":8})
 		for y in range(mini(8,maxi(1,int(c.height)))):
 			for x in range(mini(12 if right else 8,maxi(1,int(c.width)))):

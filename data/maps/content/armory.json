@@ -252,7 +252,11 @@
           "quantity": 1
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        6,
+        4
+      ]
     },
     {
       "id": "workbench",
@@ -270,7 +274,11 @@
           "quantity": 1
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        6,
+        4
+      ]
     },
     {
       "id": "locker_key",
@@ -285,7 +293,11 @@
           "door_key": "armory:vault"
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        4,
+        3
+      ]
     },
     {
       "id": "sealed_rack",
@@ -307,7 +319,11 @@
           "quantity": 2
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        6,
+        4
+      ]
     },
     {
       "id": "loading_crate",
@@ -321,7 +337,11 @@
           "quantity": 12
         }
       ],
-      "search_seconds": 0.6
+      "search_seconds": 0.6,
+      "grid_size": [
+        6,
+        4
+      ]
     }
   ],
   "doors": {
