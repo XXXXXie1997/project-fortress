@@ -22,7 +22,7 @@ func run():
 	await click(panel.slot_buttons.weapon_1.get_global_transform_with_canvas()*(panel.slot_buttons.weapon_1.size*.5),false)
 	assert(s.player.equipment.weapon_1==gun.id)
 	await click(panel.slot_buttons.weapon_1.get_global_transform_with_canvas()*(panel.slot_buttons.weapon_1.size*.5),true)
-	await click(panel.grid.get_global_transform_with_canvas()*(panel.grid_origin(false)+Vector2(10,74)),false)
+	await click(panel.grid.get_global_transform_with_canvas()*(panel.grid_origin(false)+Vector2(1,65)+Vector2(panel.gesture.grab)),false)
 	assert(s.items[gun.id].container_id=="bag" and s.player.equipment.weapon_1=="")
 	var adapters=load("res://scripts/ui/inventory/consumer_adapters.gd")
 	var product:=inv.spawn(s,"medical_needle","warehouse",5)

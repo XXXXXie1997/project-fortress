@@ -12,8 +12,8 @@ static func setup(p):
  var top:=Panel.new();top.position=Vector2(-16,-16);top.size=Vector2(1280,72);top.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(top);root.move_child(top,1)
  p.reference_ui.header=caption(root,'物资管理',Vector2(16,12))
  p.reference_ui.header.add_theme_font_size_override('font_size',ThemeStyle.FONT_TITLE)
- caption(root,'装备',Vector2(16,264))
- p.reference_ui.left_title=caption(root,'背包',Vector2(16,352))
+ caption(root,'装备',Vector2(16,316))
+ p.reference_ui.left_title=caption(root,'背包',Vector2(16,408))
  p.reference_ui.right_title=caption(root,'仓库',Vector2(832,76))
  p.reference_ui.bind_title=caption(root,'拖动或选择物品 · 绑定快捷栏',Vector2(448,548))
  p.reference_ui.empty=caption(root,'拖动放置 · 双击转移\nR 旋转选中物品',Vector2(448,372))
@@ -49,7 +49,7 @@ static func arrange(p):
  p.weight_bar.position=Vector2(16,104);p.weight_bar.size=Vector2(384,4);p.weight_bar.visible=not selecting
  p.tabs.position=Vector2(16,76)
  for node in p.tabs.get_children():node.visible=node in p.tabs_by_source.values() and (node!=p.tabs_by_source.warehouse or p.at_base)
- p.sort_bag_button.position=Vector2(296,352);p.sort_bag_button.size=Vector2(104,ThemeStyle.COMPACT_HEIGHT)
+ p.sort_bag_button.position=Vector2(296,408);p.sort_bag_button.size=Vector2(104,ThemeStyle.COMPACT_HEIGHT)
  p.reference_ui.left_title.visible=not selecting
  p.reference_ui.right_title.visible=p.loot_panel.visible
  p.reference_ui.right_title.text='战利品' if not p.box_id.is_empty() else ('仓库' if p.remote_location()=='warehouse' else '容器')
@@ -75,8 +75,8 @@ static func arrange(p):
   var index:=int(right)
   var location:String=p.remote_location() if right else p.source
   var dims:Dictionary=p.state.containers.get(location,{'width':6,'height':4})
-  var origin:=Vector2(448,128) if right else Vector2(16,128 if selecting else 392)
-  var height:=minf(512,float(dims.height)*64) if right else (512.0 if selecting else 192.0)
+  var origin:=Vector2(448,128) if right else Vector2(16,128 if selecting else 448)
+  var height:=minf(512,float(dims.height)*64) if right else (512.0 if selecting else 128.0)
   if location=='equipment':height=512
   var width:float=384 if not right or p.detail_scroll.visible else 768
   if right and not p.gesture.is_empty() and p.grid_surfaces[index].size.x>0:width=p.grid_surfaces[index].size.x
@@ -92,13 +92,13 @@ static func equipment(p):
  for i in range(keys.size()):
   if not p.slot_buttons.has(keys[i]):continue
   var b:Button=p.slot_buttons[keys[i]]
-  b.position=Vector2(0,i*48) if i<3 else Vector2((i-3)*64,176)
-  b.custom_minimum_size=Vector2(124,44) if i<3 else Vector2(60,56)
+  b.position=Vector2(0,i*68) if i<3 else Vector2((i-3)*64,232)
+  b.custom_minimum_size=Vector2(192,64) if i<3 else Vector2(60,56)
   b.size=b.custom_minimum_size;b.clip_text=true;b.expand_icon=true;b.add_theme_constant_override('icon_max_width',44)
-  if i>=3:b.text='' if b.icon!=null else '+'
-  else:
-   b.text=str(i+1)+'  '+('—' if b.icon==null else '')
-   weapon_modules(p,b,i)
+  b.text='';b.icon=null
+  if b.get_node_or_null('ItemArt')==null:
+   var art=preload('res://scripts/ui/inventory/equipment_slot_art.gd').new();art.name='ItemArt';art.panel=p;art.slot=keys[i];b.add_child(art)
+  if i<3:weapon_modules(p,b,i)
   b.size=b.custom_minimum_size
 
 
@@ -113,8 +113,8 @@ static func weapon_modules(p,weapon:Button,index:int):
   if card==null:
    card=Panel.new();card.name=name;card.mouse_filter=Control.MOUSE_FILTER_IGNORE;weapon.add_child(card)
    var label:=Label.new();label.name='Name';label.position=Vector2(4,4);label.add_theme_font_size_override('font_size',14);label.mouse_filter=Control.MOUSE_FILTER_IGNORE;card.add_child(label)
-   var icon:=TextureRect.new();icon.name='Icon';icon.position=Vector2(8,8);icon.size=Vector2(44,36);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;card.add_child(icon)
-  card.position=Vector2(128+i*64,0);card.size=Vector2(60,44)
+   var icon:=TextureRect.new();icon.name='Icon';icon.position=Vector2(2,12);icon.size=Vector2(40,40);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;card.add_child(icon)
+  card.position=Vector2(196+i*48,0);card.size=Vector2(44,64)
   var installed:Dictionary=p.state.items.get(item.get('plugins',{}).get(slots[i],''),{})
   card.get_node('Icon').texture=preload('res://scripts/art/fortress_art.gd').item_icon(installed.get('definition_id','')) if not installed.is_empty() else null
   card.get_node('Name').text=['瞄具','枪口','电容','战术'][i] if installed.is_empty() else ''

@@ -212,7 +212,11 @@ func _input(event: InputEvent) -> void:
 			if point.distance_to(gesture.start)>=DRAG_THRESHOLD:gesture.dragging=true
 		if event is InputEventMouseButton:
 			if event.button_index==MOUSE_BUTTON_RIGHT and event.pressed and gesture.get("dragging",false):
+				var held:Dictionary=state.items[gesture.id].duplicate(true);held.rotated=rotated
+				var extent:Vector2=Vector2(inventory.dimensions(held))*cell_size(false)
+				var grab:Vector2=gesture.get('grab',extent*.5)
 				rotated=not rotated
+				gesture.grab=Vector2(extent.y-grab.y,grab.x) if rotated else Vector2(grab.y,extent.x-grab.x)
 				get_viewport().set_input_as_handled();return
 			if event.button_index==MOUSE_BUTTON_LEFT and not event.pressed and gesture.get("dragging",false):
 				suppress_slot_click=true
@@ -307,7 +311,7 @@ func refresh() -> void:
 				if event.pressed and accessible_item(current_id):
 					selected=current_id
 					rotated=state.items[current_id].rotated
-					gesture={"id":current_id,"source":"equipment","cell":state.items[current_id].cell.duplicate(),"start":grid.get_global_transform().affine_inverse() * (slot_button.get_global_transform() * event.position),"dragging":false}
+					gesture={"id":current_id,"source":"equipment","grab":event.position-slot_button.size*.5+Vector2(inventory.dimensions(state.items[current_id]))*cell_size(false)*.5,"cell":state.items[current_id].cell.duplicate(),"start":grid.get_global_transform().affine_inverse() * (slot_button.get_global_transform() * event.position),"dragging":false}
 				elif not event.pressed and not gesture.is_empty():
 					suppress_slot_click=(grid.get_global_transform().affine_inverse() * (slot_button.get_global_transform() * event.position)).distance_to(gesture.start)>=DRAG_THRESHOLD
 					var copy: InputEventMouseButton=event.duplicate()
@@ -438,15 +442,8 @@ func draw_grid_side(right:bool,paint:Control) -> void:
 		var icon:Texture2D=preload('res://scripts/art/fortress_art.gd').item_icon(item.definition_id)
 		if icon!=null:
 			paint.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
-			var extent:=Vector2(minf(48,rect.size.x-8),minf(40,rect.size.y-24))
-			var icon_size:=Vector2(extent.x,minf(extent.y,extent.x*icon.get_height()/icon.get_width()))
-			if item.rotated:
-				var center:Vector2=rect.position+Vector2(rect.size.x*.5,22+icon_size.y*.5)
-				paint.draw_set_transform(center-grid_origin(right),PI*.5)
-				paint.draw_texture_rect(icon,Rect2(-icon_size*.5,icon_size),false)
-				paint.draw_set_transform(-grid_origin(right))
-			else:
-				paint.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-icon_size.x)*.5,22),icon_size),false)
+			preload('res://scripts/ui/inventory/item_visual.gd').draw_icon(paint,icon,rect.get_center()-grid_origin(right),item.rotated)
+			paint.draw_set_transform(-grid_origin(right))
 
 		var item_font:int=preload("res://scripts/ui/pixel_layout.gd").readable_size(paint,14)
 		var title:String=display_name(item.id)
@@ -461,7 +458,7 @@ func draw_grid_side(right:bool,paint:Control) -> void:
 	if not gesture.is_empty() and gesture.get("dragging",false) and accessible_item(gesture.id):
 		var pointer:Vector2=grid.get_global_transform_with_canvas().affine_inverse()*drag_pointer
 		if Rect2(grid_origin(right),paint.size).has_point(pointer):
-			var cell:=Vector2i((pointer-origin)/cell_size(right))
+			var cell:=Vector2i(((pointer-Vector2(gesture.get('grab',Vector2.ZERO))-origin)/cell_size(right)).floor())
 			var preview:Dictionary=state.items[gesture.id].duplicate(true);preview.rotated=rotated
 			var valid:bool=inventory.fits(state,preview,location,cell)
 			var bounds:=Rect2(origin+Vector2(cell)*cell_size(right),Vector2(inventory.dimensions(preview))*cell_size(right)).grow(-2)
@@ -575,7 +572,7 @@ func grid_input(event: InputEvent) -> void:
 					# has no gesture and can never turn into a drag.
 					if location != "equipment": transfer_item(selected,"bag" if right else remote_location())
 				else:
-					gesture={"id":item.id,"source":location,"cell":item.cell.duplicate(),"start":event.position,"dragging":false}
+					gesture={"id":item.id,"source":location,"cell":item.cell.duplicate(),"start":event.position,"grab":event.position-item_rect(item,location,right).position,"dragging":false}
 				break
 	else:
 		var ended: Dictionary = gesture.duplicate(true)
@@ -601,7 +598,7 @@ func grid_input(event: InputEvent) -> void:
 		# A changed/consumed item or a tab/location switch cancels stale drags.
 		if state.items[id].container_id != ended.source or state.items[id].cell != ended.cell: return
 		if not Rect2(Vector2.ZERO,grid.size).has_point(event.position): return
-		var cell := Vector2i((event.position-grid_origin(right)+grid_offset(right))/cell_size(right))
+		var cell := Vector2i(((event.position-Vector2(ended.get('grab',Vector2.ZERO))-grid_origin(right)+grid_offset(right))/cell_size(right)).floor())
 
 		if state.items[id].container_id != location:
 			transfer_item(id,location,cell,true)
