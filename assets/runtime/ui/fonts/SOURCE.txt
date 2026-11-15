@@ -1,0 +1,6 @@
+Noto Sans SC variable font, unmodified.
+Official source: https://github.com/google/fonts/tree/main/ofl/notosanssc
+Downloaded 2026-11-15 from:
+https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf
+License: SIL Open Font License 1.1. See OFL.txt (upstream copyright included).
+UI uses the default regular weight, grayscale antialiasing and native-resolution rasterization.

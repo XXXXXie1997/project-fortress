@@ -12,9 +12,9 @@ static func region(path:String,index:int,cols:int,cell:Vector2i)->AtlasTexture:
 static func item_icon(id:String)->Texture2D:
  if ALIASES.has(id):id=ALIASES[id]
  if id in ['muzzle_basic','muzzle_advanced','capacitor_basic','capacitor_advanced']:
-  return region('res://assets/runtime/items/attachments.png',0 if id.begins_with('muzzle_') else 1,2,Vector2i(20,20))
- if ITEMS.has(id):return region("res://assets/runtime/items/items.png",ITEMS[id],4,Vector2i(20,20))
- if WEAPONS.has(id):return region("res://assets/runtime/weapons/equipment.png",WEAPONS[id],4,Vector2i(24,16))
+  return region('res://assets/runtime/items/hd/items_hd.png',28 if id.begins_with('muzzle_') else 29,8,Vector2i(30,30))
+ if ITEMS.has(id):return region("res://assets/runtime/items/hd/items_hd.png",ITEMS[id],8,Vector2i(30,30))
+ if WEAPONS.has(id):return region("res://assets/runtime/items/hd/items_hd.png",16+WEAPONS[id],8,Vector2i(30,30))
 
  push_warning("ART103 unmapped item: "+id)
  return null

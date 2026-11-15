@@ -22,6 +22,7 @@ var weapon_title:=Label.new()
 var energy_caption:=Label.new()
 var weapon_icon:=Sprite2D.new()
 var tactical_icon:=Sprite2D.new()
+var weapon_slots:=VBoxContainer.new()
 func _ready():
  process_mode=Node.PROCESS_MODE_ALWAYS
  hud_scale=preload("res://scripts/ui/pixel_layout.gd").ui_scale(get_viewport().get_visible_rect().size)
@@ -30,7 +31,7 @@ func _ready():
  var heart:=TextureRect.new();heart.texture=load("res://assets/runtime/ui/wasteland/icon_health.png");heart.position=Vector2(-44,2);heart.size=Vector2(32,32);heart.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;heart.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;label.add_child(heart)
  label.position=Vector2(84,38);label.set_meta("backdrop_rect",Rect2(-60,-14,232,74));label.custom_minimum_size=Vector2(212,58);add_child(label)
  card.position=Vector2(20,625);add_child(card)
- health_bar.position=Vector2(-44,76);health_bar.size=Vector2(190,6);health_bar.show_percentage=false;health_bar.mouse_filter=Control.MOUSE_FILTER_IGNORE;label.add_child(health_bar)
+ health_bar.position=Vector2(-36,44);health_bar.size=Vector2(190,6);health_bar.show_percentage=false;health_bar.mouse_filter=Control.MOUSE_FILTER_IGNORE;label.add_child(health_bar)
  var health_fill:=StyleBoxFlat.new();health_fill.bg_color=Color("9a6558");health_fill.content_margin_top=0;health_fill.content_margin_bottom=0;health_bar.add_theme_stylebox_override("fill",health_fill)
  var health_empty:=StyleBoxFlat.new();health_empty.bg_color=Color("101314");health_empty.content_margin_top=0;health_empty.content_margin_bottom=0;health_bar.add_theme_stylebox_override("background",health_empty)
  toggle.text='冲刺：按一下切换（默认按住）';toggle.position=Vector2(410,460);toggle.toggled.connect(func(value):sprint_toggle=value);add_child(toggle);toggle.hide()
@@ -62,12 +63,30 @@ func _ready():
  preload("res://scripts/ui/keeper_theme.gd").meter(health_bar,"health")
  preload("res://scripts/ui/keeper_theme.gd").meter(weapon_energy_bar,"energy")
  card.add_child(weapon_energy_bar)
- weapon_energy_bar.position=Vector2(0,36);weapon_energy_bar.size=Vector2(220,18)
- label.custom_minimum_size=Vector2(180,44);label.set_meta("backdrop_rect",Rect2(-60,-14,264,132))
- health_bar.position=Vector2(-44,76)
- energy_caption.position=Vector2(0,64)
+ weapon_energy_bar.position=Vector2(0,44);weapon_energy_bar.size=Vector2(220,18)
+ label.custom_minimum_size=Vector2(180,44);label.set_meta("backdrop_rect",Rect2(-52,-12,304,88))
+ health_bar.position=Vector2(-36,44)
+ energy_caption.position=Vector2(0,76)
  for slot_label in quick_slots:
   slot_label.set_meta("backdrop_rect",Rect2(-10,-8,54,88))
+func update_weapon_slots():
+ var viewport_size:=get_viewport().get_visible_rect().size / hud_scale
+ weapon_slots.position=Vector2(32,viewport_size.y-292)
+ weapon_slots.visible=label.visible
+ if weapon_slots.get_parent()==null:
+  add_child(weapon_slots)
+  preload("res://scripts/ui/keeper_theme.gd").apply(weapon_slots)
+  for i in range(3):
+   var row:=HBoxContainer.new();weapon_slots.add_child(row)
+   var icon:=TextureRect.new();icon.custom_minimum_size=Vector2(56,40);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;row.add_child(icon)
+   var caption:=Label.new();caption.custom_minimum_size=Vector2(100,40);row.add_child(caption)
+ for i in range(3):
+  var row=weapon_slots.get_child(i)
+  var id:String=arena.state.player.equipment['weapon_'+str(i+1)]
+  var item:Dictionary=arena.state.items.get(id,{})
+  row.get_child(0).texture=preload('res://scripts/art/fortress_art.gd').item_icon(item.get('definition_id','')) if not item.is_empty() else null
+  row.get_child(1).text=('%d  ·  %d'%[i+1,item.get('energy',0)]) if not item.is_empty() else '%d  —'%(i+1)
+  row.modulate=Color.WHITE if arena.player.slot==i+1 else Color("8c9599")
 func _input(event):
  var management=arena.get('management')
  if management!=null and management.has_method('is_modal_open') and management.is_modal_open():
@@ -111,7 +130,7 @@ func _process(_dt):
  if is_instance_valid(task_tracker):
   var tracked:=QuestPresentation.tracker(arena.state,quest_service)
   if task_tracker.text!=tracked:task_tracker.text=tracked
-  label.text='生命\n%.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
+  label.text='HP %.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
  var weapon:Dictionary=arena.player.item()
  var energy:=0.0
  for i in arena.inventory.items_in(arena.state,'bag'):
@@ -132,8 +151,9 @@ func _process(_dt):
  weapon_title.text=preload('res://scripts/content/catalog.gd').item_name(weapon.get('definition_id',''))
  card.text='%.0f / %.0f'%[weapon.get('energy',0),weapon.get('capacity',0)]
  weapon_energy_bar.max_value=maxf(1,weapon.get('capacity',0));weapon_energy_bar.value=weapon.get('energy',0)
- energy_caption.text='随身电池  %.0f   [R] 充电'%energy
+ energy_caption.text='电池 %.0f · [R] 充电'%energy
  layout_bottom_hud()
+ update_weapon_slots()
 
 
 
@@ -157,11 +177,15 @@ func open_inventory(box_id:String=""):
 
 func layout_bottom_hud():
  var viewport_size:=get_viewport().get_visible_rect().size / hud_scale
- card.position=Vector2(34,viewport_size.y-120);card.set_meta("backdrop_rect",Rect2(-14,-52,360,160))
- weapon_icon.position=Vector2(60,card.position.y-28)
- weapon_icon.scale=Vector2(2.5,2.5)
- tactical_icon.position=Vector2(236,card.position.y-26)
+ label.position=Vector2(68,viewport_size.y-88)
+ label.set_meta("minimal_hud",true)
+ card.set_meta("minimal_hud",true)
+ card.position=Vector2(viewport_size.x-300,viewport_size.y-132);card.set_meta("backdrop_rect",Rect2(-16,-52,300,172))
+ weapon_icon.position=card.position+Vector2(0,-36);weapon_icon.scale=Vector2(2,2)
+ tactical_icon.position=card.position+Vector2(220,-28)
  quick.position=Vector2((viewport_size.x-356)*0.5,viewport_size.y-104)
- if is_instance_valid(mini_widget):mini_widget.position.x=viewport_size.x-236
- if is_instance_valid(task_tracker):task_tracker.position.x=viewport_size.x-232
- charge_title.position=Vector2(maxf(20,viewport_size.x-20-charge_title.get_combined_minimum_size().x),viewport_size.y-76-charge_title.get_combined_minimum_size().y)
+ for widget in [label,card,weapon_title,energy_caption]:
+  widget.add_theme_color_override("font_shadow_color",Color.BLACK);widget.add_theme_constant_override("shadow_offset_x",1);widget.add_theme_constant_override("shadow_offset_y",1)
+ if is_instance_valid(mini_widget):mini_widget.position=Vector2(32,32)
+ if is_instance_valid(task_tracker):task_tracker.position=Vector2(32,224);task_tracker.size.x=300;task_tracker.set_meta('backdrop_rect',Rect2(-8,-8,316,112))
+ charge_title.position=Vector2(viewport_size.x-320,240)

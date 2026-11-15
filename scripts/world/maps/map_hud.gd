@@ -80,7 +80,7 @@ func _input(event):
  if progression!=null and progression.visible and event.is_action_pressed('interact'):
   get_viewport().set_input_as_handled();return
  if event.is_action_pressed('map'):
-  full_map=not full_map;map_view.position=Vector2(80,164) if full_map else Vector2(1044,36);map_view.size=Vector2(1120,460) if full_map else Vector2(200,126);map_view.set_meta('backdrop_rect',Rect2(-24,-120,1168,632) if full_map else Rect2(-12,-12,224,174));map_title.position=Vector2(0,-96) if full_map else Vector2(4,136);map_title.add_theme_font_size_override('font_size',preload("res://scripts/ui/keeper_theme.gd").FONT_TITLE if full_map else preload("res://scripts/ui/keeper_theme.gd").FONT_BODY);map_help.visible=full_map;get_viewport().set_input_as_handled();return
+  full_map=not full_map;map_view.position=Vector2(80,164) if full_map else Vector2(32,32);map_view.size=Vector2(1120,460) if full_map else Vector2(200,126);map_view.set_meta('backdrop_rect',Rect2(-24,-120,1168,632) if full_map else Rect2(-12,-12,224,174));map_title.position=Vector2(0,-96) if full_map else Vector2(4,136);map_title.add_theme_font_size_override('font_size',preload("res://scripts/ui/keeper_theme.gd").FONT_TITLE if full_map else preload("res://scripts/ui/keeper_theme.gd").FONT_BODY);map_help.visible=full_map;get_viewport().set_input_as_handled();return
  if event.is_action_pressed('interact') and not opened and (inventory_panel==null or not inventory_panel.visible):arena.interact();get_viewport().set_input_as_handled();return
  if menu.visible:
   if event.is_action_pressed('cancel') and arena.state.expedition.get('active',false):close_menu()
@@ -94,15 +94,17 @@ func _process(dt):
  hint.size.x=minf(560,get_viewport().get_visible_rect().size.x/hud_scale-80)
  hint.position.x=(get_viewport().get_visible_rect().size.x/hud_scale-hint.size.x)*.5
  hint.position.y=get_viewport().get_visible_rect().size.y/hud_scale-260
- label.text='生命\n%.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
+ label.text='HP %.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
  var near:Dictionary=arena.nearby() if arena.ready_world else {}
  hint.text=('F '+near.get('label','')+'\n' if not near.is_empty() else '')+arena.message
- hint.visible=not full_map
+ hint.visible=not full_map and not hint.text.is_empty()
+ hint.set_meta("minimal_hud",true)
+ hint.add_theme_color_override("font_shadow_color",Color.BLACK);hint.add_theme_constant_override("shadow_offset_y",2)
  map_title.text=arena.catalog.get(arena.state.expedition.get('map_id',''),{}).get('title','区域地图')
  if not arena.state.expedition.get('active',false) and not menu.visible and not opened and (inventory_panel==null or not inventory_panel.visible):show_departure()
  var tracked:=QuestPresentation.tracker(arena.state,arena.services.quests)
  if quest_list.text!=tracked:quest_list.text=tracked
- if not full_map:map_view.position.x=get_viewport().get_visible_rect().size.x/hud_scale-236
+ if not full_map:map_view.position=Vector2(32,32)
  map_title.add_theme_font_override('font',preload('res://scripts/ui/keeper_theme.gd').pixel_font(12))
- quest_list.position.x=get_viewport().get_visible_rect().size.x/hud_scale-232
+ quest_list.position=Vector2(32,224);quest_list.size.x=300;quest_list.set_meta('backdrop_rect',Rect2(-8,-8,316,112))
  map_view.queue_redraw()

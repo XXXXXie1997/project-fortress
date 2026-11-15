@@ -40,7 +40,7 @@ var equipment_layout:Control
 var weight_bar:ProgressBar
 var sort_warehouse_button:Button
 var sort_bag_button:Button
-var binding_row:HBoxContainer
+var binding_row:GridContainer
 var tabs:HBoxContainer
 var detail_scroll:ScrollContainer
 var pending: Callable
@@ -49,6 +49,11 @@ var detail_label: Label
 var detail_id := ""
 var plugin_charge_rows: Array = []
 var warehouse_page := 0
+var reference_ui:Dictionary={}
+var grid_surfaces:Array[Control]=[]
+var grid_hscroll:Array[HScrollBar]=[]
+var grid_vscroll:Array[VScrollBar]=[]
+const ReferenceLayout=preload("res://scripts/ui/inventory/extraction_layout.gd")
 var gesture: Dictionary = {}
 const DRAG_THRESHOLD := 6.0
 var dialog: ConfirmationDialog
@@ -66,7 +71,7 @@ func bind_state(s: Dictionary, inv: InventoryService, exp: ExplorationService = 
 func _ready() -> void:
 	preload("res://scripts/ui/keeper_theme.gd").apply(self)
 	position = Vector2(56,44)
-	size = Vector2(1168,632)
+	size = Vector2(1248,632)
 	var root := Control.new()
 	add_child(root)
 	add_theme_stylebox_override("panel",StyleBoxEmpty.new())
@@ -103,11 +108,11 @@ func _ready() -> void:
 		var line:=ColorRect.new();line.position=line_rect.position;line.size=line_rect.size;line.color=Color("4b504b");line.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(line)
 		if line_rect.position.y==480:footer_line=line
 	var close_button:=button(root,"关闭",close_panel)
-	close_button.position=Vector2(524,24);close_button.size=Vector2(80,44)
+	close_button.position=Vector2(524,20);close_button.size=Vector2(80,48)
 	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh())
 	sort_warehouse_button=button(loot_panel,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh())
 	for compact in [sort_bag_button,sort_warehouse_button,loot_take]:preload("res://scripts/ui/keeper_theme.gd").compact_button(compact)
-	sort_bag_button.position=Vector2(476,76);sort_bag_button.size=Vector2(128,40)
+	sort_bag_button.position=Vector2(476,76);sort_bag_button.size=Vector2(128,44)
 	for tab in tabs.get_children():
 		if tab is Button:preload("res://scripts/ui/keeper_theme.gd").compact_button(tab)
 	for data in [["装备",Vector2(16,76)],["额外装备 / 4个通用槽",Vector2(16,450)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
@@ -116,15 +121,15 @@ func _ready() -> void:
 		if data[0]=="装备":caption.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").TEXT)
 		if data[0].begins_with("双击"):usage_caption=caption
 	grid = Control.new()
-	grid.position=Vector2(302,94);grid.size=Vector2(834,384)
+	grid.position=Vector2(302,94);grid.size=Vector2(934,432)
 	body.add_child(grid)
-	grid.draw.connect(draw_grid)
-	grid.gui_input.connect(grid_input)
+
+
 	listing = VBoxContainer.new()
 	detail_scroll=ScrollContainer.new();detail_scroll.position=Vector2(302,458);detail_scroll.size=Vector2(302,100);detail_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;body.add_child(detail_scroll);detail_scroll.add_child(listing)
 	equipment_layout=Control.new();equipment_layout.position=Vector2(16,122);body.add_child(equipment_layout)
 	listing.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	var quick := HBoxContainer.new();binding_row=quick
+	var quick := GridContainer.new();quick.columns=3;binding_row=quick
 	root.add_child(quick);quick.position=Vector2(302,570)
 	for n in range(6):
 		button(quick,str(n+1),func():
@@ -136,6 +141,7 @@ func _ready() -> void:
 	add_child(dialog)
 	dialog.confirmed.connect(func(): pending.call(); refresh())
 	setup_pixel_tip()
+	ReferenceLayout.setup(self)
 	hide()
 func button(parent: Node, text: String, callback: Callable) -> Button:
 	var b := Button.new()
@@ -206,7 +212,9 @@ func _input(event: InputEvent) -> void:
 func _process(dt: float) -> void:
 	fit_viewport()
 	update_pixel_tip()
-	if visible: update_charge_details()
+	if visible:
+		update_charge_details()
+		for surface in grid_surfaces:surface.queue_redraw()
 	if visible and not box_id.is_empty() and exploration != null:
 		var revealed_before: int = exploration.box(state,box_id).get("revealed",[]).size()
 		exploration.tick_search(state,dt,get_tree().paused)
@@ -331,7 +339,7 @@ func refresh() -> void:
 	loot_take.visible=not box_id.is_empty()
 	if loot_panel.visible:
 		var c:Dictionary=state.containers.get(remote_location(),{"width":6,"height":4})
-		loot_panel.size=Vector2(maxi(280,int(c.width)*40+24),mini(8,int(c.height))*40+(114 if remote_location()=="warehouse" else 82))
+		loot_panel.size=Vector2(maxi(280,mini(12,int(c.width))*48+24),mini(8,int(c.height))*48+(114 if remote_location()=="warehouse" else 82))
 		loot_take.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT
 		loot_take.position=Vector2(loot_panel.size.x-144,16)
 		loot_take.size=Vector2(128,preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT)
@@ -375,68 +383,69 @@ func displayed_items(location: String) -> Array:
 func concealed_item(id: String) -> bool:
 	return not box_id.is_empty() and state.items.has(id) and state.items[id].container_id == remote_location() and not id in exploration.box(state,box_id).get("revealed",[])
 
-func draw_concealed(rect: Rect2, searching: bool) -> void:
-	grid.draw_rect(rect.grow(-2),Color("303634"))
-	grid.draw_rect(rect.grow(-2),preload("res://scripts/ui/keeper_theme.gd").ACCENT if searching else Color("656c65"),false,1)
+func draw_concealed(rect: Rect2, searching: bool, paint:Control) -> void:
+	paint.draw_rect(rect.grow(-2),Color("303634"))
+	paint.draw_rect(rect.grow(-2),preload("res://scripts/ui/keeper_theme.gd").ACCENT if searching else Color("656c65"),false,1)
 	var center := rect.get_center()
 	if searching:
 		var box: Dictionary = exploration.box(state,box_id)
 		var progress := clampf(float(state.expedition.search.get("elapsed",0.0))/maxf(0.01,box.get("search_seconds",0.5)),0.0,1.0)
-		grid.draw_arc(center,9,0,TAU,24,Color("656c65"),2)
-		if progress>0: grid.draw_arc(center,9,-PI/2,-PI/2+TAU*progress,24,preload("res://scripts/ui/keeper_theme.gd").ACCENT,2)
+		paint.draw_arc(center,9,0,TAU,24,Color("656c65"),2)
+		if progress>0: paint.draw_arc(center,9,-PI/2,-PI/2+TAU*progress,24,preload("res://scripts/ui/keeper_theme.gd").ACCENT,2)
 	else:
-		grid.draw_string(theme.default_font,center+Vector2(-5,6),"?",HORIZONTAL_ALIGNMENT_LEFT,16,preload("res://scripts/ui/keeper_theme.gd").FONT_BODY,preload("res://scripts/ui/keeper_theme.gd").MUTED)
+		paint.draw_string(theme.default_font,center+Vector2(-5,6),"?",HORIZONTAL_ALIGNMENT_LEFT,16,preload("res://scripts/ui/keeper_theme.gd").FONT_BODY,preload("res://scripts/ui/keeper_theme.gd").MUTED)
 
 func item_rect(item: Dictionary, location: String, right: bool) -> Rect2:
-	var pos := Vector2(item.cell[0]-(warehouse_page if location=="warehouse" else 0),item.cell[1])*cell_size(right)
+	var pos := Vector2(item.cell[0],item.cell[1])*cell_size(right)
 	if location == "equipment":
 		var index: int = visible_items(location).find(item)
 		pos=Vector2((index%3)*100,int(index/3)*80)
-		return Rect2(pos+Vector2(338 if right else 0,28),Vector2(92,72))
-	return Rect2(pos+Vector2(338 if right else 0,28),Vector2(inventory.dimensions(item))*cell_size(right))
+		return Rect2(pos+grid_origin(right)-grid_offset(right),Vector2(92,72))
+	return Rect2(pos+grid_origin(right)-grid_offset(right),Vector2(inventory.dimensions(item))*cell_size(right))
 
-func draw_grid() -> void:
-	if state.is_empty(): return
-	for right in [false,true]:
-		var location: String = remote_location() if right else source
-		if location.is_empty(): continue
-		var origin := Vector2(338 if right else 0,28)
-		if not (selector_callback.is_valid() and not right):
-			grid.draw_string(theme.default_font,origin-Vector2(0,32),"战利品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,preload("res://scripts/ui/keeper_theme.gd").FONT_SECTION,preload("res://scripts/ui/keeper_theme.gd").TEXT)
-		var c: Dictionary = state.containers.get(location,{"width":8,"height":8})
-		for y in range(0 if location=="equipment" else mini(8,maxi(1,int(c.height)))):
-			for x in range(mini(12,maxi(1,int(c.width)))):
-				preload("res://scripts/ui/keeper_theme.gd").box("slot").draw(grid.get_canvas_item(),Rect2(origin+Vector2(x,y)*cell_size(right),Vector2.ONE*cell_size(right)).grow(-1))
-		var search_started := false
-		for item: Dictionary in displayed_items(location):
-			var rect := item_rect(item,location,right)
-			if rect.position.x < origin.x or rect.position.x >= origin.x+(480 if right else 336): continue
-			if concealed_item(item.id):
-				draw_concealed(rect,not search_started)
-				search_started=true
-				continue
-			preload("res://scripts/ui/keeper_theme.gd").box(("hover" if item.id==hover_id else "slot_normal") if item.id!=selected else "slot_selected",4).draw(grid.get_canvas_item(),rect.grow(-2))
-			var icon:Texture2D=preload('res://scripts/art/fortress_art.gd').item_icon(item.definition_id)
-			if icon!=null:
-				grid.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
-				var extent:=Vector2(minf(40,rect.size.x-8),minf(40,rect.size.y-12))
-				var icon_size:=Vector2(extent.x,minf(extent.y,extent.x*icon.get_height()/icon.get_width()))
-				grid.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-icon_size.x)*.5,4),icon_size),false)
+func draw_grid_side(right:bool,paint:Control) -> void:
+	if state.is_empty():return
+	paint.draw_set_transform(-grid_origin(right))
+	var location: String = remote_location() if right else source
+	if location.is_empty(): return
+	var origin := grid_origin(right)-grid_offset(right)
+	var c: Dictionary = state.containers.get(location,{"width":8,"height":8})
+	for y in range(0 if location=="equipment" else maxi(1,int(c.height))):
+		for x in range(maxi(1,int(c.width))):
+			preload("res://scripts/ui/keeper_theme.gd").box("slot").draw(paint.get_canvas_item(),Rect2(origin+Vector2(x,y)*cell_size(right),Vector2.ONE*cell_size(right)).grow(-1))
+	var search_started := false
+	for item: Dictionary in displayed_items(location):
+		var rect := item_rect(item,location,right)
+		if concealed_item(item.id):
+			draw_concealed(rect,not search_started,paint)
+			search_started=true
+			continue
+		preload("res://scripts/ui/keeper_theme.gd").box(("hover" if item.id==hover_id else "slot_normal") if item.id!=selected else "slot_selected",4).draw(paint.get_canvas_item(),rect.grow(-2))
+		var icon:Texture2D=preload('res://scripts/art/fortress_art.gd').item_icon(item.definition_id)
+		if icon!=null:
+			paint.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
+			var extent:=Vector2(minf(48,rect.size.x-8),minf(40,rect.size.y-24))
+			var icon_size:=Vector2(extent.x,minf(extent.y,extent.x*icon.get_height()/icon.get_width()))
+			paint.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-icon_size.x)*.5,22),icon_size),false)
 
-			var amount:=str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else "")
-			if not amount.is_empty():
-				var tw:=theme.default_font.get_string_size(amount,HORIZONTAL_ALIGNMENT_LEFT,-1,16).x
-				grid.draw_rect(Rect2(rect.end-Vector2(tw+6,18),Vector2(tw+4,16)),Color("171c23"))
-				grid.draw_string(theme.default_font,rect.end-Vector2(tw+4,6),amount,HORIZONTAL_ALIGNMENT_LEFT,tw+2,16,preload("res://scripts/ui/keeper_theme.gd").TEXT)
-	if selected != "" and state.items.has(selected) and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		var point := grid.get_local_mouse_position()
-		var right: bool = point.x >= 338
-		var location: String = remote_location() if right else source
-		var cell := Vector2i((point-Vector2(338 if right else 0,28))/cell_size(right))
-		var preview: Dictionary = state.items[selected].duplicate(true)
-		preview.rotated=rotated
-		var valid := not location.is_empty() and location != "equipment" and inventory.fits(state,preview,location,cell)
-		grid.draw_rect(Rect2(Vector2(cell)*cell_size(right)+Vector2(338 if right else 0,28),Vector2(inventory.dimensions(preview))*cell_size(right)),Color(0,1,0,0.3) if valid else Color(1,0,0,0.3))
+		var title:String=display_name(item.id)
+		while title.length()>1 and theme.default_font.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,20).x>rect.size.x-8:title=title.left(title.length()-2)+"…"
+		paint.draw_string(theme.default_font,rect.position+Vector2(4,20),title,HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-8,20,Color("c5cdcf"))
+		var amount:=str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else "")
+		if not amount.is_empty():
+			var tw:=theme.default_font.get_string_size(amount,HORIZONTAL_ALIGNMENT_LEFT,-1,20).x
+			paint.draw_rect(Rect2(rect.end-Vector2(tw+6,24),Vector2(tw+4,22)),Color("171c23"))
+			paint.draw_string(theme.default_font,rect.end-Vector2(tw+4,6),amount,HORIZONTAL_ALIGNMENT_LEFT,tw+2,20,preload("res://scripts/ui/keeper_theme.gd").TEXT)
+
+	if not gesture.is_empty() and gesture.get("dragging",false) and accessible_item(gesture.id):
+		var pointer:=grid.get_local_mouse_position()
+		if Rect2(grid_origin(right),paint.size).has_point(pointer):
+			var cell:=Vector2i((pointer-origin)/cell_size(right))
+			var preview:Dictionary=state.items[gesture.id].duplicate(true);preview.rotated=rotated
+			var valid:bool=inventory.fits(state,preview,location,cell)
+			var bounds:=Rect2(origin+Vector2(cell)*cell_size(right),Vector2(inventory.dimensions(preview))*cell_size(right)).grow(-2)
+			paint.draw_rect(bounds,Color(0.3,0.8,0.8,0.24) if valid else Color(0.9,0.2,0.2,0.3))
+			paint.draw_rect(bounds,Color("64d7df") if valid else Color("df7378"),false,2)
 
 func accessible_location(location: String) -> bool:
 	if not external_container.is_empty() and location==external_container:
@@ -529,9 +538,10 @@ func grid_input(event: InputEvent) -> void:
 		grid.queue_redraw()
 	if not event is InputEventMouseButton or event.button_index != MOUSE_BUTTON_LEFT: return
 	grid.accept_event()
-	var right: bool = event.position.x >= 338
+	var right: bool = not remote_location().is_empty() and Rect2(grid_origin(true),grid_surfaces[1].size).has_point(event.position)
 	var location: String = remote_location() if right else source
 	if event.pressed:
+		if not Rect2(grid_origin(right),grid_surfaces[int(right)].size).has_point(event.position):return
 		gesture.clear()
 		if not accessible_location(location): return
 		for item: Dictionary in visible_items(location):
@@ -557,12 +567,13 @@ func grid_input(event: InputEvent) -> void:
 					if ended.source!="equipment": drop_equipment(id,slot)
 					return
 		var moved: bool = ended.dragging or event.position.distance_to(ended.start)>=DRAG_THRESHOLD
+		if not Rect2(grid_origin(right),grid_surfaces[int(right)].size).has_point(event.position):return
 		if not moved or not accessible_location(location) or location=="equipment" or not accessible_item(id): return
 		# A changed/consumed item or a tab/location switch cancels stale drags.
 		if state.items[id].container_id != ended.source or state.items[id].cell != ended.cell: return
 		if not Rect2(Vector2.ZERO,grid.size).has_point(event.position): return
-		var cell := Vector2i((event.position-Vector2(338 if right else 0,28))/cell_size(right))
-		if location=="warehouse": cell.x+=warehouse_page
+		var cell := Vector2i((event.position-grid_origin(right)+grid_offset(right))/cell_size(right))
+
 		if state.items[id].container_id != location:
 			transfer_item(id,location,cell,true)
 		else:
@@ -608,54 +619,23 @@ func drop_equipment(id: String, slot: String, confirmed: bool = false) -> void:
 
 
 
-func cell_size(right:bool)->int:
-	if right:return 40
-	return mini(48,int(296.0/clampi(int(state.containers.get(source,{"width":6}).width),1,12)))
-
+func cell_size(_right:bool)->int:
+	return 64
+func grid_origin(right:bool)->Vector2:
+	return grid_surfaces[int(right)].position
+func grid_offset(right:bool)->Vector2:
+	return Vector2(grid_hscroll[int(right)].value,grid_vscroll[int(right)].value)
 func layout_inventory_content():
-	var rows:int=mini(8,int(state.containers.get(source,{"height":4}).height))
-	var grid_bottom:float=grid.position.y+28+(ceili(visible_items(source).size()/3.0)*80 if source=="equipment" else rows*cell_size(false))
-	info.position.y=grid_bottom+14
-	weight_bar.position.y=grid_bottom+40
-	weight_bar.size.x=mini(296,int(state.containers.get(source,{"width":6}).width)*cell_size(false))
-	usage_caption.position.y=grid_bottom+56
-	detail_scroll.position=Vector2(302,grid_bottom+86)
-	# Reserve the binding row and panel padding before allocating scrollable actions.
-	var binding_height:=44.0 if binding_row.visible else 0.0
-	var bottom_padding:=44.0 if not feedback.text.is_empty() else float(preload("res://scripts/ui/keeper_theme.gd").PANEL_PADDING)
-	var remaining:=648.0-detail_scroll.position.y-binding_height-8.0-bottom_padding
-	detail_scroll.size=Vector2(302,minf(maxf(96,listing.get_combined_minimum_size().y),maxf(36,remaining)))
-	binding_row.position=Vector2(302,detail_scroll.position.y+detail_scroll.size.y+8)
-	for i in binding_row.get_child_count():
-		binding_row.get_child(i).custom_minimum_size.x=40
-		binding_row.get_child(i).tooltip_text="绑定到快捷栏 %d" % (i+1)
-	var bottom:float=maxf(480,grid_bottom+88)
-	if detail_scroll.visible:bottom=maxf(bottom,detail_scroll.position.y+detail_scroll.size.y+8)
-	if binding_row.visible:bottom=maxf(bottom,binding_row.position.y+binding_height)
-	feedback.visible=not feedback.text.is_empty()
-	feedback.position=Vector2(16,bottom+8)
-	footer_line.position.y=bottom
-	left_panel.size.y=bottom+(44 if feedback.visible else 16)
-
+	ReferenceLayout.arrange(self)
 func arrange_equipment():
-	var keys=["weapon_1","weapon_2","weapon_3","armor","backpack","extra_1","extra_2","extra_3","extra_4"]
-	for i in range(keys.size()):
-		if not slot_buttons.has(keys[i]):continue
-		var b:Button=slot_buttons[keys[i]]
-		b.position=Vector2(0,i*58) if i<3 else (Vector2((i-3)*132,182) if i<5 else Vector2((i-5)*66,266))
-		b.custom_minimum_size=Vector2(258,50) if i<3 else (Vector2(124,64) if i<5 else Vector2(58,48))
-		b.clip_text=true
-		b.expand_icon=true;b.add_theme_constant_override("icon_max_width",48 if i<3 else 28)
-		if i>=5:b.text="" if b.icon!=null else "+"
-		elif i>=3:b.text="护甲" if i==3 else "背包"
-		b.size=b.custom_minimum_size
+	ReferenceLayout.equipment(self)
 
 func fit_viewport():
 	var vp:=get_viewport_rect().size
 	var desired:=preload("res://scripts/ui/pixel_layout.gd").ui_scale(vp)
 	var inherited:=get_canvas_transform().get_scale().x
 	scale=Vector2.ONE*desired/inherited
-	position=Vector2((vp.x/inherited-size.x*scale.x)*0.5,48*desired/inherited)
+	position=Vector2((vp.x/inherited-size.x*scale.x)*0.5,16*desired/inherited)
 
 func setup_pixel_tip():
 	tip_layer=CanvasLayer.new();tip_layer.layer=60;add_child(tip_layer)
@@ -672,6 +652,7 @@ func update_pixel_tip():
 	var point:=grid.get_local_mouse_position()
 	for right in [false,true]:
 		var location:String=remote_location() if right else source
+		if not Rect2(grid_origin(right),grid_surfaces[int(right)].size).has_point(point):continue
 		for item:Dictionary in visible_items(location):
 			if item_rect(item,location,right).has_point(point):hit=item.id;break
 	for slot in slot_buttons:

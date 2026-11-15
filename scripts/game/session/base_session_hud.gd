@@ -22,7 +22,7 @@ func _process(delta):
 	var shell=arena.session_context.shell
 	var covered:bool=shell.interface_open()
 	# Keep the inventory and its children alive/visible; only suppress ambient HUD.
-	for element in [label,card,quick,weapon_icon,tactical_icon,task_tracker,charge_title]:
+	for element in [label,card,quick,weapon_icon,tactical_icon,task_tracker,charge_title,weapon_slots,mini_widget]:
 		element.visible=not covered
 	arena.status_label.visible=false
 	charge_title.visible=false

@@ -5,10 +5,10 @@ const FONT_BODY=24
 const FONT_CAPTION=24
 const FONT_NUMBER=24
 const GAP_SMALL=8
-const BUTTON_HEIGHT=44
-const COMPACT_HEIGHT=40
+const BUTTON_HEIGHT=48
+const COMPACT_HEIGHT=44
 const PANEL_PADDING=16
-const TEXT=Color('e9e2cc')
+const TEXT=Color('e3e5e4')
 const MUTED=Color('a7b0aa')
 const DISABLED=Color('727d82')
 const ACCENT=Color('64d7df')
@@ -17,23 +17,41 @@ const WARNING=Color('d6b776')
 const DANGER=Color('df7378')
 static var cached:Theme
 static var boxes:Dictionary={}
-static func pixel_font(pixels:int=12)->FontFile:
- var font:FontFile=load('res://assets/runtime/ui/keeper/fusion-pixel-%dpx-proportional-zh_hans.otf'%pixels)
- font.antialiasing=TextServer.FONT_ANTIALIASING_NONE
- font.subpixel_positioning=TextServer.SUBPIXEL_POSITIONING_DISABLED
- font.hinting=TextServer.HINTING_NONE
- font.oversampling=1.0
- return font
-static func box(asset:String,margin:int=8)->StyleBoxTexture:
+static var regular_font:FontVariation
+static func readable_sample()->bool:
+ return true
+static func pixel_font(_pixels:int=12)->Font:
+ if regular_font!=null:return regular_font
+ var source:FontFile=load('res://assets/runtime/ui/fonts/NotoSansSC.ttf')
+ source.antialiasing=TextServer.FONT_ANTIALIASING_GRAY
+ source.hinting=TextServer.HINTING_LIGHT
+ source.oversampling=0.0
+ regular_font=FontVariation.new()
+ regular_font.base_font=source
+ regular_font.variation_opentype={TextServerManager.get_primary_interface().name_to_tag('wght'):400.0}
+ return regular_font
+static func box(asset:String,margin:int=8)->StyleBoxFlat:
  var aliases={'panel_normal':'panel','panel_inset':'inset','slot_normal':'slot','slot_selected':'selected','button_default':'button','button_hover':'hover','button_pressed':'pressed','button_focus':'focus','button_selected':'selected','button_disabled':'disabled'}
  var name:String=aliases.get(asset,asset)
  if boxes.has(name):return boxes[name]
- var s:=StyleBoxTexture.new();s.texture=load('res://assets/runtime/ui/keeper/'+name+'.png')
- for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:
-  s.set_texture_margin(side,8);s.set_content_margin(side,10)
- if name=='pressed':s.content_margin_top=12;s.content_margin_bottom=8
- boxes[name]=s
- return s
+ var style:=StyleBoxFlat.new()
+ style.bg_color=Color('10151e')
+ style.border_color=Color('343d46');style.border_width_bottom=1
+ if name in ['slot','button','hover','pressed','selected','disabled']:
+  style.bg_color=Color('242b31')
+ if name=='inset':style.bg_color=Color('0d1219')
+ if name=='hover':style.bg_color=Color('353f48')
+ if name=='pressed':style.bg_color=Color('48535b')
+ if name=='disabled':style.bg_color=Color('1c2228')
+ if name=='bar':style.bg_color=Color('080d12')
+ if name=='energy':style.bg_color=ACCENT
+ if name=='health':style.bg_color=DANGER
+ if name in ['focus','selected']:
+  style.bg_color=Color(0,0,0,0) if name=='focus' else Color('343b40')
+  style.border_color=Color('ed6a36');style.set_border_width_all(2)
+ for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:style.set_content_margin(side,10)
+ boxes[name]=style
+ return style
 static func get_theme()->Theme:
  if cached!=null:return cached
  cached=Theme.new();cached.default_font_size=24
@@ -80,10 +98,10 @@ static func get_theme()->Theme:
  for role in ['normal_font_size','bold_font_size','italics_font_size','mono_font_size']:cached.set_font_size(role,'RichTextLabel',24)
  cached.set_constant('line_spacing','Label',4)
  return cached
-static func button_box(asset:String,compact:bool=false)->StyleBoxTexture:
+static func button_box(asset:String,compact:bool=false)->StyleBoxFlat:
  var key:=asset+('_compact' if compact else '_button')
  if boxes.has(key):return boxes[key]
- var style:=box(asset).duplicate() as StyleBoxTexture
+ var style:=box(asset).duplicate() as StyleBoxFlat
  var padding:=4 if compact else 6
  style.content_margin_top=padding+(2 if asset=='pressed' else 0)
  style.content_margin_bottom=padding-(2 if asset=='pressed' else 0)

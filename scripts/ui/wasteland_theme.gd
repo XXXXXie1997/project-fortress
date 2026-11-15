@@ -20,7 +20,7 @@ const GAP_SECTION=24
 const PANEL_PADDING=16
 const BUTTON_HEIGHT=PixelTheme.BUTTON_HEIGHT
 const COMPACT_HEIGHT=PixelTheme.COMPACT_HEIGHT
-static func box(asset:String,margin:int=8)->StyleBoxTexture:
+static func box(asset:String,margin:int=8)->StyleBox:
  if asset.begins_with("button_"):
   var names={"button_default":"button","button_hover":"hover","button_pressed":"pressed","button_focus":"focus","button_selected":"selected","button_disabled":"disabled"}
   return PixelTheme.button_box(names.get(asset,"button"))

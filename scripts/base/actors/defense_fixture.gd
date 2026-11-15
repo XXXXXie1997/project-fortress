@@ -81,6 +81,7 @@ func _draw():
  if not alive:color=Color('3c3031')
  draw_colored_polygon(footprint,color.darkened(0.35))
  var title:String={'warehouse':'仓库能源站','generator':'发电厂','technology':'科技终端','quest':'任务终端','workstation':'工作站','trade':'贸易站','farm':'农田','turret':'炮塔','shield':'防护罩'}.get(kind,'设施')
- draw_string(ThemeDB.fallback_font,Vector2(-24,-40),title,HORIZONTAL_ALIGNMENT_LEFT,-1,12)
+ var text_scale:float=(get_viewport().get_stretch_transform()*get_global_transform_with_canvas()).get_scale().x
+ draw_string(preload('res://scripts/ui/keeper_theme.gd').pixel_font(),Vector2(-24,-40),title,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(20,ceili(10.0/maxf(.01,text_scale))))
  if kind!='shield':draw_line(Vector2(-25,-48),Vector2(-25+50*d.durability/d.maximum,-48),Color.GREEN,3)
 

@@ -1,0 +1,6 @@
+Original project pixel artwork authored in Aseprite, 2026-11-15.
+Editable source: assets/source/ui016/items_hd.aseprite
+Atlas: 240x120, 8 columns, 30x30 pixel slices.
+Redrawn silhouettes, bevels, metal/cloth surfaces and cyan energy components.
+Not an enlargement of the old 20px atlas. No third-party pixels included.
+Existing item identity and aliases are preserved by FortressArt.item_icon.

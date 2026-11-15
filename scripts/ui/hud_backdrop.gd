@@ -1,6 +1,6 @@
 extends Node2D
 var extra_top:=0.0
-var style:StyleBoxTexture
+var style:StyleBox
 var owner_control:Control
 static func attach(target:Control,top:float=0.0):
  var backdrop=load("res://scripts/ui/hud_backdrop.gd").new();backdrop.extra_top=top;backdrop.owner_control=target

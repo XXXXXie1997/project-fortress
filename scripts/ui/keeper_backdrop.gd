@@ -1,6 +1,6 @@
 extends Node2D
 var extra_top:=0.0
-var style:StyleBoxTexture
+var style:StyleBox
 var owner_control:Control
 static func attach(target:Control,top:float=0.0):
  var backdrop=load("res://scripts/ui/keeper_backdrop.gd").new();backdrop.extra_top=top;backdrop.owner_control=target
@@ -21,6 +21,7 @@ func _draw():
  if style==null:return
  if not is_instance_valid(owner_control):return
  var target:Control=owner_control
+ if target.get_meta("minimal_hud",false):return
  if target is Label and target.text.is_empty():return
  var dimensions:Vector2=target.size
  if target is RichTextLabel:
