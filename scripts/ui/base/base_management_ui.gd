@@ -118,7 +118,7 @@ func show_production(id: String) -> void:
 	for recipe:String in services.production.recipes:
 		var r:Dictionary=services.production.recipes[recipe]
 		var choice:=button(definition_name(r.output.keys()[0]),func():selected_recipe=recipe;show_production(id),recipe_rows)
-		choice.custom_minimum_size=Vector2(264,56)
+		choice.custom_minimum_size=Vector2(264,preload("res://scripts/ui/keeper_theme.gd").BUTTON_HEIGHT)
 		if recipe==selected_recipe:choice.add_theme_stylebox_override("normal",preload("res://scripts/ui/wasteland_theme.gd").box("button_selected"))
 	var recipe_id:=selected_recipe
 	var r:Dictionary=services.production.recipes[recipe_id]
@@ -213,7 +213,7 @@ func show_trade() -> void:
 	button("统一成交",func():commit_trade(false),actions)
 	button("清空两篮",func():sell_basket.clear();buy_basket.clear();show_trade(),actions)
 	button("返回建设",show_buildings,actions)
-	for action:Control in actions.get_children():action.custom_minimum_size=Vector2(262,44)
+	for action:Control in actions.get_children():action.custom_minimum_size=Vector2(262,preload("res://scripts/ui/keeper_theme.gd").BUTTON_HEIGHT)
 func trade_column(parent:Node)->VBoxContainer:
 	var frame:=PanelContainer.new();frame.custom_minimum_size=Vector2(262,360);frame.add_theme_stylebox_override("panel",preload("res://scripts/ui/wasteland_theme.gd").box("panel_inset"));parent.add_child(frame)
 	var list:=ScrollContainer.new();list.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED;frame.add_child(list)

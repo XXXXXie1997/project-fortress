@@ -4,9 +4,9 @@ const FONT_SECTION=16
 const FONT_BODY=16
 const FONT_CAPTION=14
 const FONT_NUMBER=20
-const GAP_SMALL=8
-const BUTTON_HEIGHT=48
-const COMPACT_HEIGHT=44
+const GAP_SMALL=4
+const BUTTON_HEIGHT=36
+const COMPACT_HEIGHT=32
 const PANEL_PADDING=16
 const TEXT=Color('e3e5e4')
 const MUTED=Color('a7b0aa')
@@ -102,7 +102,9 @@ static func button_box(asset:String,compact:bool=false)->StyleBoxFlat:
  var key:=asset+('_compact' if compact else '_button')
  if boxes.has(key):return boxes[key]
  var style:=box(asset).duplicate() as StyleBoxFlat
- var padding:=4 if compact else 6
+ var padding:=2 if compact else 3
+ style.content_margin_left=6
+ style.content_margin_right=6
  style.content_margin_top=padding+(2 if asset=='pressed' else 0)
  style.content_margin_bottom=padding-(2 if asset=='pressed' else 0)
  boxes[key]=style

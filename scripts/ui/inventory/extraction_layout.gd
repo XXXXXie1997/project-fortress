@@ -7,7 +7,7 @@ static func setup(p):
  for node in root.get_children():
   if node is ColorRect:node.hide()
   if node is Label and node!=p.info and node!=p.feedback:node.hide()
-  if node is Button and node.text=='关闭':node.position=Vector2(1152,8);node.size=Vector2(80,48)
+  if node is Button and node.text=='关闭':node.position=Vector2(1152,14);node.size=Vector2(80,ThemeStyle.BUTTON_HEIGHT)
  p.reference_ui.scrim=ColorRect.new();p.reference_ui.scrim.position=Vector2(-16,-16);p.reference_ui.scrim.size=Vector2(1280,720);p.reference_ui.scrim.color=Color('0c1119');p.reference_ui.scrim.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(p.reference_ui.scrim);root.move_child(p.reference_ui.scrim,0)
  var top:=Panel.new();top.position=Vector2(-16,-16);top.size=Vector2(1280,72);top.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(top);root.move_child(top,1)
  p.reference_ui.header=caption(root,'物资管理',Vector2(16,12))
@@ -49,7 +49,7 @@ static func arrange(p):
  p.weight_bar.position=Vector2(16,104);p.weight_bar.size=Vector2(384,4);p.weight_bar.visible=not selecting
  p.tabs.position=Vector2(16,76)
  for node in p.tabs.get_children():node.visible=node in p.tabs_by_source.values() and (node!=p.tabs_by_source.warehouse or p.at_base)
- p.sort_bag_button.position=Vector2(272,348);p.sort_bag_button.size=Vector2(128,44)
+ p.sort_bag_button.position=Vector2(296,352);p.sort_bag_button.size=Vector2(104,ThemeStyle.COMPACT_HEIGHT)
  p.reference_ui.left_title.visible=not selecting
  p.reference_ui.right_title.visible=p.loot_panel.visible
  p.reference_ui.right_title.text='战利品' if not p.box_id.is_empty() else ('仓库' if p.remote_location()=='warehouse' else '容器')
@@ -86,7 +86,7 @@ static func arrange(p):
   var v:ScrollBar=p.grid_vscroll[index];v.position=origin+Vector2(width+4,0);v.size=Vector2(12,height);v.max_value=float(dims.height)*64;v.page=height;v.visible=surface.visible and v.max_value>v.page
   if right:p.loot_panel.size=Vector2(800 if p.detail_scroll.visible else width+32,height+96)
   surface.queue_redraw()
- for button in [p.loot_take,p.sort_warehouse_button]:button.position=Vector2(p.loot_panel.size.x-160,12);button.size=Vector2(144,44)
+ for button in [p.loot_take,p.sort_warehouse_button]:button.position=Vector2(p.loot_panel.size.x-136,16);button.size=Vector2(120,ThemeStyle.COMPACT_HEIGHT)
 static func equipment(p):
  var keys=['weapon_1','weapon_2','weapon_3','armor','backpack','extra_1','extra_2','extra_3','extra_4']
  for i in range(keys.size()):
