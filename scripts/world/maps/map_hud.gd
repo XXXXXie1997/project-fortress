@@ -10,20 +10,20 @@ var map_help:=Label.new()
 func _ready():
  super._ready()
  charge_title.hide()
- quest_list.position=Vector2(1048,224);quest_list.size=Vector2(192,84);quest_list.set_meta("backdrop_rect",Rect2(-16,-14,224,112));quest_list.bbcode_enabled=true;quest_list.add_theme_font_size_override('normal_font_size',preload("res://scripts/ui/wasteland_theme.gd").FONT_BODY);add_child(quest_list)
+ quest_list.position=Vector2(1048,224);quest_list.size=Vector2(192,84);quest_list.set_meta("backdrop_rect",Rect2(-16,-14,224,112));quest_list.bbcode_enabled=true;quest_list.add_theme_font_size_override('normal_font_size',preload("res://scripts/ui/keeper_theme.gd").FONT_BODY);add_child(quest_list)
  # 地图拥有自己的任务追踪，明确释放父HUD同类控件。
  if is_instance_valid(task_tracker):task_tracker.queue_free();task_tracker=null
  for child in get_children():
   if child is Label and child.text.begins_with('任务追踪：'):child.queue_free()
   if child.get_script()!=null and child.get_script().resource_path.ends_with('combat_minimap.gd'):child.queue_free()
- preload("res://scripts/ui/wasteland_theme.gd").apply(menu)
+ preload("res://scripts/ui/keeper_theme.gd").apply(menu)
  menu.position=Vector2(300,100);menu.custom_minimum_size=Vector2(680,450);menu.add_child(choices);add_child(menu);menu.hide()
- map_view=load('res://scripts/world/maps/map_view.gd').new();map_view.arena=arena;map_view.position=Vector2(1044,36);map_view.size=Vector2(200,126);add_child(map_view);map_view.set_meta('backdrop_rect',Rect2(-12,-12,224,174));preload('res://scripts/ui/hud_backdrop.gd').attach(map_view)
- map_title.position=Vector2(4,136);map_title.add_theme_color_override('font_color',preload("res://scripts/ui/wasteland_theme.gd").TEXT);map_view.add_child(map_title)
+ map_view=load('res://scripts/world/maps/map_view.gd').new();map_view.arena=arena;map_view.position=Vector2(1044,36);map_view.size=Vector2(200,126);add_child(map_view);map_view.set_meta('backdrop_rect',Rect2(-12,-12,224,174));preload('res://scripts/ui/keeper_backdrop.gd').attach(map_view)
+ map_title.position=Vector2(4,136);map_title.add_theme_color_override('font_color',preload("res://scripts/ui/keeper_theme.gd").TEXT);map_view.add_child(map_title)
  map_help.position=Vector2(0,-48);map_help.text='[M] 关闭地图 / 世界仍在运行';map_help.hide();map_view.add_child(map_help)
  hint.position=Vector2(360,560);add_child(hint)
- preload("res://scripts/ui/hud_backdrop.gd").attach(hint)
- preload("res://scripts/ui/hud_backdrop.gd").attach(quest_list)
+ preload("res://scripts/ui/keeper_backdrop.gd").attach(hint)
+ preload("res://scripts/ui/keeper_backdrop.gd").attach(quest_list)
 func clear_choices(title:String):
  for child in choices.get_children():choices.remove_child(child);child.queue_free()
  var heading:=Label.new();heading.text=title;choices.add_child(heading)
@@ -74,7 +74,7 @@ func _input(event):
  if progression!=null and progression.visible and event.is_action_pressed('interact'):
   get_viewport().set_input_as_handled();return
  if event.is_action_pressed('map'):
-  full_map=not full_map;map_view.position=Vector2(80,164) if full_map else Vector2(1044,36);map_view.size=Vector2(1120,460) if full_map else Vector2(200,126);map_view.set_meta('backdrop_rect',Rect2(-24,-120,1168,632) if full_map else Rect2(-12,-12,224,174));map_title.position=Vector2(0,-96) if full_map else Vector2(4,136);map_title.add_theme_font_size_override('font_size',preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE if full_map else preload("res://scripts/ui/wasteland_theme.gd").FONT_BODY);map_help.visible=full_map;get_viewport().set_input_as_handled();return
+  full_map=not full_map;map_view.position=Vector2(80,164) if full_map else Vector2(1044,36);map_view.size=Vector2(1120,460) if full_map else Vector2(200,126);map_view.set_meta('backdrop_rect',Rect2(-24,-120,1168,632) if full_map else Rect2(-12,-12,224,174));map_title.position=Vector2(0,-96) if full_map else Vector2(4,136);map_title.add_theme_font_size_override('font_size',preload("res://scripts/ui/keeper_theme.gd").FONT_TITLE if full_map else preload("res://scripts/ui/keeper_theme.gd").FONT_BODY);map_help.visible=full_map;get_viewport().set_input_as_handled();return
  if event.is_action_pressed('interact') and not opened and (inventory_panel==null or not inventory_panel.visible):arena.interact();get_viewport().set_input_as_handled();return
  if menu.visible:
   if event.is_action_pressed('cancel') and arena.state.expedition.get('active',false):close_menu()
@@ -90,6 +90,9 @@ func _process(dt):
  if not arena.state.expedition.get('active',false) and not menu.visible and not opened and (inventory_panel==null or not inventory_panel.visible):show_departure()
  var tracked:=QuestPresentation.tracker(arena.state,arena.services.quests)
  if quest_list.text!=tracked:quest_list.text=tracked
+ if not full_map:map_view.position.x=get_viewport().get_visible_rect().size.x/hud_scale-236
+ map_title.add_theme_font_override('font',preload('res://scripts/ui/keeper_theme.gd').pixel_font(12 if full_map else 8))
+ quest_list.position.x=get_viewport().get_visible_rect().size.x/hud_scale-232
  map_view.queue_redraw()
 
 

@@ -1,0 +1,36 @@
+extends Node
+## A 640x360 minimum, fixed 16:9 window with integer pixel tiers.
+## Art authored on the existing 1280 grid uses 0.5 logical scale (2px -> 1px).
+var previous_size:=Vector2i.ZERO
+func _ready():
+ process_mode=Node.PROCESS_MODE_ALWAYS
+ get_window().min_size=Vector2i(640,360)
+ get_window().set_meta('pixel_layout',true)
+ get_window().canvas_item_default_texture_filter=Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
+ get_window().size_changed.connect(resize)
+ resize()
+func _process(_dt):
+ if get_window().size!=previous_size:resize()
+func resize():
+ var window:=get_window()
+ var requested:=window.size
+ var units:=maxi(40,roundi(requested.x/16.0))
+ if previous_size!=Vector2i.ZERO:
+  var delta:=requested-previous_size
+  if absi(delta.y)*16>absi(delta.x)*9:units=maxi(40,roundi(requested.y/9.0))
+ var fitted:=Vector2i(units*16,units*9)
+ previous_size=fitted
+ if window.size!=fitted:window.size=fitted
+ var tier:=maxi(1,floori(minf(window.size.x/640.0,window.size.y/360.0)))
+ window.content_scale_mode=Window.CONTENT_SCALE_MODE_VIEWPORT
+ window.content_scale_aspect=Window.CONTENT_SCALE_ASPECT_EXPAND
+ window.content_scale_stretch=Window.CONTENT_SCALE_STRETCH_INTEGER
+ window.content_scale_size=Vector2i(maxi(640,window.size.x/tier),maxi(360,window.size.y/tier))
+ window.set_meta('pixel_tier',tier)
+static func ui_scale(viewport_size:Vector2)->float:
+ var tree:=Engine.get_main_loop() as SceneTree
+ if tree!=null and tree.root.get_meta('pixel_layout',false):return 0.5
+ return maxf(0.5,floorf(minf(viewport_size.x/640.0,viewport_size.y/360.0))*0.5)
+static func world_scale()->float:
+ var tree:=Engine.get_main_loop() as SceneTree
+ return 0.5 if tree!=null and tree.root.get_meta('pixel_layout',false) else 1.0

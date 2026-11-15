@@ -62,7 +62,7 @@ func _ready() -> void:
 	retry.pressed.connect(func():
 		if coordinator.shutdown().ok: save_notice.hide())
 	save_notice.hide()
-	phases = VBoxContainer.new();preload("res://scripts/ui/wasteland_theme.gd").apply(phases); phases.position = Vector2(1022, 438);phases.custom_minimum_size=Vector2(224,184); overlay.add_child(phases)
+	phases = VBoxContainer.new();preload("res://scripts/ui/keeper_theme.gd").apply(phases); phases.position = Vector2(1022, 438);phases.custom_minimum_size=Vector2(224,0); overlay.add_child(phases)
 	var shortcuts=preload("res://scripts/ui/action_shortcuts.gd").new();shortcuts.shell=self;overlay.add_child(shortcuts)
 	rows = VBoxContainer.new()
 	rows.add_theme_constant_override("separation", preload("res://scripts/ui/wasteland_theme.gd").GAP)
@@ -201,6 +201,11 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST: request_exit()
 
 func _process(delta: float) -> void:
+	var hud_factor:=preload("res://scripts/ui/pixel_layout.gd").ui_scale(get_viewport().get_visible_rect().size)
+	panel.scale=Vector2.ONE*hud_factor
+	panel.position=(Vector2(56,44) if overlay_mode!="start" else Vector2(390,70))*hud_factor
+	phases.scale=Vector2.ONE*hud_factor
+	phases.position=Vector2(get_viewport().get_visible_rect().size.x-(phases.size.x+34)*hud_factor,get_viewport().get_visible_rect().size.y-(phases.size.y+88)*hud_factor)
 	if exiting:return
 	if coordinator != null: coordinator.tick(delta)
 	if is_instance_valid(arena) and not mounting and not mount_queued:
@@ -326,7 +331,7 @@ func refresh_phase_controls() -> void:
 			return {"ok": EnergyService.transfer(trial.base.energy_store,trial.base.shield,trial.base.shield.capacity) > 0})))
 	if not coordinator.state.cycle.pending_loot.is_empty(): phase_button("领取守夜战利品", show_night_loot)
 
-	preload("res://scripts/ui/hud_backdrop.gd").attach(phases)
+	preload("res://scripts/ui/keeper_backdrop.gd").attach(phases)
 
 func show_departures(night: bool) -> void:
 	overlay_mode = "stage"

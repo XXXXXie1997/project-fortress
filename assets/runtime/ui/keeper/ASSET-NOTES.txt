@@ -1,0 +1,20 @@
+Pixel UI components
+Original project artwork authored in Aseprite. Editable source:
+assets/source/ui009/components.aseprite (192x64, named 32x32 slices).
+PNG components use an 8px nine-slice margin in the existing 1280 UI coordinate grid.
+Reference game UI was used only for visual direction; no reference-game pixels or fonts are included.
+
+Fusion Pixel Font, 8px and 12px proportional, Simplified Chinese
+Author: TakWolf and contributors
+Project: https://github.com/TakWolf/fusion-pixel-font
+Release: https://github.com/TakWolf/fusion-pixel-font/releases/tag/2026.11.10
+Assets: fusion-pixel-font-8px-proportional-otf-v2026.11.10.zip
+        fusion-pixel-font-12px-proportional-otf-v2026.11.10.zip
+Font files are unmodified. SIL Open Font License 1.1; retain OFL.txt and LICENSES/.
+Upstream component license notices are preserved in LICENSES/.
+
+Rendering: nearest-neighbor, no font antialiasing, no subpixel positioning,
+no hinting, oversampling 1. Compact text uses the native 8px design;
+headings, prominent values and inventory tooltips use the native 12px design.
+The 1280-coordinate UI is rendered at 0.5 logical scale, then enlarged
+by integer window tiers. Font size 16 maps to native 8px, 24 to native 12px.

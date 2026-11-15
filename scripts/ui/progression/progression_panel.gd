@@ -42,6 +42,8 @@ func close():
  visible=false;actor.progression_ui_blocked=false
  actor.progression_pointer_guard=Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 func _process(_dt):
+ var ui_factor:=preload("res://scripts/ui/pixel_layout.gd").ui_scale(get_viewport().get_visible_rect().size)
+ box.scale=Vector2.ONE*ui_factor;box.position=Vector2(56,44)*ui_factor
  if not is_instance_valid(actor):queue_free();return
  if not visible:return
  if terminal and not at_base():terminal=false;refresh()

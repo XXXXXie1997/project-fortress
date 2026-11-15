@@ -52,13 +52,19 @@ var warehouse_page := 0
 var gesture: Dictionary = {}
 const DRAG_THRESHOLD := 6.0
 var dialog: ConfirmationDialog
+var hover_id := ""
+var tip_layer:CanvasLayer
+var tip:PanelContainer
+var tip_text:Label
+var transition:Tween
+var closing:=false
 const CELL := 44
 func bind_state(s: Dictionary, inv: InventoryService, exp: ExplorationService = null) -> void:
 	state = s
 	inventory = inv
 	exploration = exp
 func _ready() -> void:
-	preload("res://scripts/ui/wasteland_theme.gd").apply(self)
+	preload("res://scripts/ui/keeper_theme.gd").apply(self)
 	position = Vector2(56,44)
 	size = Vector2(1168,632)
 	var root := Control.new()
@@ -68,7 +74,8 @@ func _ready() -> void:
 	loot_panel=Panel.new();loot_panel.position=Vector2(628,64);loot_panel.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(loot_panel)
 	loot_take=button(loot_panel,"全部拾取",func():exploration.take_all(state,box_id);refresh())
 	tabs = HBoxContainer.new()
-	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE);root.add_child(heading);heading.position=Vector2(24,24)
+	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",preload("res://scripts/ui/keeper_theme.gd").FONT_TITLE);root.add_child(heading);heading.position=Vector2(24,24)
+	heading.add_theme_font_override("font",preload("res://scripts/ui/keeper_theme.gd").pixel_font(12))
 	root.add_child(tabs);tabs.position=Vector2(310,66)
 	for location in ["bag","warehouse","equipment"]:
 		tabs_by_source[location]=button(tabs,{"bag":"背包","warehouse":"仓库","equipment":"已装备"}[location],func():
@@ -86,9 +93,9 @@ func _ready() -> void:
 	info = Label.new()
 	root.add_child(info);info.position=Vector2(302,350)
 	weight_bar=ProgressBar.new();weight_bar.position=Vector2(302,376);weight_bar.show_percentage=false;weight_bar.size=Vector2(264,8);root.add_child(weight_bar)
-	var fill:=StyleBoxFlat.new();fill.bg_color=preload("res://scripts/ui/wasteland_theme.gd").ACCENT;weight_bar.add_theme_stylebox_override("fill",fill)
+	var fill:=StyleBoxFlat.new();fill.bg_color=preload("res://scripts/ui/keeper_theme.gd").ACCENT;weight_bar.add_theme_stylebox_override("fill",fill)
 	feedback=Label.new()
-	feedback.add_theme_color_override("font_color",preload("res://scripts/ui/wasteland_theme.gd").WARNING)
+	feedback.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").WARNING)
 	root.add_child(feedback);feedback.position=Vector2(16,570)
 	var body := Control.new()
 	root.add_child(body)
@@ -96,12 +103,12 @@ func _ready() -> void:
 		var line:=ColorRect.new();line.position=line_rect.position;line.size=line_rect.size;line.color=Color("4b504b");line.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(line)
 		if line_rect.position.y==480:footer_line=line
 	button(root,"关闭",close_panel).position=Vector2(540,24)
-	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(506,66);sort_bag_button.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").COMPACT_HEIGHT;sort_bag_button.size=Vector2(90,28)
+	sort_bag_button=button(root,"整理背包",func():inventory.sort_container(state,"bag");refresh());sort_bag_button.position=Vector2(506,66);sort_bag_button.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT;sort_bag_button.size=Vector2(90,28)
 	sort_warehouse_button=button(loot_panel,"整理仓库",func():if at_base:inventory.sort_container(state,"warehouse");refresh());sort_warehouse_button.position=Vector2(640,496)
 	for data in [["装备",Vector2(16,76)],["额外装备 / 4个通用槽",Vector2(16,450)],["双击转移 / 拖动放置 / R旋转",Vector2(302,392)]]:
-		var caption:=Label.new();caption.text=data[0];caption.position=data[1];caption.add_theme_color_override("font_color",preload("res://scripts/ui/wasteland_theme.gd").MUTED);root.add_child(caption)
-		caption.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_SECTION if data[0]=="装备" else preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION)
-		if data[0]=="装备":caption.add_theme_color_override("font_color",preload("res://scripts/ui/wasteland_theme.gd").TEXT)
+		var caption:=Label.new();caption.text=data[0];caption.position=data[1];caption.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").MUTED);root.add_child(caption)
+		caption.add_theme_font_size_override("font_size",preload("res://scripts/ui/keeper_theme.gd").FONT_SECTION if data[0]=="装备" else preload("res://scripts/ui/keeper_theme.gd").FONT_CAPTION)
+		if data[0]=="装备":caption.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").TEXT)
 		if data[0].begins_with("双击"):usage_caption=caption
 	grid = Control.new()
 	grid.position=Vector2(302,94);grid.size=Vector2(834,384)
@@ -119,14 +126,15 @@ func _ready() -> void:
 			if accessible_item(selected): state.player.quick[n] = state.items[selected].definition_id
 			refresh())
 	dialog = ConfirmationDialog.new()
-	dialog.theme=preload("res://scripts/ui/wasteland_theme.gd").get_theme()
+	dialog.theme=preload("res://scripts/ui/keeper_theme.gd").get_theme()
 	add_child(dialog)
 	dialog.confirmed.connect(func(): pending.call(); refresh())
+	setup_pixel_tip()
 	hide()
 func button(parent: Node, text: String, callback: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT
+	b.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").BUTTON_HEIGHT
 	parent.add_child(b)
 	b.pressed.connect(callback)
 	b.button_down.connect(func(): held_button=b)
@@ -144,7 +152,11 @@ func open_panel(id: String = "") -> void:
 	if not accessible_item(selected): selected=""
 	box_id=id
 	if not id.is_empty() and exploration != null: exploration.open_search(state,id)
+	closing=false
+	if transition:transition.kill()
 	show()
+	modulate.a=0.0
+	transition=create_tween();transition.tween_property(self,"modulate:a",1.0,0.09)
 	movement_lock_changed.emit(not id.is_empty())
 	refresh()
 func close_panel() -> void:
@@ -156,10 +168,14 @@ func close_panel() -> void:
 	gesture.clear()
 	if exploration != null and not box_id.is_empty(): exploration.close_search(state)
 	box_id=""
-	hide()
+	closing=true
+	if transition:transition.kill()
+	if is_instance_valid(tip):tip.hide()
+	transition=create_tween();transition.tween_property(self,"modulate:a",0.0,0.08)
+	transition.tween_callback(func():hide();closing=false)
 	movement_lock_changed.emit(false)
 func _input(event: InputEvent) -> void:
-	if not visible: return
+	if not visible or closing: return
 	if event.is_action_pressed("ui_cancel"):
 		close_panel()
 		get_viewport().set_input_as_handled()
@@ -168,6 +184,8 @@ func _input(event: InputEvent) -> void:
 		grid.queue_redraw()
 		get_viewport().set_input_as_handled()
 func _process(dt: float) -> void:
+	fit_viewport()
+	update_pixel_tip()
 	if visible: update_charge_details()
 	if visible and not box_id.is_empty() and exploration != null:
 		var revealed_before: int = exploration.box(state,box_id).get("revealed",[]).size()
@@ -180,7 +198,7 @@ func _process(dt: float) -> void:
 func update_charge_details() -> void:
 	if is_instance_valid(detail_label) and accessible_item(detail_id):
 		var item: Dictionary = state.items[detail_id]
-		detail_label.text = "%s [%s]\n品质%s 耐久%s 电量%s/%s\n插件%s" % [display_name(item.id),item.id,item.quality,item.durability,item.energy,item.capacity,str(item.plugins)]
+		detail_label.text = "%s\n品质 %s   耐久 %s\n电量 %s / %s" % [display_name(item.id),item.quality,item.durability,item.energy,item.capacity]
 	for row: Dictionary in plugin_charge_rows:
 		if not is_instance_valid(row.label): continue
 		var valid: bool = selected==row.parent and accessible_item(row.parent) and ChargingService.manual_target_allowed(state,row.id,row.parent,inventory.definitions)
@@ -200,7 +218,7 @@ func refresh() -> void:
 		return
 	var counts: Array = []
 	for n in range(6): counts.append(str(n+1)+":"+str(inventory.quick_count(state,n)))
-	info.add_theme_color_override("font_color",preload("res://scripts/ui/wasteland_theme.gd").WARNING if inventory.weight(state,"bag") > state.containers.bag.maximum_weight * 0.8 else preload("res://scripts/ui/wasteland_theme.gd").TEXT)
+	info.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").WARNING if inventory.weight(state,"bag") > state.containers.bag.maximum_weight * 0.8 else preload("res://scripts/ui/keeper_theme.gd").TEXT)
 	info.text = "负重  %.1f / %.1f kg" % [inventory.weight(state,"bag"),state.containers.bag.maximum_weight]
 	tabs.visible=selector_callback.is_valid()
 	for child in tabs.get_children():child.visible=child in tabs_by_source.values() or (child is Button and child.text=="翻页" and source=="warehouse" and int(state.containers.warehouse.width)>12)
@@ -247,11 +265,11 @@ func refresh() -> void:
 				if event.pressed and accessible_item(current_id):
 					selected=current_id
 					rotated=state.items[current_id].rotated
-					gesture={"id":current_id,"source":"equipment","cell":state.items[current_id].cell.duplicate(),"start":event.position+slot_button.global_position-grid.global_position,"dragging":false}
+					gesture={"id":current_id,"source":"equipment","cell":state.items[current_id].cell.duplicate(),"start":grid.get_global_transform().affine_inverse() * (slot_button.get_global_transform() * event.position),"dragging":false}
 				elif not event.pressed and not gesture.is_empty():
-					suppress_slot_click=(event.position+slot_button.global_position-grid.global_position).distance_to(gesture.start)>=DRAG_THRESHOLD
+					suppress_slot_click=(grid.get_global_transform().affine_inverse() * (slot_button.get_global_transform() * event.position)).distance_to(gesture.start)>=DRAG_THRESHOLD
 					var copy: InputEventMouseButton=event.duplicate()
-					copy.position=event.position+slot_button.global_position-grid.global_position
+					copy.position=grid.get_global_transform().affine_inverse() * (slot_button.get_global_transform() * event.position)
 					grid_input(copy))
 	if selector_callback.is_valid(): button(listing,"确认选中物品",confirm_selection)
 	if accessible_item(selected):
@@ -259,7 +277,7 @@ func refresh() -> void:
 		var detail := Label.new()
 		detail_label=detail
 		detail_id=item.id
-		detail.text = "%s [%s]\n品质%s 耐久%s 电量%s/%s\n插件%s" % [display_name(item.id),item.id,item.quality,item.durability,item.energy,item.capacity,str(item.plugins)]
+		detail.text = "%s\n品质 %s   耐久 %s\n电量 %s / %s" % [display_name(item.id),item.quality,item.durability,item.energy,item.capacity]
 		listing.add_child(detail)
 		if item.container_id == "bag" and item.get("is_battery",false):
 			var supply_id: String = item.id
@@ -294,11 +312,11 @@ func refresh() -> void:
 	if loot_panel.visible:
 		var c:Dictionary=state.containers.get(remote_location(),{"width":6,"height":4})
 		loot_panel.size=Vector2(maxi(280,int(c.width)*40+24),mini(8,int(c.height))*40+(114 if remote_location()=="warehouse" else 82))
-		loot_take.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").COMPACT_HEIGHT
+		loot_take.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT
 		loot_take.position=Vector2(loot_panel.size.x-116,2)
 		loot_take.size=Vector2(104,28)
 		sort_warehouse_button.position=loot_take.position
-		sort_warehouse_button.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").COMPACT_HEIGHT
+		sort_warehouse_button.custom_minimum_size.y=preload("res://scripts/ui/keeper_theme.gd").COMPACT_HEIGHT
 		sort_warehouse_button.size=loot_take.size
 	layout_inventory_content()
 	arrange_equipment()
@@ -338,15 +356,15 @@ func concealed_item(id: String) -> bool:
 
 func draw_concealed(rect: Rect2, searching: bool) -> void:
 	grid.draw_rect(rect.grow(-2),Color("303634"))
-	grid.draw_rect(rect.grow(-2),preload("res://scripts/ui/wasteland_theme.gd").ACCENT if searching else Color("656c65"),false,1)
+	grid.draw_rect(rect.grow(-2),preload("res://scripts/ui/keeper_theme.gd").ACCENT if searching else Color("656c65"),false,1)
 	var center := rect.get_center()
 	if searching:
 		var box: Dictionary = exploration.box(state,box_id)
 		var progress := clampf(float(state.expedition.search.get("elapsed",0.0))/maxf(0.01,box.get("search_seconds",0.5)),0.0,1.0)
 		grid.draw_arc(center,9,0,TAU,24,Color("656c65"),2)
-		if progress>0: grid.draw_arc(center,9,-PI/2,-PI/2+TAU*progress,24,preload("res://scripts/ui/wasteland_theme.gd").ACCENT,2)
+		if progress>0: grid.draw_arc(center,9,-PI/2,-PI/2+TAU*progress,24,preload("res://scripts/ui/keeper_theme.gd").ACCENT,2)
 	else:
-		grid.draw_string(theme.default_font,center+Vector2(-5,6),"?",HORIZONTAL_ALIGNMENT_LEFT,16,preload("res://scripts/ui/wasteland_theme.gd").FONT_BODY,preload("res://scripts/ui/wasteland_theme.gd").MUTED)
+		grid.draw_string(theme.default_font,center+Vector2(-5,6),"?",HORIZONTAL_ALIGNMENT_LEFT,16,preload("res://scripts/ui/keeper_theme.gd").FONT_BODY,preload("res://scripts/ui/keeper_theme.gd").MUTED)
 
 func item_rect(item: Dictionary, location: String, right: bool) -> Rect2:
 	var pos := Vector2(item.cell[0]-(warehouse_page if location=="warehouse" else 0),item.cell[1])*cell_size(right)
@@ -363,11 +381,11 @@ func draw_grid() -> void:
 		if location.is_empty(): continue
 		var origin := Vector2(338 if right else 0,28)
 		if not (selector_callback.is_valid() and not right):
-			grid.draw_string(theme.default_font,origin-Vector2(0,32),"战利品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,preload("res://scripts/ui/wasteland_theme.gd").FONT_SECTION,preload("res://scripts/ui/wasteland_theme.gd").TEXT)
+			grid.draw_string(theme.default_font,origin-Vector2(0,32),"战利品" if right and not box_id.is_empty() else ("仓库" if location=="warehouse" else ("装备" if location=="equipment" else "随身背包")),HORIZONTAL_ALIGNMENT_LEFT,390,preload("res://scripts/ui/keeper_theme.gd").FONT_SECTION,preload("res://scripts/ui/keeper_theme.gd").TEXT)
 		var c: Dictionary = state.containers.get(location,{"width":8,"height":8})
 		for y in range(0 if location=="equipment" else mini(8,maxi(1,int(c.height)))):
 			for x in range(mini(12,maxi(1,int(c.width)))):
-				grid.draw_rect(Rect2(origin+Vector2(x,y)*cell_size(right),Vector2.ONE*cell_size(right)),Color("#4b504b"),false)
+				preload("res://scripts/ui/keeper_theme.gd").box("slot").draw(grid.get_canvas_item(),Rect2(origin+Vector2(x,y)*cell_size(right),Vector2.ONE*cell_size(right)).grow(-1))
 		var search_started := false
 		for item: Dictionary in displayed_items(location):
 			var rect := item_rect(item,location,right)
@@ -376,13 +394,19 @@ func draw_grid() -> void:
 				draw_concealed(rect,not search_started)
 				search_started=true
 				continue
-			preload("res://scripts/ui/wasteland_theme.gd").box("slot_normal" if item.id!=selected else "slot_selected",4).draw(grid.get_canvas_item(),rect.grow(-2))
+			preload("res://scripts/ui/keeper_theme.gd").box(("hover" if item.id==hover_id else "slot_normal") if item.id!=selected else "slot_selected",4).draw(grid.get_canvas_item(),rect.grow(-2))
 			var icon:Texture2D=preload('res://scripts/art/fortress_art.gd').item_icon(item.definition_id)
 			if icon!=null:
 				grid.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
-				grid.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-32)*.5,8),Vector2(32,32)),false)
+				var extent:=Vector2(minf(40,rect.size.x-8),minf(40,rect.size.y-12))
+				var icon_size:=Vector2(extent.x,minf(extent.y,extent.x*icon.get_height()/icon.get_width()))
+				grid.draw_texture_rect(icon,Rect2(rect.position+Vector2((rect.size.x-icon_size.x)*.5,4),icon_size),false)
 
-			grid.draw_string(theme.default_font,rect.position+Vector2(3,rect.size.y-6),str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else ""),HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-4,preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION,preload("res://scripts/ui/wasteland_theme.gd").TEXT)
+			var amount:=str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else "")
+			if not amount.is_empty():
+				var tw:=theme.default_font.get_string_size(amount,HORIZONTAL_ALIGNMENT_LEFT,-1,16).x
+				grid.draw_rect(Rect2(rect.end-Vector2(tw+6,18),Vector2(tw+4,16)),Color("171c23"))
+				grid.draw_string(theme.default_font,rect.end-Vector2(tw+4,6),amount,HORIZONTAL_ALIGNMENT_LEFT,tw+2,16,preload("res://scripts/ui/keeper_theme.gd").TEXT)
 	if selected != "" and state.items.has(selected) and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		var point := grid.get_local_mouse_position()
 		var right: bool = point.x >= 338
@@ -508,7 +532,7 @@ func grid_input(event: InputEvent) -> void:
 		var id: String = ended.id
 		if accessible_item(id):
 			for slot in slot_buttons:
-				if slot_buttons[slot].get_global_rect().has_point(grid.global_position+event.position):
+				if slot_buttons[slot].get_global_rect().has_point(grid.get_global_transform() * event.position):
 					if ended.source!="equipment": drop_equipment(id,slot)
 					return
 		var moved: bool = ended.dragging or event.position.distance_to(ended.start)>=DRAG_THRESHOLD
@@ -599,3 +623,47 @@ func arrange_equipment():
 		if i>=5:b.text="" if b.icon!=null else "+"
 		elif i>=3:b.text="护甲" if i==3 else "背包"
 		b.size=b.custom_minimum_size
+
+func fit_viewport():
+	var vp:=get_viewport_rect().size
+	var desired:=preload("res://scripts/ui/pixel_layout.gd").ui_scale(vp)
+	var inherited:=get_canvas_transform().get_scale().x
+	scale=Vector2.ONE*desired/inherited
+	position=Vector2((vp.x/inherited-size.x*scale.x)*0.5,48*desired/inherited)
+
+func setup_pixel_tip():
+	tip_layer=CanvasLayer.new();tip_layer.layer=60;add_child(tip_layer)
+	tip=PanelContainer.new();tip.mouse_filter=Control.MOUSE_FILTER_IGNORE;tip_layer.add_child(tip)
+	preload("res://scripts/ui/keeper_theme.gd").apply(tip)
+	tip_text=Label.new();tip_text.mouse_filter=Control.MOUSE_FILTER_IGNORE;tip.add_child(tip_text);tip.hide()
+	tip_text.add_theme_font_override("font",preload("res://scripts/ui/keeper_theme.gd").pixel_font(12))
+	tip_text.add_theme_font_size_override("font_size",24)
+
+func update_pixel_tip():
+	if tip==null:return
+	if not visible or closing:tip.hide();return
+	var hit:=""
+	var point:=grid.get_local_mouse_position()
+	for right in [false,true]:
+		var location:String=remote_location() if right else source
+		for item:Dictionary in visible_items(location):
+			if item_rect(item,location,right).has_point(point):hit=item.id;break
+	for slot in slot_buttons:
+		var b:Button=slot_buttons[slot]
+		if Rect2(Vector2.ZERO,b.size).has_point(b.get_local_mouse_position()):hit=state.player.equipment[slot]
+	if hover_id!=hit:hover_id=hit;grid.queue_redraw()
+	if hit.is_empty() or not accessible_item(hit) or not gesture.is_empty():tip.hide();return
+	var item:Dictionary=state.items[hit]
+	tip_text.text=display_name(hit)+"\n────────────\n品质  %s   耐久  %s"%[item.quality,item.durability]
+	if item.get("capacity",0)>0:tip_text.text+="\n能量  %.0f / %.0f"%[item.energy,item.capacity]
+	if item.quantity>1:tip_text.text+="\n数量  %d"%item.quantity
+	tip_text.text+="\n\n拖动放置  ·  双击转移"
+	var factor:=preload("res://scripts/ui/pixel_layout.gd").ui_scale(get_viewport_rect().size)
+	tip_layer.transform=Transform2D(Vector2(factor,0),Vector2(0,factor),Vector2.ZERO)
+	tip.size=tip.get_combined_minimum_size()
+	var pointer:=get_viewport().get_mouse_position()/factor
+	var mouse:=pointer+Vector2(18,18)
+	var limit:=get_viewport_rect().size/factor-tip.size-Vector2(12,12)
+	if mouse.x>limit.x:mouse.x=pointer.x-tip.size.x-18
+	if mouse.y>limit.y:mouse.y=pointer.y-tip.size.y-18
+	tip.position=mouse.clamp(Vector2(12,12),limit);tip.show()

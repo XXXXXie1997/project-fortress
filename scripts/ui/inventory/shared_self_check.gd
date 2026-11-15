@@ -5,9 +5,10 @@ func _initialize():call_deferred("run")
 func click(point:Vector2,down:bool):
 	var e:=InputEventMouseButton.new()
 	e.button_index=MOUSE_BUTTON_LEFT;e.position=point;e.pressed=down
-	Input.parse_input_event(e)
+	root.push_input(e,true)
 	await process_frame
 func run():
+	root.size=Vector2i(1280,720)
 	var s:=WorldState.fresh()
 	var inv:=InventoryService.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/items.json")).items)
 	inv.setup(s)
@@ -17,18 +18,18 @@ func run():
 	panel=InventoryPanel.new();panel.bind_state(s,inv);root.add_child(panel);panel.open_panel()
 	await process_frame
 	await process_frame
-	await click(panel.grid.global_position+Vector2(10,38),true)
-	await click(panel.slot_buttons.weapon_1.get_global_rect().get_center(),false)
+	await click(panel.grid.get_global_transform_with_canvas()*Vector2(10,38),true)
+	await click(panel.slot_buttons.weapon_1.get_global_transform_with_canvas()*(panel.slot_buttons.weapon_1.size*.5),false)
 	assert(s.player.equipment.weapon_1==gun.id)
-	await click(panel.slot_buttons.weapon_1.get_global_rect().get_center(),true)
-	await click(panel.grid.global_position+Vector2(10,82),false)
+	await click(panel.slot_buttons.weapon_1.get_global_transform_with_canvas()*(panel.slot_buttons.weapon_1.size*.5),true)
+	await click(panel.grid.get_global_transform_with_canvas()*Vector2(10,82),false)
 	assert(s.items[gun.id].container_id=="bag" and s.player.equipment.weapon_1=="")
 	var adapters=load("res://scripts/ui/inventory/consumer_adapters.gd")
 	var product:=inv.spawn(s,"medical_needle","warehouse",5)
 	adapters.production(panel,["medical_needle"])
 	assert(panel.visible_items(panel.remote_location()).size()==1)
-	await click(panel.grid.global_position+panel.item_rect(s.items[product.id],"warehouse",true).position+Vector2(10,10),true)
-	await click(panel.grid.global_position+Vector2(186,82),false)
+	await click(panel.grid.get_global_transform_with_canvas()*(panel.item_rect(s.items[product.id],"warehouse",true).position+Vector2(10,10)),true)
+	await click(panel.grid.get_global_transform_with_canvas()*Vector2(186,82),false)
 	assert(s.items[product.id].container_id=="bag")
 	adapters.strengthening(panel,func(id):chosen=id,true)
 	panel.source="bag";panel.selected=gun.id;panel.confirm_selection()
