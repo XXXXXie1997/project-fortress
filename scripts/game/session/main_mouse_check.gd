@@ -2,7 +2,7 @@ extends SceneTree
 var shell
 func _initialize(): call_deferred("run")
 func find_button(node: Node, prefix: String) -> Button:
-	if node is Button and node.text.begins_with(prefix) and node.is_visible_in_tree(): return node
+	if node is Button and (node.text.begins_with(prefix) or node.accessibility_name.begins_with(prefix)) and node.is_visible_in_tree(): return node
 	for child in node.get_children():
 		var result := find_button(child, prefix)
 		if result != null: return result

@@ -7,10 +7,10 @@ func mouse(point: Vector2, down: bool, double: bool = false):
 	e.position=point
 	e.pressed=down
 	e.double_click=double
-	Input.parse_input_event(e)
+	root.push_input(e,true)
 	await process_frame
 func point(id: String, right: bool) -> Vector2:
-	return panel.grid.global_position+panel.item_rect(panel.state.items[id],panel.state.items[id].container_id,right).position+Vector2(10,10)
+	return panel.grid.get_global_transform_with_canvas()*(panel.item_rect(panel.state.items[id],panel.state.items[id].container_id,right).position+Vector2(10,10))
 func run():
 	var s := WorldState.fresh()
 	var inv := InventoryService.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/items.json")).items)
@@ -44,23 +44,32 @@ func run():
 	assert(WorldState.encode(s)==snapshot)
 	# Explicit drag exactly once; duplicate release cannot undo it.
 	await mouse(start,true)
-	var drop := panel.grid.global_position+Vector2(3*44+10,28+2*44+10)
+	var drop := panel.grid.get_global_transform_with_canvas()*(panel.grid_origin(false)+Vector2(3,2)*panel.cell_size(false)+Vector2(10,10))
 	await mouse(drop,false)
 	assert(s.items[gun.id].container_id=="bag" and s.items[gun.id].cell==[3,2])
 	snapshot=WorldState.encode(s)
 	await mouse(start,false)
 	assert(WorldState.encode(s)==snapshot)
 	# Empty-space click cannot drag a stale selection.
-	await mouse(panel.grid.global_position+Vector2(300,300),true)
+	await mouse(panel.grid.get_global_transform_with_canvas()*Vector2(446,452),true)
 	await mouse(start,false)
 	assert(WorldState.encode(s)==snapshot)
 	# Rotated explicit transfer uses requested cell atomically.
 	await mouse(point(gun.id,false),true)
-	var r := InputEventKey.new()
-	r.keycode=KEY_R;r.pressed=true
-	Input.parse_input_event(r)
+	var pointer:=point(gun.id,false)+Vector2(12,8)
+	var motion:=InputEventMouseMotion.new()
+	motion.position=pointer
+	motion.button_mask=MOUSE_BUTTON_MASK_LEFT
+	root.push_input(motion,true)
+	var rotate:=InputEventMouseButton.new()
+	rotate.position=pointer
+	rotate.button_index=MOUSE_BUTTON_RIGHT
+	rotate.pressed=true
+	root.push_input(rotate,true)
+	rotate.pressed=false
+	root.push_input(rotate,true)
 	await process_frame
-	await mouse(panel.grid.global_position+Vector2(338+3*40+10,28+40+10),false)
+	await mouse(panel.grid.get_global_transform_with_canvas()*(panel.grid_origin(true)+Vector2(3,1)*panel.cell_size(true)+Vector2(panel.gesture.grab)+Vector2(1,1)),false)
 	assert(s.items[gun.id].container_id=="warehouse" and s.items[gun.id].cell==[3,1] and s.items[gun.id].rotated)
 	panel.queue_free()
 	await process_frame

@@ -25,7 +25,10 @@ func rect_shape(rect:Array)->PackedVector2Array:
 func _draw():
  labels.clear();label_rects.clear()
  recommended_regions.clear()
- draw_rect(Rect2(Vector2.ZERO,size),Color('151919'))
+ draw_rect(Rect2(Vector2.ZERO,size),Color('121f23'))
+ if size.x>400:
+  for x in range(16,int(size.x)-224,24):
+   for y in range(16,int(size.y),24):draw_rect(Rect2(x,y,2,2),Color('24353a'))
  if not arena.state.expedition.get('active',false):return
  var id:String=arena.state.expedition.map_id;var content:Dictionary=arena.catalog[id]
  bounds=arena.projection.world_bounds(Rect2(Vector2.ZERO,Vector2(content.size[0],content.size[1])))
@@ -40,14 +43,20 @@ func _draw():
     var outline:=area.duplicate();outline.append(area[0])
     draw_polyline(outline,Color('7edbc8'),2)
  for road in content.roads:draw_colored_polygon(rect_shape(road),Color('596258'))
- for room in content.rooms:draw_colored_polygon(rect_shape(room.rect),Color('8d9692'))
+ for room in content.rooms:
+  var polygon:=rect_shape(room.rect)
+  draw_colored_polygon(polygon,Color('617579'));polygon.append(polygon[0]);draw_polyline(polygon,Color('aec2c1'),1)
  for obstacle in content.barriers:draw_colored_polygon(rect_shape(obstacle),Color('9c8b68'))
  for key in content.points:
   var p:Dictionary=content.points[key]
   if p.kind=='spawn' and not key in arena.state.world.exploration.spawns[id]:continue
   if p.kind=='travel' and not arena.state.world.exploration.travel.has(id+':'+key):continue
   var colors={'spawn':Color('7edbc8'),'extraction':Color('82c95e'),'travel':Color('51a8e7'),'exit':Color('e4bd69')}
-  var pos:=map_point(Vector2(p.position[0],p.position[1]));draw_circle(pos,4,colors[p.kind])
+  var pos:=map_point(Vector2(p.position[0],p.position[1]))
+  if size.x>400:
+   var kit=preload('res://scripts/ui/keeper_theme.gd')
+   draw_texture_rect(kit.symbol({'spawn':'sun','extraction':'defense','travel':'signal','exit':'next'}[p.kind]),Rect2(pos-Vector2(8,8),Vector2(16,16)),false)
+  else:draw_circle(pos,3,colors[p.kind])
   if size.x>400:labels.append({'point':pos,'text':{'spawn':'出生','extraction':'撤离','travel':'传送','exit':'出口'}[p.kind]+' · '+p.label,'color':colors[p.kind]})
  for objective in content.objectives:
   for q in arena.state.quests.active.values():
@@ -70,11 +79,11 @@ func draw_labels():
   var entry:Dictionary=labels[i]
   var y:float=42+i*36
   var area:=Rect2(x,y,214,30);label_rects.append(area)
-  draw_rect(area,Color(.12,.19,.22))
+  preload('res://scripts/ui/keeper_theme.gd').box('inset').draw(get_canvas_item(),area)
   var number:=str(i+1)
   var pos:Vector2=entry.point
   draw_line(pos,Vector2(x-10,y+15),Color(entry.color,.65),1)
-  draw_circle(pos,3,entry.color)
+  draw_circle(pos,2,entry.color)
   draw_string(font,Vector2(x+5,y+20),number+'  '+entry.text,HORIZONTAL_ALIGNMENT_LEFT,204,preload("res://scripts/ui/wasteland_theme.gd").FONT_CAPTION,preload("res://scripts/ui/wasteland_theme.gd").TEXT)
  if not recommended_regions.is_empty():
   var top:float=size.y-18-recommended_regions.size()*48-26

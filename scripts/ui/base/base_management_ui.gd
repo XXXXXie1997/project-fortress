@@ -1,5 +1,6 @@
 class_name BaseManagementUI
 extends CanvasLayer
+const Kit=preload("res://scripts/ui/keeper_theme.gd")
 signal world_changed
 signal placement_requested(type: String, moving_id: String)
 var state: Dictionary
@@ -49,7 +50,7 @@ func _ready() -> void:
 	inventory_content.add_child(inventory_energy);inventory_energy.position=Vector2(12,12)
 	resource_status=Label.new();resource_status.position=Vector2(340,38);resource_status.set_meta("backdrop_rect",Rect2(-60,-14,300,78));add_child(resource_status)
 	preload("res://scripts/ui/keeper_backdrop.gd").attach(resource_status)
-	var energy_icon:=TextureRect.new();energy_icon.texture=load("res://assets/runtime/ui/wasteland/icon_energy.png");energy_icon.position=Vector2(-44,2);energy_icon.size=Vector2(32,32);energy_icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;energy_icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;resource_status.add_child(energy_icon)
+	var energy_icon:=TextureRect.new();energy_icon.texture=Kit.symbol("station");energy_icon.position=Vector2(-44,2);energy_icon.size=Vector2(32,32);energy_icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;energy_icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;resource_status.add_child(energy_icon)
 	confirmation=ConfirmationDialog.new();confirmation.theme=preload("res://scripts/ui/wasteland_theme.gd").get_theme();add_child(confirmation)
 	preload("res://scripts/ui/keeper_theme.gd").configure_dialog(confirmation)
 	confirmation.canceled.connect(func():pending=Callable())
@@ -60,7 +61,11 @@ func _ready() -> void:
 	show_buildings()
 func button(label: String, callback: Callable, parent: Node = null) -> Button:
 	var b:=Button.new();b.text=label;b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;b.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT
-	(parent if parent!=null else content).add_child(b);b.pressed.connect(callback);return b
+	(parent if parent!=null else content).add_child(b);b.pressed.connect(callback)
+	if label.begins_with("返回"):Kit.icon_button(b,"back",label)
+	elif label.begins_with("维修"):b.icon=Kit.symbol("repair")
+	elif label.begins_with("升级") or label.begins_with("强化"):b.icon=Kit.symbol("upgrade")
+	return b
 func clear(title: String) -> void:
 	preload("res://scripts/ui/panel_transition.gd").reveal(root_panel)
 	content.remove_meta("reference_custom")
@@ -76,15 +81,17 @@ func clear(title: String) -> void:
 	button("关闭面板 · 继续鼠标施工",func():preload("res://scripts/ui/panel_transition.gd").dismiss(root_panel))
 func report(ok: bool, success: String, failure: String = "操作被拒绝：请检查阶段、设施状态、材料及容量。") -> void:
 	message.text=success if ok else failure
+	message.add_theme_color_override("font_color",Kit.ACCENT if ok else Kit.WARNING)
 	if ok and services.has("farming"): services.farming.collect_ready(state)
 	if ok:world_changed.emit()
 func show_buildings() -> void:
 	preload("res://scripts/ui/panel_transition.gd").reveal(root_panel);clear("基地建设")
 	for type: String in ["generator","turret","farm"]:
-		button({"generator":"建造发电厂","turret":"建造炮塔","farm":"开垦农田"}[type],func():placement_requested.emit(type,"");preload("res://scripts/ui/panel_transition.gd").dismiss(root_panel))
+		var construct:=button({"generator":"建造发电厂","turret":"建造炮塔","farm":"开垦农田"}[type],func():placement_requested.emit(type,"");preload("res://scripts/ui/panel_transition.gd").dismiss(root_panel))
+		construct.icon=facility_art(type);construct.add_theme_constant_override("icon_max_width",36)
 	button("扩建区域 / 居民位",func():report(services.building.expand(state),"扩建完成"))
 	button("打开仓库与装备",func():inventory_panel.open_panel())
-	var storage:=Label.new();storage.text="仓库等级 %d · 能源 %.0f / %.0f
+	var storage:=Label.new();storage.text="仓库等级 %d · \ue000 %.0f / %.0f
 格子 %d × %d" % [state.base.get("station_level",1),state.base.energy_store.energy,state.base.energy_store.capacity,state.containers.warehouse.width,state.containers.warehouse.height];content.add_child(storage)
 func inspect(id: String) -> void:
 	if not state.base.buildings.has(id):return
@@ -92,10 +99,25 @@ func inspect(id: String) -> void:
 	var b: Dictionary=state.base.buildings[id]
 	clear("设施：%s  等级%s
 耐久 %.0f / %.0f" % [name_for(b.type),b.level,b.durability,b.maximum])
+	var visual:=TextureRect.new()
+	visual.texture=facility_art(b.type,b.durability<=0)
+	visual.custom_minimum_size=Vector2(120,120)
+	visual.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+	visual.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	content.add_child(visual)
+	visual.size_flags_horizontal=Control.SIZE_SHRINK_BEGIN
+	var attributes:=Label.new()
+	attributes.text={"warehouse":"仓储与无线充能","generator":"为基地提供能源","turret":"基地防御","technology":"研究与设施升级","quest":"接取及交付任务","farm":"种植与收获","trade":"物资交易与当日回购","workstation":"制作、维修与改装"}.get(b.type,"")
+	if b.type=="warehouse":
+		attributes.text+="\n%s  %.0f / %.0f    ·    %d × %d 格" % [Kit.STATION,state.base.energy_store.energy,state.base.energy_store.capacity,state.containers.warehouse.width,state.containers.warehouse.height]
+	elif b.type=="farm":attributes.text+="\n"+farm_status(id)
+	elif b.type=="workstation":attributes.text+="\n"+production_status(id)
+	content.add_child(attributes)
 	button("移动（免费）",func():placement_requested.emit(b.type,id);preload("res://scripts/ui/panel_transition.gd").dismiss(root_panel))
 	button("维修 / 原位重建",func():report(services.building.repair(state,id),"设施修复完成");inspect(id))
 	button("升级",func():report(upgrade_building(id),"设施升级完成");inspect(id))
-	button("拆除并返还材料",func():report(services.building.demolish(state,id),"拆除完成","无法拆除：预置设施、未清订单/作物或退款空间不足。");show_buildings())
+	var demolish:=button("拆除并返还材料",func():report(services.building.demolish(state,id),"拆除完成","无法拆除：预置设施、未清订单/作物或退款空间不足。");show_buildings())
+	demolish.add_theme_color_override("font_color",Kit.DANGER)
 	if b.type=="workstation":
 		button("制作与订单",func():show_production(id))
 		button("维修 / 强化 / 拆解 / 插件",func():show_workstation(id))
@@ -103,6 +125,9 @@ func inspect(id: String) -> void:
 	if b.type=="trade":button("进入双篮交易",show_trade)
 	if b.type=="warehouse":button("仓库 / 能源 / 装备",func():inventory_panel.open_panel())
 	button("返回建设",show_buildings)
+func facility_art(kind:String,ruined:bool=false)->Texture2D:
+	return FortressArt.crop_texture("material",1) if kind=="farm" else FortressArt.facility_texture(kind,ruined)
+
 func name_for(type: String) -> String:
 	return {"generator":"发电厂","turret":"炮塔","farm":"农田","warehouse":"仓库能源站","technology":"科技终端","quest":"任务终端","workstation":"工作站","trade":"贸易站"}.get(type,"设施")
 func show_production(id: String) -> void:
@@ -126,7 +151,7 @@ func show_production(id: String) -> void:
 	var art:=TextureRect.new();art.texture=preload("res://scripts/art/fortress_art.gd").item_icon(r.output.keys()[0]);art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;art.custom_minimum_size=Vector2(80,80);detail.add_child(art)
 	var quantity:=SpinBox.new();quantity.min_value=1;quantity.max_value=99;detail.add_child(quantity)
 	var cost:=Label.new();cost.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;detail.add_child(cost)
-	var update_cost=func(_v):cost.text="预付材料："+cost_text(r.cost)+" / 每份\n预付能源："+str(float(r.energy)*quantity.value)+"\n按阶段产能交付，取消返还未产部分。"
+	var update_cost=func(_v):cost.text="预付材料："+cost_text(r.cost)+" / 每份\n\ue000  "+str(float(r.energy)*quantity.value)+"\n按阶段产能交付，取消返还未产部分。"
 	quantity.value_changed.connect(update_cost);update_cost.call(1)
 	var submit:=button("制作 "+name_label.text,func():report(submit_order(id,recipe_id,int(quantity.value)),"已预付并下单",order_block_reason(id,recipe_id,int(quantity.value)));show_production(id),detail)
 	submit.disabled=state.base.buildings[id].has("order")
@@ -142,7 +167,8 @@ func show_farm(id: String) -> void:
 	clear("农田 · 独立批次")
 	for crop: String in services.farming.crops:
 		var c: Dictionary=services.farming.crops[crop]
-		button("种植 "+("催化作物" if crop=="catalyst" else "材料作物")+" 材料"+cost_text(c.cost),func():report(services.farming.plant(state,id,crop),"已种植",plant_block_reason(id,crop));show_farm(id))
+		var plant:=button("种植 "+("催化作物" if crop=="catalyst" else "材料作物")+"\n"+cost_text(c.cost),func():report(services.farming.plant(state,id,crop),"已种植",plant_block_reason(id,crop));show_farm(id))
+		plant.icon=FortressArt.crop_texture(crop,2);plant.add_theme_constant_override("icon_max_width",32)
 	activity_id=id;activity_kind="farm"
 	activity_label=Label.new();activity_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(activity_label)
@@ -159,6 +185,8 @@ func show_workstation(id: String) -> void:
 				var item:Dictionary=state.items[item_id]
 				var maximum:float=services.inventory.definitions[item.definition_id].get("durability",0)
 				var amount:int=maxi(1,ceili(services.workstation.config.repair_scrap*(1.0-float(item.durability)/maximum))) if maximum>0 else 0
+				confirmation.title="维修装备" if action=="repair" else "拆解物品"
+				confirmation.ok_button_text="维修" if action=="repair" else "拆解"
 				confirmation.dialog_text="确认"+("维修" if action=="repair" else "拆解")+"："+inventory_panel.display_name(item_id)+"\n"+("消耗废料×"+str(amount) if action=="repair" else "返还废料×"+str(services.workstation.config.dismantle_scrap))+"；背包可能溢出。"
 				confirmation.popup_centered()))
 	button("强化 / 升级",func():
@@ -168,7 +196,7 @@ func show_workstation(id: String) -> void:
 			for target_id: String in services.workstation.config.tiers:
 				var tier: Dictionary=services.workstation.config.tiers[target_id]
 				if tier.family==old.family and int(tier.level)==int(old.level)+1:
-					button("升级 · 本次材料"+tier_difference(old,tier)+" 能源"+str(float(tier.energy)-float(old.energy)),func():report(services.workstation.modify(state,id,item_id,"upgrade",target_id),"升级完成，保留电量与插件");show_workstation(id))))
+					button("升级 · 本次材料"+tier_difference(old,tier)+"  "+Kit.STATION+str(float(tier.energy)-float(old.energy)),func():report(services.workstation.modify(state,id,item_id,"upgrade",target_id),"升级完成，保留电量与插件");show_workstation(id))))
 	button("装入插件",func():
 		select_item(func(i):return services.inventory.definitions[i.definition_id].category=="ranged",func(weapon_id):
 			select_item(func(i):return services.inventory.definitions[i.definition_id].category=="plugin",func(plugin_id):report(services.workstation.modify(state,id,weapon_id,"install",plugin_id),"插件已安装"))))
@@ -197,7 +225,8 @@ func show_trade() -> void:
 				var price:int=trade_price(item.id,side=="sell")
 				var name:String=definition_name(item.definition_id)
 				if name=="物资":name=inventory_panel.display_name(item.id)
-				var label_text:String=name+" ×"+str(item.quantity)+" · "+str(price)+" 能源\n"+{"bag":"背包","warehouse":"仓库","equipment":"已装备","shop":"商店","buyback":"当日回购"}[location]+" · 电量 "+str(item.energy)+"/"+str(item.capacity)
+				var origin:String={"bag":"背包","warehouse":"仓库","equipment":"已装备","shop":"商店","buyback":"当日回购"}[location]
+				var label_text:String="%s ×%d\n%s %d  ·  %s" % [name,item.quantity,Kit.STATION,price,origin]
 				var dest:Node=basket_view if item.id in basket else available
 				var row:=button(label_text,func():
 					if item.id in basket:basket.erase(item.id)
@@ -205,12 +234,14 @@ func show_trade() -> void:
 					show_trade(),dest)
 				row.icon=preload('res://scripts/art/fortress_art.gd').item_icon(item.definition_id)
 				row.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
-				row.tooltip_text="品质%s · 耐久%s · 电量%s/%s\n%s" % [item.quality,item.durability,item.energy,item.capacity,"当日原价回购" if location=="buyback" else "价格不受电量影响"]
+				row.alignment=HORIZONTAL_ALIGNMENT_LEFT
+				row.tooltip_text=name+"\n"+inventory_panel.item_attributes(item)+"\n"+("当日原价回购" if location=="buyback" else "价格不受电量影响")
 				if item.id in basket:net+=price if side=="sell" else -price
-	var summary:=Label.new();summary.text="卖出 %d 件 / 买入 %d 件  净能源 %+d · 当前 %.0f / %.0f" % [sell_basket.size(),buy_basket.size(),net,state.base.energy_store.energy,state.base.energy_store.capacity];content.add_child(summary)
+	var summary:=Label.new();summary.add_theme_color_override("font_color",Kit.ACCENT);summary.text="卖出 %d 件 / 买入 %d 件  \ue000 %+d · 当前 %.0f / %.0f" % [sell_basket.size(),buy_basket.size(),net,state.base.energy_store.energy,state.base.energy_store.capacity];content.add_child(summary)
 	var actions:=HBoxContainer.new();actions.add_theme_constant_override("separation",preload("res://scripts/ui/wasteland_theme.gd").GAP);content.add_child(actions)
 	button("送到："+("仓库" if target=="warehouse" else "背包"),func():target="bag" if target=="warehouse" else "warehouse";show_trade(),actions)
-	button("统一成交",func():commit_trade(false),actions)
+	var settle:=button("统一成交",func():commit_trade(false),actions)
+	settle.add_theme_stylebox_override("normal",Kit.button_box("selected"))
 	button("清空两篮",func():sell_basket.clear();buy_basket.clear();show_trade(),actions)
 	button("返回建设",show_buildings,actions)
 	for action:Control in actions.get_children():action.custom_minimum_size=Vector2(262,preload("res://scripts/ui/keeper_theme.gd").BUTTON_HEIGHT)
@@ -225,7 +256,9 @@ func trade_price(id: String, selling: bool) -> int:
 func commit_trade(confirmed: bool) -> void:
 	var result:Dictionary=services.trade.transact(state,sell_basket,buy_basket,target,confirmed)
 	if result.get("confirmation_required",false):
-		confirmation.dialog_text="确认能源损失 %.0f / 可能背包溢出 %s" % [result.get("lost_energy",0),str(result.get("overflow",[]))]
+		confirmation.title="交易结算"
+		confirmation.ok_button_text="确认成交"
+		confirmation.dialog_text="储能损失  %.0f\n背包溢出  %d 件" % [result.get("lost_energy",0),result.get("overflow",[]).size()]
 		pending=func():commit_trade(true)
 		confirmation.popup_centered();return
 	report(result.ok,trade_result_text(result),"交易未提交：检查资源、设施、阶段或已变动商品。")
@@ -272,11 +305,12 @@ func _process(_dt: float) -> void:
 	var station_active:=false
 	for b:Dictionary in state.base.buildings.values():
 		if b.type=="warehouse":station_active=b.durability>0
-	resource_status.text="基地能源  %.0f / %.0f\n无线充能站 / %s" % [state.base.energy_store.energy,state.base.energy_store.capacity,"运行中" if station_active else "废墟停用"]
+	resource_status.tooltip_text="基地储能"
+	resource_status.text="%.0f / %.0f\n无线充能站 / %s" % [state.base.energy_store.energy,state.base.energy_store.capacity,"运行中" if station_active else "废墟停用"]
 	inventory_energy.position=Vector2(-360,-52)
 	inventory_energy.size=Vector2(360,40);inventory_energy.clip_text=true
 	inventory_energy.visible=false
-	inventory_energy.text="能源 %.0f / %.0f" % [state.base.energy_store.energy,state.base.energy_store.capacity]
+	inventory_energy.text="\ue000 %.0f / %.0f" % [state.base.energy_store.energy,state.base.energy_store.capacity]
 	resource_status.visible=not presentation_obscured and not inventory_panel.visible and not root_panel.visible
 	message.visible=not presentation_obscured and not feedback_obscured and not inventory_panel.visible
 
@@ -288,7 +322,7 @@ func is_modal_open() -> bool:
 
 
 func trade_result_text(result: Dictionary) -> String:
-	var text:="交易完成，净能源 %+d。" % int(result.get("actual_net",0))
+	var text:="交易完成，\ue000 %+d。" % int(result.get("actual_net",0))
 	var counts:Dictionary={}
 	for destination:Dictionary in result.get("destinations",{}).values():
 		var location:String=destination.get("destination","")

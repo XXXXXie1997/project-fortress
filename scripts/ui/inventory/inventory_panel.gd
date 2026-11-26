@@ -60,9 +60,12 @@ var drag_preview:Control
 const DRAG_THRESHOLD := 6.0
 var dialog: ConfirmationDialog
 var hover_id := ""
+var has_pointer_sample := false
 var tip_layer:CanvasLayer
 var tip:PanelContainer
+var tip_title:Label
 var tip_text:Label
+var tip_action:Label
 var transition:Tween
 var closing:=false
 const CELL := 44
@@ -84,13 +87,15 @@ func _ready() -> void:
 	var heading:=Label.new();heading.text="背包与装备";heading.add_theme_font_size_override("font_size",preload("res://scripts/ui/keeper_theme.gd").FONT_TITLE);root.add_child(heading);heading.position=Vector2(24,24)
 	heading.add_theme_font_override("font",preload("res://scripts/ui/keeper_theme.gd").pixel_font(12))
 	root.add_child(tabs);tabs.position=Vector2(310,66)
-	for location in ["bag","warehouse","equipment"]:
+	for location in ["equipment","bag","warehouse"]:
 		tabs_by_source[location]=button(tabs,{"bag":"背包","warehouse":"仓库","equipment":"已装备"}[location],func():
 			if location=="warehouse" and not at_base: return
+			if source!=location:selected=""
 			source=location; refresh())
 		tabs_by_source[location].gui_input.connect(func(event):
 			if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and event.pressed:
 				if location=="warehouse" and not at_base: return
+				if source!=location:selected=""
 				source=location
 				refresh())
 	button(tabs,"整理",func(): inventory.sort_container(state,source); refresh())
@@ -139,7 +144,12 @@ func _ready() -> void:
 	preload("res://scripts/ui/keeper_theme.gd").configure_dialog(dialog)
 	dialog.theme=preload("res://scripts/ui/keeper_theme.gd").get_theme()
 	add_child(dialog)
-	dialog.confirmed.connect(func(): pending.call(); refresh())
+	dialog.confirmed.connect(func():
+		var action:=pending
+		pending=Callable()
+		if action.is_valid():action.call()
+		refresh())
+	dialog.canceled.connect(func():pending=Callable())
 	setup_pixel_tip()
 	ReferenceLayout.setup(self)
 	drag_preview=preload("res://scripts/ui/inventory/drag_preview.gd").new();drag_preview.panel=self
@@ -165,6 +175,7 @@ func flush_refresh() -> void:
 		refresh_pending=false
 		if visible: refresh()
 func open_panel(id: String = "") -> void:
+	has_pointer_sample=false
 	gesture.clear()
 	if not at_base and source=="warehouse": source="bag"
 	if not accessible_item(selected): selected=""
@@ -205,7 +216,9 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and not event.pressed:
 		finish_pointer_release.call_deferred()
 	if not visible or closing: return
-	if event is InputEventMouse:drag_pointer=event.position
+	if event is InputEventMouse:
+		drag_pointer=event.position
+		has_pointer_sample=true
 	if not gesture.is_empty():
 		if event is InputEventMouseMotion:
 			var point:Vector2=grid.get_global_transform_with_canvas().affine_inverse()*event.position
@@ -244,7 +257,7 @@ func _process(dt: float) -> void:
 func update_charge_details() -> void:
 	if is_instance_valid(detail_label) and accessible_item(detail_id):
 		var item: Dictionary = state.items[detail_id]
-		detail_label.text = "%s\n品质 %s   耐久 %s\n电量 %s / %s" % [display_name(item.id),item.quality,item.durability,item.energy,item.capacity]
+		detail_label.text = display_name(item.id)+"\n"+item_attributes(item)
 	for row: Dictionary in plugin_charge_rows:
 		if not is_instance_valid(row.label): continue
 		var valid: bool = selected==row.parent and accessible_item(row.parent) and ChargingService.manual_target_allowed(state,row.id,row.parent,inventory.definitions)
@@ -274,7 +287,10 @@ func refresh() -> void:
 	detail_scroll.visible=not selected.is_empty() or selector_callback.is_valid()
 	sort_bag_button.visible=not selector_callback.is_valid()
 	sort_warehouse_button.visible=at_base and box_id.is_empty()
-	for location in tabs_by_source: tabs_by_source[location].visible=location!="warehouse" or at_base
+	for location in tabs_by_source:
+		var tab:Button=tabs_by_source[location]
+		tab.visible=location!="warehouse" or at_base
+		tab.add_theme_stylebox_override("normal",preload("res://scripts/ui/keeper_theme.gd").button_box("selected" if location==source else "button",true))
 	detail_label=null
 	detail_id=""
 	plugin_charge_rows.clear()
@@ -295,6 +311,8 @@ func refresh() -> void:
 			if selected != "" and accessible_item(selected) and state.items[selected].container_id in ["bag","warehouse","equipment"]: result = inventory.equip(state,selected,slot,false,at_base)
 			else: result = inventory.unequip(state,slot,false,at_base)
 			if result.get("confirmation_required",false):
+				dialog.title="更换背包"
+				dialog.ok_button_text="确认更换"
 				dialog.dialog_text="缩小背包将转移 %d 件物品。%s" % [result.get("overflow",[]).size(),"基地先放仓库，剩余放地面箱。" if at_base else "野外溢出物品直接放地面掉落箱。"]
 				pending=func():
 					if selected!="" and not accessible_item(selected): return
@@ -317,13 +335,15 @@ func refresh() -> void:
 					var copy: InputEventMouseButton=event.duplicate()
 					copy.position=grid.get_global_transform().affine_inverse() * (slot_button.get_global_transform() * event.position)
 					grid_input(copy))
-	if selector_callback.is_valid(): button(listing,"确认选中物品",confirm_selection)
+	if selector_callback.is_valid():
+		var confirm:=button(listing,"确认选中物品",confirm_selection)
+		confirm.disabled=not accessible_item(selected)
 	if accessible_item(selected):
 		var item: Dictionary = state.items[selected]
 		var detail := Label.new()
 		detail_label=detail
 		detail_id=item.id
-		detail.text = "%s\n品质 %s   耐久 %s\n电量 %s / %s" % [display_name(item.id),item.quality,item.durability,item.energy,item.capacity]
+		detail.text = display_name(item.id)+"\n"+item_attributes(item)
 		listing.add_child(detail)
 		if item.container_id == "bag" and item.get("is_battery",false):
 			var supply_id: String = item.id
@@ -402,7 +422,7 @@ func concealed_item(id: String) -> bool:
 	return not box_id.is_empty() and state.items.has(id) and state.items[id].container_id == remote_location() and not id in exploration.box(state,box_id).get("revealed",[])
 
 func draw_concealed(rect: Rect2, searching: bool, paint:Control) -> void:
-	paint.draw_rect(rect.grow(-2),Color("303634"))
+	preload("res://scripts/ui/keeper_theme.gd").box("inset").draw(paint.get_canvas_item(),rect.grow(-2))
 	paint.draw_rect(rect.grow(-2),preload("res://scripts/ui/keeper_theme.gd").ACCENT if searching else Color("656c65"),false,1)
 	var center := rect.get_center()
 	if searching:
@@ -449,7 +469,7 @@ func draw_grid_side(right:bool,paint:Control) -> void:
 		var title:String=display_name(item.id)
 		while title.length()>1 and theme.default_font.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,item_font).x>rect.size.x-8:title=title.left(title.length()-2)+"…"
 		paint.draw_string(theme.default_font,rect.position+Vector2(4,20),title,HORIZONTAL_ALIGNMENT_LEFT,rect.size.x-8,item_font,Color("c5cdcf"))
-		var amount:=str(int(item.energy)) if item.get("is_battery",false) else (str(item.quantity) if item.quantity>1 else "")
+		var amount:=preload("res://scripts/ui/keeper_theme.gd").BATTERY+str(int(item.energy)) if item.get("is_battery",false) else ("×"+str(item.quantity) if item.quantity>1 else "")
 		if not amount.is_empty():
 			var tw:=theme.default_font.get_string_size(amount,HORIZONTAL_ALIGNMENT_LEFT,-1,item_font).x
 			paint.draw_rect(Rect2(rect.end-Vector2(tw+6,24),Vector2(tw+4,22)),Color("171c23"))
@@ -541,6 +561,8 @@ func transfer_item(id: String, destination: String, cell: Vector2i = Vector2i(-1
 		var revealed: Array = exploration.box(trial,box_id).revealed
 		if not id in revealed: revealed.append(id)
 	if needs_confirmation and not confirmed:
+		dialog.title="卸下背包"
+		dialog.ok_button_text="确认卸下"
 		dialog.dialog_text="落点可用，卸下背包将转移 %d 件溢出物品。%s" % [overflow.size(),"优先仓库，剩余地面箱。" if at_base else "野外直接地面箱。"]
 		pending=func():
 			rotated=desired_rotation
@@ -590,7 +612,7 @@ func grid_input(event: InputEvent) -> void:
 					refresh();return
 		if accessible_item(id):
 			for slot in slot_buttons:
-				if slot_buttons[slot].get_global_rect().has_point(grid.get_global_transform() * event.position):
+				if slot_buttons[slot].is_visible_in_tree() and slot_buttons[slot].get_global_rect().has_point(grid.get_global_transform() * event.position):
 					if ended.source!="equipment": drop_equipment(id,slot)
 					return
 		if not Rect2(grid_origin(right),grid_surfaces[int(right)].size).has_point(event.position):return
@@ -617,6 +639,7 @@ func bind_external_container(id: String, permission: Callable, filter: Callable 
 	selected=""
 
 func open_selector(filter: Callable, callback: Callable, base_permission: bool) -> void:
+	selected=""
 	selector_filter=filter
 	selector_callback=callback
 	at_base=base_permission
@@ -638,7 +661,9 @@ func drop_equipment(id: String, slot: String, confirmed: bool = false) -> void:
 	if not accessible_item(id): return
 	var result:=inventory.equip(state,id,slot,confirmed,at_base)
 	if result.get("confirmation_required",false):
-		dialog.dialog_text="装备背包将溢出物品。"+("优先仓库，剩余地面箱。" if at_base else "野外直接地面箱。")
+		dialog.title="更换背包"
+		dialog.ok_button_text="确认更换"
+		dialog.dialog_text="溢出物品  %d 件\n" % result.get("overflow",[]).size()+("优先仓库，剩余地面箱。" if at_base else "野外直接地面箱。")
 		pending=func(): drop_equipment(id,slot,true)
 		dialog.popup_centered()
 	refresh()
@@ -663,19 +688,43 @@ func fit_viewport():
 	scale=Vector2.ONE*desired/inherited
 	position=Vector2((vp.x/inherited-size.x*scale.x)*0.5,16*desired/inherited)
 
+func item_attributes(item:Dictionary) -> String:
+	var lines:=PackedStringArray(["品质  %s" % item.quality])
+	if inventory.definitions[item.definition_id].get("durability",0)>0:
+		lines.append("耐久  %s" % item.durability)
+	if item.get("capacity",0)>0:
+		var glyph:String=preload("res://scripts/ui/keeper_theme.gd").BATTERY if item.get("is_battery",false) else preload("res://scripts/ui/keeper_theme.gd").CAPACITOR
+		lines.append("%s  %.0f / %.0f" % [glyph,item.energy,item.capacity])
+	if item.quantity>1:lines.append("数量  ×%d" % item.quantity)
+	return "\n".join(lines)
+
 func setup_pixel_tip():
 	tip_layer=CanvasLayer.new();tip_layer.layer=60;add_child(tip_layer)
 	tip=PanelContainer.new();tip.mouse_filter=Control.MOUSE_FILTER_IGNORE;tip_layer.add_child(tip)
 	preload("res://scripts/ui/keeper_theme.gd").apply(tip)
-	tip_text=Label.new();tip_text.mouse_filter=Control.MOUSE_FILTER_IGNORE;tip.add_child(tip_text);tip.hide()
+	var body:=VBoxContainer.new()
+	body.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	tip.add_child(body)
+	tip_title=Label.new()
+	tip_title.add_theme_font_size_override("font_size",preload("res://scripts/ui/keeper_theme.gd").FONT_TITLE)
+	tip_title.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").ACCENT)
+	body.add_child(tip_title)
+	body.add_child(HSeparator.new())
+	tip_text=Label.new();body.add_child(tip_text)
+	tip_action=Label.new()
+	tip_action.add_theme_font_size_override("font_size",preload("res://scripts/ui/keeper_theme.gd").FONT_CAPTION)
+	tip_action.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").MUTED)
+	body.add_child(tip_action)
+	tip.hide()
 	tip_text.add_theme_font_override("font",preload("res://scripts/ui/keeper_theme.gd").pixel_font(12))
-	tip_text.add_theme_font_size_override("font_size",16)
+	tip_text.add_theme_font_size_override("font_size",preload("res://scripts/ui/keeper_theme.gd").FONT_BODY)
 
 func update_pixel_tip():
 	if tip==null:return
-	if not visible or closing:tip.hide();return
+	if not visible or closing or dialog.visible:tip.hide();return
 	var hit:=""
-	var point:=grid.get_local_mouse_position()
+	var cursor:=drag_pointer if has_pointer_sample else get_viewport().get_mouse_position()
+	var point:=grid.get_global_transform_with_canvas().affine_inverse()*cursor
 	for right in [false,true]:
 		var location:String=remote_location() if right else source
 		if not Rect2(grid_origin(right),grid_surfaces[int(right)].size).has_point(point):continue
@@ -683,18 +732,17 @@ func update_pixel_tip():
 			if item_rect(item,location,right).has_point(point):hit=item.id;break
 	for slot in slot_buttons:
 		var b:Button=slot_buttons[slot]
-		if Rect2(Vector2.ZERO,b.size).has_point(b.get_local_mouse_position()):hit=state.player.equipment[slot]
+		if b.is_visible_in_tree() and Rect2(Vector2.ZERO,b.size).has_point(b.get_global_transform_with_canvas().affine_inverse()*cursor):hit=state.player.equipment[slot]
 	if hover_id!=hit:hover_id=hit;grid.queue_redraw()
 	if hit.is_empty() or not accessible_item(hit) or not gesture.is_empty():tip.hide();return
 	var item:Dictionary=state.items[hit]
-	tip_text.text=display_name(hit)+"\n────────────\n品质  %s   耐久  %s"%[item.quality,item.durability]
-	if item.get("capacity",0)>0:tip_text.text+="\n能量  %.0f / %.0f"%[item.energy,item.capacity]
-	if item.quantity>1:tip_text.text+="\n数量  %d"%item.quantity
-	tip_text.text+="\n\n拖动放置  ·  双击转移"
+	tip_title.text=display_name(hit)
+	tip_text.text=item_attributes(item)
+	tip_action.text="选择物品" if selector_callback.is_valid() else "拖动放置  ·  双击转移"
 	var factor:=preload("res://scripts/ui/pixel_layout.gd").ui_scale(get_viewport_rect().size)
 	tip_layer.transform=Transform2D(Vector2(factor,0),Vector2(0,factor),Vector2.ZERO)
 	tip.size=tip.get_combined_minimum_size()
-	var pointer:=get_viewport().get_mouse_position()/factor
+	var pointer:=cursor/factor
 	var mouse:=pointer+Vector2(18,18)
 	var limit:=get_viewport_rect().size/factor-tip.size-Vector2(12,12)
 	if mouse.x>limit.x:mouse.x=pointer.x-tip.size.x-18

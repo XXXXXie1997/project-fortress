@@ -36,6 +36,7 @@ func clear_choices(title:String):
  preload("res://scripts/ui/panel_transition.gd").reveal(menu);opened=true
 func option(text_value:String,callback:Callable):
  var b:=Button.new();b.text=text_value;b.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART;b.custom_minimum_size.y=preload('res://scripts/ui/keeper_theme.gd').BUTTON_HEIGHT;choices.add_child(b);b.pressed.connect(callback)
+ if text_value=='关闭':preload('res://scripts/ui/keeper_theme.gd').icon_button(b,'close','关闭 · Esc')
 func close_menu():preload("res://scripts/ui/panel_transition.gd").dismiss(menu);opened=false
 func show_departure():
  clear_choices('避难所出发终端 · 第 %d 天 · %s'%[arena.state.day,arena.state.phase])
@@ -64,13 +65,17 @@ func confirm_night(id:String,spawn:String):
   else:arena.depart(id,spawn,true,true))
  option('返回',show_departure)
 func show_travel(source:String):
- clear_choices('传送消耗随身电池能源 15；仅可前往已修复点')
+ clear_choices('传送   ·   \ue001 15')
+ var destinations:=0
  for key in arena.state.world.exploration.travel:
   var part:Array=key.split(':')
   if part[0]==arena.state.expedition.map_id and part[1]==source:continue
-  option(arena.catalog[part[0]].title,func():
+  destinations+=1
+  option(arena.catalog[part[0]].title+' · '+str(arena.catalog[part[0]].points[part[1]].get('label',part[1])),func():
    if arena.exploration.travel(arena.state,source,part[0],part[1],15):await arena.rebuild_map();close_menu()
    else:arena.message='随身能源不足')
+ if destinations==0:
+  var empty:=Label.new();empty.text='暂无其他已修复的传送点';choices.add_child(empty)
  option('关闭',close_menu)
 func _input(event):
  var progression=arena.player.get('progression_panel')
@@ -79,7 +84,11 @@ func _input(event):
   super._input(event);return
  if progression!=null and progression.visible and event.is_action_pressed('interact'):
   get_viewport().set_input_as_handled();return
+ if full_map and event.is_action_pressed('cancel'):
+  event=InputEventAction.new();event.action='map';event.pressed=true
  if event.is_action_pressed('map'):
+  if menu.visible or (inventory_panel!=null and inventory_panel.visible) or (progression!=null and progression.visible):
+   return
   full_map=not full_map;map_view.position=Vector2(80,164) if full_map else Vector2(get_viewport().get_visible_rect().size.x/hud_scale-236,36);map_view.size=Vector2(1120,460) if full_map else Vector2(200,126);map_view.set_meta('backdrop_rect',Rect2(-24,-120,1168,632) if full_map else Rect2(-12,-12,224,174));map_title.position=Vector2(0,-96) if full_map else Vector2(4,136);map_title.add_theme_font_size_override('font_size',preload("res://scripts/ui/keeper_theme.gd").FONT_TITLE if full_map else preload("res://scripts/ui/keeper_theme.gd").FONT_BODY);map_help.visible=full_map;get_viewport().set_input_as_handled();return
  if event.is_action_pressed('interact') and not opened and (inventory_panel==null or not inventory_panel.visible):arena.interact();get_viewport().set_input_as_handled();return
  if menu.visible:
@@ -96,7 +105,7 @@ func _process(dt):
  hint.position.y=get_viewport().get_visible_rect().size.y/hud_scale-260
  label.text='HP %.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]
  var near:Dictionary=arena.nearby() if arena.ready_world else {}
- hint.text=('F '+near.get('label','')+'\n' if not near.is_empty() else '')+arena.message
+ hint.text=('[F]  '+near.get('label','')+'\n' if not near.is_empty() else '')+arena.message
  hint.visible=not full_map and not hint.text.is_empty()
  hint.set_meta("minimal_hud",true)
  hint.add_theme_color_override("font_shadow_color",Color.BLACK);hint.add_theme_constant_override("shadow_offset_y",2)

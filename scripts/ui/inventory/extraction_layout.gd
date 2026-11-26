@@ -7,13 +7,17 @@ static func setup(p):
  for node in root.get_children():
   if node is ColorRect:node.hide()
   if node is Label and node!=p.info and node!=p.feedback:node.hide()
-  if node is Button and node.text=='关闭':node.position=Vector2(1152,14);node.size=Vector2(80,ThemeStyle.BUTTON_HEIGHT)
- p.reference_ui.scrim=ColorRect.new();p.reference_ui.scrim.position=Vector2(-16,-16);p.reference_ui.scrim.size=Vector2(1280,720);p.reference_ui.scrim.color=Color('0c1119');p.reference_ui.scrim.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(p.reference_ui.scrim);root.move_child(p.reference_ui.scrim,0)
+  if node is Button and node.text=='关闭':
+   ThemeStyle.icon_button(node,'close','关闭 · Esc')
+   node.position=Vector2(1196,14);node.size=Vector2(36,36)
+ p.reference_ui.scrim=ColorRect.new();p.reference_ui.scrim.position=Vector2(-16,-16);p.reference_ui.scrim.size=Vector2(1280,720);p.reference_ui.scrim.color=Color('101a1e');p.reference_ui.scrim.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(p.reference_ui.scrim);root.move_child(p.reference_ui.scrim,0)
  var top:=Panel.new();top.position=Vector2(-16,-16);top.size=Vector2(1280,72);top.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(top);root.move_child(top,1)
  p.reference_ui.bag_panel=Panel.new();p.reference_ui.bag_panel.position=Vector2(416,64);p.reference_ui.bag_panel.size=Vector2(416,608);p.reference_ui.bag_panel.mouse_filter=Control.MOUSE_FILTER_IGNORE;root.add_child(p.reference_ui.bag_panel);root.move_child(p.reference_ui.bag_panel,2)
+ ThemeStyle.icon_button(p.sort_bag_button,'sort','整理背包')
+ ThemeStyle.icon_button(p.sort_warehouse_button,'sort','整理仓库')
  p.reference_ui.header=caption(root,'物资管理',Vector2(16,12))
  p.reference_ui.header.add_theme_font_size_override('font_size',ThemeStyle.FONT_TITLE)
- caption(root,'装备',Vector2(16,316))
+ p.reference_ui.equipment_caption=caption(root,'装备',Vector2(16,316))
  p.reference_ui.left_title=caption(root,'背包',Vector2(432,76))
  p.reference_ui.right_title=caption(root,'仓库',Vector2(832,76))
  p.reference_ui.bind_title=caption(root,'拖动或选择物品 · 绑定快捷栏',Vector2(448,548))
@@ -44,17 +48,19 @@ static func arrange(p):
  p.left_panel.position=Vector2(0,64);p.left_panel.size=Vector2(416,608)
  p.loot_panel.position=Vector2(832,64)
  p.reference_ui.right_title.position=Vector2(848,76)
+ p.reference_ui.equipment_caption.visible=not selecting
  p.equipment_layout.visible=not selecting
  p.equipment_layout.position=Vector2(16,112)
  p.info.position=Vector2(16,72);p.info.visible=not selecting
  p.weight_bar.position=Vector2(16,104);p.weight_bar.size=Vector2(384,4);p.weight_bar.visible=not selecting
  p.tabs.position=Vector2(432,76)
  for node in p.tabs.get_children():node.visible=node in p.tabs_by_source.values() and (node!=p.tabs_by_source.warehouse or p.at_base)
- p.sort_bag_button.position=Vector2(712,76);p.sort_bag_button.size=Vector2(104,ThemeStyle.COMPACT_HEIGHT)
+ p.sort_bag_button.position=Vector2(784,76);p.sort_bag_button.size=Vector2(32,ThemeStyle.COMPACT_HEIGHT)
  p.reference_ui.left_title.visible=not selecting
  p.reference_ui.right_title.visible=p.loot_panel.visible
  p.reference_ui.right_title.text='战利品' if not p.box_id.is_empty() else ('仓库' if p.remote_location()=='warehouse' else '容器')
  if p.loot_panel.visible:p.reference_ui.right_title.text+=' (%d)'%p.displayed_items(p.remote_location()).size()
+ if not p.box_id.is_empty() and p.displayed_items(p.remote_location()).is_empty():p.reference_ui.right_title.text='战利品 · 已取空'
  p.reference_ui.header.text='选择物品' if selecting else ('仓库 / 整备' if p.at_base else '背包 / 搜刮')
  p.detail_scroll.visible=(not p.selected.is_empty() or selecting) and p.gesture.is_empty()
  p.detail_scroll.position=Vector2(16,432);p.detail_scroll.size=Vector2(384,152)
@@ -85,7 +91,8 @@ static func arrange(p):
   var v:ScrollBar=p.grid_vscroll[index];v.position=origin+Vector2(width+4,0);v.size=Vector2(12,height);v.max_value=float(dims.height)*64;v.page=height;v.visible=surface.visible and v.max_value>v.page
   if right:p.loot_panel.size=Vector2(416,height+96)
   surface.queue_redraw()
- for button in [p.loot_take,p.sort_warehouse_button]:button.position=Vector2(p.loot_panel.size.x-136,16);button.size=Vector2(120,ThemeStyle.COMPACT_HEIGHT)
+ p.loot_take.position=Vector2(p.loot_panel.size.x-136,16);p.loot_take.size=Vector2(120,ThemeStyle.COMPACT_HEIGHT)
+ p.sort_warehouse_button.position=Vector2(p.loot_panel.size.x-48,16);p.sort_warehouse_button.size=Vector2(32,32)
 static func equipment(p):
  var keys=['weapon_1','weapon_2','weapon_3','armor','backpack','extra_1','extra_2','extra_3','extra_4']
  for i in range(keys.size()):
@@ -115,6 +122,10 @@ static func weapon_modules(p,weapon:Button,index:int):
    var icon:=TextureRect.new();icon.name='Icon';icon.position=Vector2(2,12);icon.size=Vector2(40,40);icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;card.add_child(icon)
   card.position=Vector2(196+i*48,0);card.size=Vector2(44,64)
   var installed:Dictionary=p.state.items.get(item.get('plugins',{}).get(slots[i],''),{})
-  card.get_node('Icon').texture=preload('res://scripts/art/fortress_art.gd').item_icon(installed.get('definition_id','')) if not installed.is_empty() else null
-  card.get_node('Name').text=['瞄具','枪口','电容','战术'][i] if installed.is_empty() else ''
+  card.get_node('Icon').texture=preload('res://scripts/art/fortress_art.gd').item_icon(installed.definition_id) if not installed.is_empty() else ThemeStyle.symbol(slots[i])
+  card.get_node('Icon').size=Vector2(20,20) if installed.is_empty() else Vector2(40,40)
+  card.get_node('Icon').position=(card.size-card.get_node('Icon').size)*0.5
+  card.get_node('Name').text=''
+  card.mouse_filter=Control.MOUSE_FILTER_PASS
+  card.tooltip_text=['瞄具','枪口','电容','战术'][i]+' · '+('空槽' if installed.is_empty() else p.display_name(installed.id))
   card.modulate=Color('68727a') if installed.is_empty() else Color.WHITE

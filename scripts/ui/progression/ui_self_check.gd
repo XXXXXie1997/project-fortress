@@ -46,7 +46,7 @@ func _initialize():
  for i in 3:await process_frame
  var close_button:Button
  for child in ui.find_children('*','Button',true,false):
-  if child.text.begins_with('关闭'):close_button=child;break
+  if child.accessibility_name.begins_with('关闭'):close_button=child;break
  var point:=close_button.get_global_rect().get_center()
  var before_close:float=a.state.items[a.state.player.equipment.weapon_1].energy
  var press:=InputEventMouseButton.new();press.position=point;press.button_index=MOUSE_BUTTON_LEFT;press.button_mask=MOUSE_BUTTON_MASK_LEFT;press.pressed=true;Input.parse_input_event(press)

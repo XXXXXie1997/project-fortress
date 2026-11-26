@@ -57,7 +57,7 @@ func _ready() -> void:
 	save_notice.position = Vector2(250, 20)
 	overlay.add_child(save_notice)
 	save_notice.visibility_changed.connect(_overlay_visibility)
-	save_notice_text = Label.new(); save_notice.add_child(save_notice_text)
+	save_notice_text = Label.new(); save_notice_text.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").WARNING); save_notice.add_child(save_notice_text)
 	var retry := Button.new(); retry.text = "重试保存"; save_notice.add_child(retry)
 	retry.pressed.connect(func():
 		if coordinator.shutdown().ok: save_notice.hide())
@@ -75,7 +75,7 @@ func clear(title: String) -> void:
 	panel.custom_minimum_size=Vector2(1168,632) if overlay_mode!="start" else Vector2(480,480)
 	panel.size=panel.custom_minimum_size
 	call_deferred("_arrange_reference_overlay")
-	panel.theme=preload("res://scripts/ui/wasteland_theme.gd").get_theme()
+	panel.theme=preload("res://assets/runtime/ui/start_menu.tres") if overlay_mode=="start" else preload("res://scripts/ui/wasteland_theme.gd").get_theme()
 	panel.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST if overlay_mode!="start" else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 	if overlay_mode!="start":
 		var frame=preload("res://scripts/ui/wasteland_theme.gd").box("panel_normal").duplicate()
@@ -89,15 +89,19 @@ func clear(title: String) -> void:
 	if is_instance_valid(arena) and is_instance_valid(arena.player): arena.player.progression_ui_blocked = true
 	var label := Label.new()
 	label.text = title
-	label.add_theme_font_size_override("font_size", preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE)
+	label.add_theme_font_size_override("font_size", 24 if overlay_mode=="start" else preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE)
 	rows.add_child(label)
 
-func button(label: String, action: Callable) -> void:
+func button(label: String, action: Callable) -> Button:
 	var control := Button.new()
 	control.text = label
 	control.custom_minimum_size.y = 40
 	control.pressed.connect(action)
 	rows.add_child(control)
+	if overlay_mode!="start":
+		var icons={"关闭":"close","返回":"back","上一页":"back","下一页":"next"}
+		if icons.has(label):preload("res://scripts/ui/keeper_theme.gd").icon_button(control,icons[label],label)
+	return control
 
 func message_line() -> void:
 	status = Label.new()
@@ -153,22 +157,46 @@ func show_pause() -> void:
 	button("保存进度", func(): report(coordinator.shutdown()))
 	button("设置与帮助", show_settings)
 	button("保存并退出", request_exit)
-	var options:=VBoxContainer.new();rows.add_child(options)
-	var settings_title:=Label.new();settings_title.text="操作与声音";settings_title.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE);options.add_child(settings_title)
-	var sprint:=CheckButton.new();sprint.text="Shift冲刺：切换式";sprint.button_pressed=bool(preferences.get_value("controls","sprint_toggle",false));options.add_child(sprint)
-	sprint.toggled.connect(func(enabled):preferences.set_value("controls","sprint_toggle",enabled);arena.hud.sprint_toggle=enabled;save_preferences())
-	for key in audio_manager.levels:
-		var caption:=Label.new();caption.text={"effects":"基础音效","ambience":"环境音量","music":"背景音乐"}.get(key,key);options.add_child(caption)
-		var slider:=HSlider.new();slider.min_value=0;slider.max_value=1;slider.step=0.05;slider.value=audio_manager.levels[key];options.add_child(slider)
-		slider.value_changed.connect(func(value):audio_manager.levels[key]=value;audio_manager.apply_levels();preferences.set_value("audio",key,value);save_preferences())
+	add_settings_controls()
 	message_line()
+
+func add_settings_controls() -> void:
+	var options := VBoxContainer.new()
+	rows.add_child(options)
+	var sprint := CheckButton.new()
+	sprint.text = "Shift 冲刺 · 按一下切换"
+	sprint.button_pressed = bool(preferences.get_value("controls","sprint_toggle",false))
+	options.add_child(sprint)
+	sprint.toggled.connect(func(enabled):
+		preferences.set_value("controls","sprint_toggle",enabled)
+		if is_instance_valid(arena): arena.hud.sprint_toggle=enabled
+		save_preferences())
+	for key in audio_manager.levels:
+		var caption := Label.new()
+		var channel: String = {"effects":"基础音效","ambience":"环境音量","music":"背景音乐"}.get(key,key)
+		caption.text = "%s    %d%%" % [channel, roundi(audio_manager.levels[key]*100)]
+		options.add_child(caption)
+		var slider := HSlider.new()
+		slider.max_value=1
+		slider.step=0.05
+		slider.value=audio_manager.levels[key]
+		slider.accessibility_name=channel
+		options.add_child(slider)
+		slider.value_changed.connect(func(value):
+			caption.text="%s    %d%%" % [channel,roundi(value*100)]
+			audio_manager.levels[key]=value
+			audio_manager.apply_levels()
+			preferences.set_value("audio",key,value)
+			save_preferences())
 
 func show_failure() -> void:
 	overlay_mode = "failure"
 	get_tree().paused = true
 	clear("基地失守")
 	for entry in [["重新开始", "new"], ["重新开始＋", "plus"], ["回到最后有效存档", "latest"], ["回到当天早晨", "morning"]]:
-		button(entry[0], func(): report(coordinator.failure_choice(entry[1], int(Time.get_unix_time_from_system()))))
+		var consequences={"new":"从新的基地开始","plus":"继承后开始新的过程","latest":"恢复最近一次有效进度","morning":"恢复本日清晨的进度"}
+		var choice=button(entry[0]+"\n"+consequences[entry[1]], func(): report(coordinator.failure_choice(entry[1], int(Time.get_unix_time_from_system()))))
+		choice.icon=preload("res://scripts/ui/keeper_theme.gd").symbol({"new":"sun","plus":"upgrade","latest":"back","morning":"sun"}[entry[1]])
 	message_line()
 
 func report(result: Dictionary) -> void:
@@ -176,7 +204,7 @@ func report(result: Dictionary) -> void:
 
 func _save_error(_result: Dictionary) -> void:
 	if is_instance_valid(status): status.text = "保存失败，可重试或取消退出继续游玩。"
-	save_notice_text.text = "进度尚未保存到磁盘"
+	save_notice_text.text = "保存失败 · 当前进度仍在内存中"
 	save_notice.show()
 
 func request_exit() -> void:
@@ -232,17 +260,18 @@ func _process(delta: float) -> void:
 			arena.player.progression_panel.close()
 			overlay_mode = "stage"
 			clear("已恢复与外界的联系")
-			var ending := Label.new(); ending.text = "信号已成功发出。你仍可继续经营基地、探索与守夜。"; ending.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; ending.custom_minimum_size.x=450; rows.add_child(ending)
+			add_illustration(preload("res://assets/runtime/ui/field_kit/radio.png"),Vector2(160,104))
+			var ending := Label.new(); ending.text = "\ue00b   信号已成功发出。你仍可继续经营基地、探索与守夜。"; ending.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; ending.custom_minimum_size.x=450; rows.add_child(ending)
 			button("继续生存", func():preload("res://scripts/ui/panel_transition.gd").dismiss(panel))
 			message_line()
 			coordinator.request_save()
 	phases.visible = not interface_open() and not mounting and not coordinator.state.is_empty() and coordinator.state.session.location == "base" and coordinator.state.phase in ["morning", "dusk"]
 
 # Presentation only: never hide a CanvasLayer that owns an active inventory.
-func interface_open() -> bool:
+func interface_open(include_map := true) -> bool:
 	if panel.visible: return true
 	if not is_instance_valid(arena): return false
-	if is_instance_valid(arena.hud) and arena.hud.get("full_map")==true:return true
+	if include_map and is_instance_valid(arena.hud) and arena.hud.get("full_map")==true:return true
 	var management = arena.get("management")
 	if management != null and management.presentation_open(): return true
 	if is_instance_valid(arena.hud) and arena.hud.inventory_panel != null and arena.hud.inventory_panel.visible: return true
@@ -312,9 +341,18 @@ func phase_button(label: String, action: Callable) -> void:
 	var row:=HBoxContainer.new();row.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	if phases.get_child_count()>0:
 		phase_actions.append(action)
-		var icon:=TextureRect.new();var atlas:=AtlasTexture.new();atlas.atlas=load("res://assets/runtime/ui/action_icons.png");atlas.region=Rect2(120,0,24,24)
-		icon.visible=false;icon.texture=atlas;icon.custom_minimum_size=Vector2(24,24);icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;icon.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(icon)
-	var caption:=Label.new();caption.text=("[F%d] "%phase_actions.size() if phases.get_child_count()>0 else "")+label;caption.add_theme_font_size_override("font_size",preload("res://scripts/ui/wasteland_theme.gd").FONT_BODY);row.custom_minimum_size.y=24;caption.mouse_filter=Control.MOUSE_FILTER_IGNORE;row.add_child(caption)
+		var keycap := Label.new()
+		keycap.text = "F%d" % phase_actions.size()
+		keycap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		keycap.custom_minimum_size.x = 36
+		keycap.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").ACCENT)
+		keycap.add_theme_stylebox_override("normal",preload("res://scripts/ui/keeper_theme.gd").box("inset",2))
+		row.add_child(keycap)
+	var caption:=Label.new()
+	caption.text=label
+	caption.add_theme_font_size_override("font_size",preload("res://scripts/ui/keeper_theme.gd").FONT_BODY)
+	row.custom_minimum_size.y=24
+	row.add_child(caption)
 	phases.add_child(row)
 
 func refresh_phase_controls() -> void:
@@ -340,7 +378,7 @@ func refresh_phase_controls() -> void:
 
 func show_departures(night: bool) -> void:
 	overlay_mode = "stage"
-	clear("选择夜探地点" if night else "选择出发地点")
+	clear("\ue010  选择夜探地点" if night else "\ue00f  选择出发地点")
 	for id: String in coordinator.state.world.exploration.unlocked:
 		var map: Dictionary = coordinator.services.exploration.maps[id]
 		for point: String in coordinator.state.world.exploration.spawns[id]:
@@ -352,10 +390,11 @@ func show_departures(night: bool) -> void:
 
 func confirm_night(mode: String, map_id := "", point := "") -> void:
 	overlay_mode = "stage"
-	clear("夜间行动确认")
+	clear("\ue010  夜间行动确认")
+	add_illustration(FortressArt.facility_texture("shield"),Vector2(96,96))
 	var snapshot: Dictionary = coordinator.services.cycle.defense.capture(coordinator.state, coordinator.services.cycle.threat.strength(coordinator.state), "preview")
 	var assessment: Dictionary = coordinator.services.cycle.defense.evaluate(snapshot)
-	var info := Label.new(); info.text = "防守评估：%s\n弱势行动可能导致基地失守。" % {"weak":"劣势","advantage":"优势","critical":"临界"}.get(assessment.rating,"临界"); rows.add_child(info)
+	var info := Label.new(); info.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").WARNING); info.text = "\ue00a  防守评估  %s\n弱势行动可能导致基地失守。" % {"weak":"劣势","advantage":"优势","critical":"临界"}.get(assessment.rating,"临界"); rows.add_child(info)
 	button("确认行动", func():
 		var result: Dictionary = coordinator.begin_night(mode, true, map_id, point)
 		if result.ok and mode == "rest": result = coordinator.finish_night()
@@ -406,14 +445,17 @@ func show_base_containers() -> void:
 	for id: String in coordinator.state.containers:
 		if id != "ground" and not id.begins_with("relics_"): continue
 		var count: int = coordinator.services.inventory.items_in(coordinator.state,id).size()
+		if count==0:continue
 		button(("前代幸存者遗物" if id.begins_with("relics_") else "基地地面箱") + " · %d 件" % count, func():
 			preload("res://scripts/ui/panel_transition.gd").dismiss(panel)
 			var inventory: InventoryPanel = arena.management.inventory_panel
 			inventory.at_base = true
 			inventory.bind_external_container(id, func(): return coordinator.state.session.location == "base")
 			inventory.open_panel())
+	var empty:=rows.get_child_count()==1
 	button("关闭", func(): preload("res://scripts/ui/panel_transition.gd").dismiss(panel))
 	message_line()
+	if empty:status.text="基地目前没有遗物或地面物品。"
 
 func show_night_loot() -> void:
 	overlay_mode = "stage"
@@ -425,6 +467,7 @@ func show_night_loot() -> void:
 			else: status.text = "仓库空间不足，战利品仍保留，可腾出空间后再领。")
 	button("关闭", func(): preload("res://scripts/ui/panel_transition.gd").dismiss(panel))
 	message_line()
+	if coordinator.state.cycle.pending_loot.is_empty():status.text="本次没有待领取的守夜战利品。"
 
 func near_candidate() -> String:
 	if not is_instance_valid(arena): return ""
@@ -434,12 +477,26 @@ func near_candidate() -> String:
 			if not candidate.is_empty() and not candidate.accepted and arena.clear_line(arena.player.position,child.position,41): return child.candidate_id
 	return ""
 
+func add_illustration(texture:Texture2D, extent:Vector2) -> void:
+	var art:=TextureRect.new()
+	art.texture=texture
+	art.custom_minimum_size=extent
+	art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	rows.add_child(art)
+
+func survivor_portrait() -> Texture2D:
+	return FortressArt.region("res://assets/runtime/characters/survivor.png",0,4,Vector2i(24,24))
+
 func show_candidate(id: String) -> void:
 	overlay_mode = "stage"
 	var candidate: Dictionary = coordinator.state.world.recruitment.candidates[id]
 	clear(candidate.name)
+	add_illustration(survivor_portrait(),Vector2(72,72))
 	var description := Label.new()
-	description.text = "生命上限 %d · 防守能力 %d\n免费邀请加入基地；满员时不会消耗此机会。" % [candidate.hp,candidate.power]
+	description.theme = preload("res://scripts/ui/keeper_theme.gd").get_theme()
+	description.text = "\ue011  %d     \ue00a  防守 %d\n免费邀请加入基地；满员时不会消耗此机会。" % [candidate.hp,candidate.power]
 	rows.add_child(description)
 	button("邀请加入基地", func():
 		if near_candidate() != id: status.text = "请靠近这位幸存者再交谈。"; return
@@ -455,21 +512,7 @@ func show_settings() -> void:
 	get_tree().paused = true
 	overlay_mode = "settings"
 	clear("设置与帮助")
-	var sprint := CheckButton.new(); sprint.text = "Shift 冲刺改为按一下切换"
-	sprint.button_pressed = bool(preferences.get_value("controls","sprint_toggle",false))
-	sprint.toggled.connect(func(enabled):
-		preferences.set_value("controls","sprint_toggle",enabled)
-		if is_instance_valid(arena): arena.hud.sprint_toggle = enabled
-		save_preferences())
-	rows.add_child(sprint)
-	for key: String in audio_manager.levels:
-		if key != "effects": continue
-		var line := Label.new(); line.text = {"music":"配乐音量","ambience":"环境音量","effects":"音效音量"}[key]; rows.add_child(line)
-		var slider := HSlider.new(); slider.min_value = 0; slider.max_value = 1; slider.step = 0.05; slider.value = audio_manager.levels[key]
-		slider.value_changed.connect(func(value):
-			audio_manager.levels[key] = value; audio_manager.apply_levels()
-			preferences.set_value("audio",key,value); save_preferences())
-		rows.add_child(slider)
+	add_settings_controls()
 	button("回看分页教学", func(): tutorial_return = "settings"; show_tutorial(0))
 	button("重置教学完成记录", func(): report(coordinator.saver.reset_tutorial()))
 	button("返回", func():
@@ -540,7 +583,8 @@ func _input(event:InputEvent):
 		overlay_mode="player";clear("玩家信息")
 		var info:=Label.new()
 		var player:Dictionary=coordinator.state.player
-		info.text="生命 %.0f / %.0f\n\n关闭此面板后：Tab 查看背包与装备\nT 查看天赋成长\n\n[P] / [Esc] 返回"%[player.vitals.hp,player.vitals.max_hp]
+		add_illustration(survivor_portrait(),Vector2(72,72))
+		info.text="\ue011    %.0f / %.0f\n\n[Tab]  背包与装备       [T]  天赋成长"%[player.vitals.hp,player.vitals.max_hp]
 		rows.add_child(info);get_viewport().set_input_as_handled()
 	elif event.physical_keycode>=KEY_F1 and event.physical_keycode<=KEY_F6 and phases.visible:
 		var index:int=event.physical_keycode-KEY_F1

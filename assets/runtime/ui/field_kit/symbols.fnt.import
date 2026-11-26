@@ -1,0 +1,17 @@
+[remap]
+
+importer="font_data_bmfont"
+type="FontFile"
+uid="uid://bs1qxallyt742"
+path="res://.godot/imported/symbols.fnt-27a79c7e2b64ed9ae673fc59d1e28e28.fontdata"
+
+[deps]
+
+source_file="res://assets/runtime/ui/field_kit/symbols.fnt"
+dest_files=["res://.godot/imported/symbols.fnt-27a79c7e2b64ed9ae673fc59d1e28e28.fontdata"]
+
+[params]
+
+fallbacks=[]
+compress=true
+scaling_mode=2

@@ -27,6 +27,7 @@ func click(text:String):
 func world_tap(cell:Vector2i):
 	await tap(arena.get_canvas_transform()*arena.grid.cell_to_world(cell))
 func run():
+	root.size=Vector2i(1280,720)
 	root.gui_embed_subwindows=true
 	arena=load("res://scenes/ui/base/base_management_arena.tscn").instantiate();root.add_child(arena)
 	while arena.management==null:await process_frame

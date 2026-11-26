@@ -21,7 +21,7 @@ func _process(delta):
 	super._process(delta)
 	var covered:bool=arena.session_context.shell.interface_open() or menu.visible
 	for element in [label,card,quick,weapon_icon,tactical_icon,hint]:element.visible=not covered
-	map_view.visible=not covered
-	quest_list.visible = not arena.session_context.shell.interface_open() and not menu.visible and not full_map
+	map_view.visible=not arena.session_context.shell.interface_open(false) and not menu.visible
+	quest_list.visible = not arena.session_context.shell.interface_open() and not menu.visible and not full_map and not arena.state.quests.active.is_empty()
 	var phase: String = {"morning":"清晨","day":"白天","dusk":"黄昏","night":"夜晚"}.get(arena.state.phase,"当前阶段")
 	label.text='HP %.0f / %.0f'%[arena.state.player.vitals.hp,arena.state.player.vitals.max_hp]

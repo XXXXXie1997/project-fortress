@@ -27,7 +27,7 @@ func _ready():
  hud_scale=preload("res://scripts/ui/pixel_layout.gd").ui_scale(get_viewport().get_visible_rect().size)
  transform=Transform2D(Vector2(hud_scale,0),Vector2(0,hud_scale),Vector2.ZERO)
  for widget in [label,card,panel,text,quick,toggle,charge_title,task_tracker]:preload("res://scripts/ui/keeper_theme.gd").apply(widget)
- var heart:=TextureRect.new();heart.texture=load("res://assets/runtime/ui/wasteland/icon_health.png");heart.position=Vector2(-44,2);heart.size=Vector2(32,32);heart.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;heart.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;label.add_child(heart)
+ var heart:=TextureRect.new();heart.texture=preload('res://scripts/ui/keeper_theme.gd').symbol('heart');heart.position=Vector2(-44,2);heart.size=Vector2(32,32);heart.expand_mode=TextureRect.EXPAND_IGNORE_SIZE;heart.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST;label.add_child(heart)
  label.position=Vector2(84,38);label.set_meta("backdrop_rect",Rect2(-60,-14,232,74));label.custom_minimum_size=Vector2(212,58);add_child(label)
  card.position=Vector2(20,625);add_child(card)
  health_bar.position=Vector2(-36,44);health_bar.size=Vector2(190,6);health_bar.show_percentage=false;health_bar.mouse_filter=Control.MOUSE_FILTER_IGNORE;label.add_child(health_bar)
@@ -127,9 +127,9 @@ func _process(_dt):
  tactical_icon.texture=preload('res://scripts/art/fortress_art.gd').item_icon(tactical.definition_id) if not tactical.is_empty() else null;tactical_icon.visible=not tactical.is_empty()
  card.add_theme_color_override("font_color",preload("res://scripts/ui/keeper_theme.gd").HOVER if arena.state.player.combat.charging else preload("res://scripts/ui/keeper_theme.gd").ACCENT)
  weapon_title.text=preload('res://scripts/content/catalog.gd').item_name(weapon.get('definition_id',''))
- card.text='%.0f / %.0f'%[weapon.get('energy',0),weapon.get('capacity',0)]
+ card.text='\ue002  %.0f / %.0f'%[weapon.get('energy',0),weapon.get('capacity',0)]
  weapon_energy_bar.max_value=maxf(1,weapon.get('capacity',0));weapon_energy_bar.value=weapon.get('energy',0)
- energy_caption.text='电池 %.0f · [R] 充电'%energy
+ energy_caption.text='\ue001  %.0f    [R] 充电'%energy
  layout_bottom_hud()
 
 

@@ -8,8 +8,8 @@ const GAP_SMALL=4
 const BUTTON_HEIGHT=36
 const COMPACT_HEIGHT=32
 const PANEL_PADDING=16
-const TEXT=Color('e3e5e4')
-const MUTED=Color('a7b0aa')
+const TEXT=Color('e6e4dc')
+const MUTED=Color('a6b7b6')
 const DISABLED=Color('727d82')
 const ACCENT=Color('64d7df')
 const HOVER=Color('a3eee4')
@@ -28,38 +28,66 @@ static func pixel_font(_pixels:int=12)->Font:
  source.oversampling=0.0
  regular_font=FontVariation.new()
  regular_font.base_font=source
+ regular_font.fallbacks=[preload('res://assets/runtime/ui/field_kit/symbols.fnt')]
  regular_font.variation_opentype={TextServerManager.get_primary_interface().name_to_tag('wght'):400.0}
  return regular_font
-static func box(asset:String,margin:int=8)->StyleBoxFlat:
- var aliases={'panel_normal':'panel','panel_inset':'inset','slot_normal':'slot','slot_selected':'selected','button_default':'button','button_hover':'hover','button_pressed':'pressed','button_focus':'focus','button_selected':'selected','button_disabled':'disabled'}
- var name:String=aliases.get(asset,asset)
- if boxes.has(name):return boxes[name]
- var style:=StyleBoxFlat.new()
- style.bg_color=Color('10151e')
- style.border_color=Color('343d46');style.border_width_bottom=1
- if name in ['slot','button','hover','pressed','selected','disabled']:
-  style.bg_color=Color('242b31')
- if name=='inset':style.bg_color=Color('0d1219')
- if name=='hover':style.bg_color=Color('353f48')
- if name=='pressed':style.bg_color=Color('48535b')
- if name=='disabled':style.bg_color=Color('1c2228')
- if name=='bar':style.bg_color=Color('080d12')
- if name=='energy':style.bg_color=ACCENT
- if name=='health':style.bg_color=DANGER
- if name in ['focus','selected']:
-  style.bg_color=Color(0,0,0,0) if name=='focus' else Color('343b40')
-  style.border_color=Color('ed6a36');style.set_border_width_all(2)
- for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:style.set_content_margin(side,10)
- boxes[name]=style
+# Names follow the hand-drawn tiles from left to right in the two atlases.
+const FRAME_NAMES = ["panel", "inset", "slot", "button", "hover", "pressed", "selected", "disabled", "bar", "energy", "health", "focus"]
+const SYMBOL_NAMES = ["station", "battery", "capacitor", "close", "back", "sort", "scope", "muzzle", "tactical", "next", "defense", "signal", "repair", "upgrade", "lock", "sun", "moon", "heart"]
+const STATION = "\ue000"
+const BATTERY = "\ue001"
+const CAPACITOR = "\ue002"
+const HEART = "\ue011"
+static var symbols: Dictionary = {}
+static var symbol_sheet: ImageTexture
+
+static func symbol(id: String) -> Texture2D:
+ if not symbols.has(id):
+  var tile := AtlasTexture.new()
+  if symbol_sheet == null:
+   # The bitmap font importer embeds its page and marks the PNG as import-skip.
+   var font := preload("res://assets/runtime/ui/field_kit/symbols.fnt")
+   symbol_sheet = ImageTexture.create_from_image(font.get_texture_image(0,Vector2i(16,0),0))
+  tile.atlas = symbol_sheet
+  tile.region = Rect2(SYMBOL_NAMES.find(id) * 16, 0, 16, 16)
+  symbols[id] = tile
+ return symbols[id]
+
+static func icon_button(button: Button, id: String, description: String):
+ button.text = ""
+ button.icon = symbol(id)
+ button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+ button.tooltip_text = description
+ button.accessibility_name = description
+ button.custom_minimum_size = Vector2(32, 32)
+
+static func box(asset: String, margin: int = 8) -> StyleBoxTexture:
+ var aliases = {"panel_normal":"panel", "panel_inset":"inset", "slot_normal":"slot", "slot_selected":"selected", "button_default":"button", "button_hover":"hover", "button_pressed":"pressed", "button_focus":"focus", "button_selected":"selected", "button_disabled":"disabled"}
+ var id: String = aliases.get(asset, asset)
+ var key := "%s:%d" % [id, margin]
+ if boxes.has(key): return boxes[key]
+ var style := StyleBoxTexture.new()
+ style.texture = preload("res://assets/runtime/ui/field_kit/frames.png")
+ style.region_rect = Rect2(maxi(0, FRAME_NAMES.find(id)) * 32, 0, 32, 32)
+ style.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
+ style.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
+ for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+  style.set_texture_margin(side, 6)
+  style.set_content_margin(side, margin)
+ boxes[key] = style
  return style
+
 static func get_theme()->Theme:
  if cached!=null:return cached
  cached=Theme.new();cached.default_font_size=FONT_BODY
  var font:=pixel_font()
  cached.default_font=font
  for role in ['normal_font','bold_font','italics_font','bold_italics_font','mono_font']:cached.set_font(role,'RichTextLabel',font)
- cached.set_stylebox('panel','TooltipPanel',box('panel'))
+ cached.set_stylebox('panel','TooltipPanel',box('panel',12))
  cached.set_color('font_color','TooltipLabel',TEXT)
+ cached.set_font_size('font_size','TooltipLabel',FONT_BODY)
+ cached.set_icon('close','Window',symbol('close'))
+ cached.set_icon('close_pressed','Window',symbol('close'))
  cached.set_stylebox('hover','PopupMenu',box('hover'))
  for type in ['CheckButton','CheckBox','PopupMenu']:
   for state in ['checked','unchecked']:
@@ -74,6 +102,12 @@ static func get_theme()->Theme:
  for type in ['Panel','PanelContainer','PopupPanel','PopupMenu','Window','AcceptDialog','ConfirmationDialog']:
   cached.set_stylebox('panel',type,box('panel'))
   cached.set_stylebox('embedded_border',type,box('panel'))
+ var title_frame:=box('panel').duplicate() as StyleBoxTexture
+ title_frame.expand_margin_top=32
+ for type in ['Window','AcceptDialog','ConfirmationDialog']:
+  cached.set_stylebox('embedded_border',type,title_frame)
+  cached.set_stylebox('embedded_unfocused_border',type,title_frame)
+  cached.set_constant('title_height',type,32)
  for type in ['LineEdit','TextEdit']:
   cached.set_stylebox('normal',type,box('inset'))
   cached.set_stylebox('focus',type,box('focus'))
@@ -98,10 +132,10 @@ static func get_theme()->Theme:
  for role in ['normal_font_size','bold_font_size','italics_font_size','mono_font_size']:cached.set_font_size(role,'RichTextLabel',FONT_BODY)
  cached.set_constant('line_spacing','Label',4)
  return cached
-static func button_box(asset:String,compact:bool=false)->StyleBoxFlat:
+static func button_box(asset:String,compact:bool=false)->StyleBoxTexture:
  var key:=asset+('_compact' if compact else '_button')
  if boxes.has(key):return boxes[key]
- var style:=box(asset).duplicate() as StyleBoxFlat
+ var style:=box(asset).duplicate() as StyleBoxTexture
  var padding:=2 if compact else 3
  style.content_margin_left=6
  style.content_margin_right=6
@@ -122,7 +156,11 @@ static func configure_dialog(dialog:ConfirmationDialog):
  dialog.ok_button_text='确认'
  dialog.cancel_button_text='取消'
  dialog.content_scale_mode=Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
- dialog.content_scale_factor=0.5
+ dialog.content_scale_factor=1.0
+ dialog.min_size=Vector2i(320,132)
+ dialog.get_label().autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+ dialog.get_label().custom_minimum_size.x=280
+ for button in [dialog.get_ok_button(),dialog.get_cancel_button()]:button.custom_minimum_size=Vector2(76,BUTTON_HEIGHT)
  dialog.canvas_item_default_texture_filter=Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 static func meter(bar:ProgressBar,kind:String):
  bar.show_percentage=false;bar.mouse_filter=Control.MOUSE_FILTER_IGNORE

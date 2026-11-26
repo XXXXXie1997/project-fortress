@@ -67,7 +67,7 @@ func refresh():
  var inv:InventoryService=actor.arena.inventory
  var growth:PlayerGrowth=actor.growth_bridge.growth
  var heading=label({'talents':'个人天赋','technology':'科技终端','quests':'任务记录'}.get(mode,'成长与基地终端'));heading.add_theme_font_size_override('font_size',preload("res://scripts/ui/wasteland_theme.gd").FONT_TITLE)
- var close_button=button('关闭 [Esc]',close);close_button.size_flags_horizontal=Control.SIZE_SHRINK_END;close_button.custom_minimum_size=Vector2(100,36)
+ var close_button=button('关闭 [Esc]',close);close_button.size_flags_horizontal=Control.SIZE_SHRINK_END;preload('res://scripts/ui/keeper_theme.gd').icon_button(close_button,'close','关闭 · Esc')
  preload('res://scripts/ui/reference_layout.gd').header(rows,heading,close_button,'世界仍在运行 / '+{'talents':'分配天赋点','technology':'基地科技与升级','quests':'主线与每日委托'}.get(mode,''))
  if mode=='talents':
   var g:=growth.snapshot(s);label('等级 %d   累计经验 %d   可用点 %d'%[g.level,g.xp,g.points])
@@ -78,12 +78,20 @@ func refresh():
    for required in node.requires:
     var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(160,100),positions[id]+Vector2(160,0)]);line.width=3;line.default_color=preload("res://scripts/ui/wasteland_theme.gd").ACCENT;surface.add_child(line)
    var item:=Button.new();item.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT;item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(320,100);item.text='%s\n%d / %d'%[names[id],g.ranks.get(id,0),node.max_rank];bind_button(item,invest.bind(id));surface.add_child(item)
+   item.icon=preload('res://scripts/ui/keeper_theme.gd').symbol({'vitality':'heart','stamina':'battery','accuracy':'scope','hurt_speed':'defense','stealth':'moon'}[id])
+   if int(g.ranks.get(id,0))>=int(node.max_rank):
+    item.disabled=true;item.tooltip_text='已满级'
+   elif node.requires.any(func(required):return int(g.ranks.get(required,0))<1):
+    item.disabled=true;item.icon=preload('res://scripts/ui/keeper_theme.gd').symbol('lock');item.tooltip_text='需要前置天赋'
+   elif g.points<1:
+    item.disabled=true;item.tooltip_text='没有可用天赋点'
   label('潜行只减警觉积累；应激只在实际生命损失后触发，重复刷新不叠加。')
   var reset_button=button('基地洗点：预览费用',func():
    var quote:=growth.preview_reset(s,at_base())
    if not quote.ok:result(false);return
-   var dialog:=ConfirmationDialog.new();dialog.theme=preload('res://scripts/ui/wasteland_theme.gd').get_theme();reset_dialog=dialog;dialog.dialog_text='消耗能源 %s、材料 %s，返还天赋点。'%[quote.cost.energy,materials(quote.cost.materials)];add_child(dialog)
+   var dialog:=ConfirmationDialog.new();dialog.theme=preload('res://scripts/ui/wasteland_theme.gd').get_theme();reset_dialog=dialog;dialog.dialog_text='基地储能  \ue000 %s\n材料  %s，返还天赋点。'%[quote.cost.energy,materials(quote.cost.materials)];add_child(dialog)
    preload('res://scripts/ui/keeper_theme.gd').configure_dialog(dialog)
+   dialog.title='重置天赋';dialog.ok_button_text='重置'
    dialog.confirmed.connect(func():result(actor.growth_bridge.reset(s,inv,quote,at_base()));dialog.queue_free())
    dialog.canceled.connect(dialog.queue_free);dialog.popup_centered())
   reset_button.disabled=not at_base()
@@ -96,7 +104,11 @@ func refresh():
    for required in node.requires:
     var line:=Line2D.new();line.points=PackedVector2Array([positions[required]+Vector2(160,70),positions[id]+Vector2(160,0)]);line.width=3;line.default_color=preload("res://scripts/ui/wasteland_theme.gd").ACCENT;surface.add_child(line)
    var item:=Button.new();item.custom_minimum_size.y=preload("res://scripts/ui/wasteland_theme.gd").BUTTON_HEIGHT;item.action_mode=BaseButton.ACTION_MODE_BUTTON_PRESS;item.position=positions[id];item.size=Vector2(330,80)
-   item.text='%s\n能源%s · %s\n%s'%[names.get(id,id),node.energy,materials(node.materials),'已解锁' if s.base.get('technology',{}).has(id) else '解锁']
+   item.icon=preload('res://scripts/ui/keeper_theme.gd').symbol('upgrade' if not s.base.get('technology',{}).has(id) else 'defense')
+   item.disabled=s.base.get('technology',{}).has(id)
+   item.text='%s\n\ue000 %s · %s\n%s'%[names.get(id,id),node.energy,materials(node.materials),'已解锁' if s.base.get('technology',{}).has(id) else '解锁']
+   if node.requires.any(func(required):return not s.base.get('technology',{}).has(required)):
+    item.disabled=true;item.icon=preload('res://scripts/ui/keeper_theme.gd').symbol('lock');item.tooltip_text='需要前置科技'
    bind_button(item,unlock.bind(id));surface.add_child(item)
   var building_config:Dictionary=JSON.parse_string(FileAccess.get_file_as_string('res://data/buildings.json'))
   var storage_level:=1
@@ -126,6 +138,8 @@ func refresh():
     if definition.kind=='daily':daily_index+=1
     var prefix:='主线' if definition.kind=='main' else '每日委托 %d'%daily_index
     var item=button('%s · %s\n%s\n%s'%[prefix,quest_name(definition_id),quest_details(definition),reason if reason!='' else '点击接取'],quest_action.bind('accept',id))
+    item.icon=load('res://assets/runtime/ui/wasteland/icon_flag.png' if definition.kind=='main' else 'res://assets/runtime/ui/wasteland/icon_quest.png')
+    item.alignment=HORIZONTAL_ALIGNMENT_LEFT
     item.disabled=reason!=''
   for id in s.quests.active:
    var q:=quests.status(s,id)
@@ -179,7 +193,7 @@ func quest_details(definition:Dictionary)->String:
  var region:String={'suburbs':'郊区','city':'城区','armory':'武器库'}.get(definition.get('region',''),'待探索区域')
  var objective:String={'kill':'击败感染者','reach':'调查目标','deliver':'提交废料'}.get(definition.objective,'完成目标')
  var reward:Dictionary=definition.reward
- return '%s ×%d · %s · %s\n奖励：经验%d、能源%d、%s'%[objective,definition.count,region,'无限期' if definition.kind=='main' else '%d天内交付'%definition.duration,reward.xp,reward.energy,materials(reward.materials)]
+ return '%s ×%d · %s · %s\n奖励：经验%d、\ue000 %d、%s'%[objective,definition.count,region,'无限期' if definition.kind=='main' else '%d天内交付'%definition.duration,reward.xp,reward.energy,materials(reward.materials)]
 
 
 

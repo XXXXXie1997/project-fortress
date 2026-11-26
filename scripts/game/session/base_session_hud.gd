@@ -24,12 +24,13 @@ func _process(delta):
 	# Keep the inventory and its children alive/visible; only suppress ambient HUD.
 	for element in [label,card,quick,weapon_icon,tactical_icon,task_tracker,charge_title,mini_widget]:
 		element.visible=not covered
+	task_tracker.visible=not covered and not arena.state.quests.active.is_empty()
 	arena.status_label.visible=false
 	charge_title.visible=false
 	arena.management.presentation_obscured=shell.panel.visible or arena.player.progression_panel.visible
 	var warning:Dictionary=warning_rules.warning_state(arena.state)
 	loss_warning.visible=warning.visible and not covered
-	loss_warning.text="基地危急：损毁已达失守阈值" if warning.threshold_reached else "基地危急：接近失守"
+	loss_warning.text="\ue00a  基地危急：损毁已达失守阈值" if warning.threshold_reached else "\ue00a  基地危急：接近失守"
 	loss_warning.text+="\n请保护核心设施；准备阶段可修复废墟"
 func _input(event):
 	if arena.session_context.shell.panel.visible:
