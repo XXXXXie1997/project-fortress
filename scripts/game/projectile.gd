@@ -14,7 +14,7 @@ func _physics_process(dt):
  if arena.has_method('combat_context') and map_context!=arena.combat_context():
   set_physics_process(false);queue_free();return
  var end:Vector2=global_position+direction*speed*dt
- var result=get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(global_position,end,11 if hostile else 13))
+ var result=preload("res://scripts/combat/body_geometry.gd").ray(self,global_position,end,1+8+128 if hostile else 1+8+256)
  if not result.is_empty():
   if hostile and result.collider.has_method('receive_damage'):result.collider.receive_damage(damage,direction)
   else:arena.hit(result.collider,damage,attack,direction)

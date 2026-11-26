@@ -13,6 +13,7 @@ func data()->Dictionary:
  return {}
 func _ready():
  collision_layer=64;collision_mask=1+32
+ preload("res://scripts/combat/body_geometry.gd").install(self,512,Vector2(0,-22),Vector2(20,40))
  var cs:=CollisionShape2D.new();var circle:=CircleShape2D.new();circle.radius=12;cs.shape=circle;add_child(cs)
  visual=load('res://scripts/art/survivor_visual.gd').new();visual.scale=Vector2(2,2);add_child(visual)
 func receive_damage(amount:float,_direction:Vector2=Vector2.ZERO):
@@ -46,7 +47,8 @@ func _physics_process(dt):
   velocity=arena.walk_direction(position,post)*90 if position.distance_to(post)>12 else Vector2.ZERO
   var enemy=arena.nearest_enemy(position,350)
   if enemy!=null and cooldown<=0 and weapon.energy>=1:
-   weapon.energy-=1;arena.fire_base(position,enemy.position,15,false);cooldown=0.35
+   visual.aim=(preload("res://scripts/combat/body_geometry.gd").center(enemy)-(position+Vector2(0,-18))).normalized()
+   weapon.energy-=1;arena.fire_base(preload("res://scripts/combat/body_geometry.gd").safe_muzzle(self,visual.muzzle_position(visual.aim)),preload("res://scripts/combat/body_geometry.gd").center(enemy),15,false);cooldown=0.35
    arena.emit_sfx('shot_rifle',position,true,id)
  move_and_slide()
  var logical:Vector2=arena.grid.world_to_logical(position)

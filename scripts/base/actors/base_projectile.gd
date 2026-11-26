@@ -7,8 +7,8 @@ var life:=3.0
 func _physics_process(dt):
  if not arena.running:queue_free();return
  var end:Vector2=position+direction*420*dt
- var mask:=1+2+16+32+64 if hostile else 1+4+32
- var hit:=get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(position,end,mask))
+ var mask:=1+8+128+16+32+512 if hostile else 1+8+256+32
+ var hit:=preload("res://scripts/combat/body_geometry.gd").ray(self,position,end,mask)
  if not hit.is_empty():
   if hostile and hit.collider.has_method('receive_damage'):hit.collider.receive_damage(damage,direction)
   elif not hostile:arena.hit(hit.collider,damage,{'penetration':20.0},direction)

@@ -44,7 +44,7 @@ func _process(_dt):
  art_visual.alive=d.energy>0 if kind=='shield' else d.durability>0
  if kind=='turret' and art_visual.alive:
   var target=arena.nearest_enemy(position,360)
-  if target!=null:art_visual.aim=position.direction_to(target.position)
+  if target!=null:art_visual.aim=(preload("res://scripts/combat/body_geometry.gd").center(target)-art_visual.to_global(Vector2(0,-72))).normalized()
 func receive_damage(amount:float,_direction:Vector2=Vector2.ZERO):
  if not live_instance():return
  var d:=data()
@@ -70,7 +70,9 @@ func _physics_process(dt):
   elif cooldown<=0:
    var enemy=arena.nearest_enemy(position,360)
    if enemy!=null:
-    d.capacitor.energy-=1;arena.fire_base(position,enemy.position,18,false);cooldown=0.25
+    art_visual.aim=(preload("res://scripts/combat/body_geometry.gd").center(enemy)-art_visual.to_global(Vector2(0,-72))).normalized()
+    var muzzle:Vector2=art_visual.to_global(Vector2(0,-72)+art_visual.aim*90.0)
+    d.capacitor.energy-=1;arena.fire_base(preload("res://scripts/combat/body_geometry.gd").safe_muzzle(self,muzzle),preload("res://scripts/combat/body_geometry.gd").center(enemy),18,false);cooldown=0.25
     arena.emit_sfx('shot_rifle',position,true,id)
  queue_redraw()
 func _draw():

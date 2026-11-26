@@ -21,6 +21,7 @@ func _ready():
  # Apply visibility after the art component has updated its own animation frame.
  process_priority=10
  collision_layer=2;collision_mask=13
+ preload("res://scripts/combat/body_geometry.gd").install(self,128,Vector2(0,-33),Vector2(28,58))
  var shape=CollisionShape2D.new();var circle=CircleShape2D.new();circle.radius=12;shape.shape=circle;add_child(shape)
  visual=load('res://scripts/art/survivor_visual.gd').new();visual.scale=Vector2(3,3);add_child(visual);add_child(camera)
  visual.process_priority=0
@@ -28,6 +29,10 @@ func _ready():
  progression_panel=load('res://scripts/ui/progression/progression_panel.gd').new();progression_panel.actor=self;add_child.call_deferred(progression_panel)
 func item()->Dictionary:
  return arena.state.items.get(arena.state.player.equipment['weapon_%d'%slot],{})
+
+func aim_origin()->Vector2:
+ if visual.has_meta("hd_actor"):return visual.get_meta("hd_actor").shoulder_point()
+ return global_position+Vector2(0,-27)
 func _unhandled_input(event):
  if progression_ui_blocked:return
  var s:Dictionary=arena.state.player.combat
@@ -62,7 +67,7 @@ func _physics_process(dt):
  var stamina_factor:float=effects.stamina_factor*burden.stamina_factor
  var move=Input.get_vector('move_left','move_right','move_up','move_down')
  if inventory_movement_locked:move=Vector2.ZERO
- var aim:Vector2=(get_global_mouse_position()-global_position).normalized()
+ var aim:Vector2=aim_origin().direction_to(get_global_mouse_position())
  var ui_open:bool=progression_ui_blocked or progression_pointer_guard or (arena.hud!=null and (arena.hud.opened or (arena.hud.inventory_panel!=null and arena.hud.inventory_panel.visible)))
  ActionRules.tick(s,dt,effective_config(),Input.is_action_pressed('aim') and not ui_open,(sprint_latched if arena.hud.sprint_toggle else Input.is_action_pressed('sprint')),move!=Vector2.ZERO,false,stamina_factor)
  velocity=move*180.0*ActionRules.movement_factor(s,effective_config())*burden.speed_factor
@@ -81,7 +86,7 @@ func _physics_process(dt):
  camera.zoom=Vector2.ONE*view_zoom
  camera.position=camera_rules.camera_offset(get_viewport().get_mouse_position(),get_viewport_rect().size,view_zoom,s.aiming)
  camera.force_update_scroll()
- aim=(get_global_mouse_position()-global_position).normalized()
+ aim=aim_origin().direction_to(get_global_mouse_position())
  var weapon:Dictionary=item()
  if s.charging:
   var target_id:String=selected_charge_target if not selected_charge_target.is_empty() else weapon.get('id','')
@@ -98,6 +103,7 @@ func _physics_process(dt):
  cooldown=maxf(0,cooldown-dt)
  bloom=WeaponRules.recover_bloom(bloom,effective_config().weapons.rifle,dt)
  if Input.is_action_pressed('fire') and not ui_open and cooldown<=0 and ActionRules.can_attack(s) and not weapon.is_empty():
+  sync_visual_state()
   var spec:Dictionary=arena.weapons.get(weapon.definition_id,{})
   if spec.is_empty():return
   var melee:bool=spec.kind=='melee'
@@ -122,10 +128,14 @@ func _physics_process(dt):
     arena.emit_sfx('shot_heavy' if spec.get('pellets',1)>1 or spec.interval>=0.5 else ('shot_smg' if spec.interval<0.12 else 'shot_rifle'),global_position)
     if arena.has_method('emit_player_noise'):arena.emit_player_noise('gunshot',global_position)
     params.source_position=[global_position.x,global_position.y]
+    if visual.has_meta("hd_actor"):visual.get_meta("hd_actor").fired()
     for pellet in range(spec.get('pellets',1)):
-     var bullet=load('res://scripts/game/projectile.gd').new();bullet.arena=arena;bullet.position=global_position;bullet.damage=params.damage;bullet.attack=params.duplicate()
+     var bullet=load('res://scripts/game/projectile.gd').new();bullet.arena=arena;bullet.position=preload("res://scripts/combat/body_geometry.gd").safe_muzzle(self,visual.muzzle_position(aim));bullet.damage=params.damage;bullet.attack=params.duplicate()
      var precision:float=growth_bridge.spread_factor(arena.state)*effects.precision_factor*(0.8 if tactical.enabled and tactical.mode==1 and tactical.battery().get('energy',0)>0 else 1.0)
-     bullet.direction=aim.rotated(randf_range(-1,1)*WeaponRules.spread(spec,bloom,move!=Vector2.ZERO,s.aiming,precision));arena.add_child(bullet)
+     var shot_direction:=aim
+     if visual.has_meta("hd_actor") and (get_global_mouse_position()-bullet.position).dot(aim)>0:
+      shot_direction=bullet.position.direction_to(get_global_mouse_position())
+     bullet.direction=shot_direction.rotated(randf_range(-1,1)*WeaponRules.spread(spec,bloom,move!=Vector2.ZERO,s.aiming,precision));arena.add_child(bullet)
     bloom=WeaponRules.after_shot(bloom,spec);cooldown=spec.interval
  sync_visual_state()
  queue_redraw()
@@ -146,7 +156,7 @@ func sync_visual_state():
  var attachment_type:int=['light','laser','launcher'].find(definition.get('tactical_type',''))
  var ranged:bool=spec.get('kind','')=='ranged'
  var attached:bool=ranged and attachment_type>=0 and plugin.get('container_id','')=='plugin'
- visual.aim=(get_global_mouse_position()-global_position).normalized()
+ visual.aim=aim_origin().direction_to(get_global_mouse_position())
  visual.moving=velocity.length()>0
  visual.charging=s.charging and ranged
  visual.dodging=s.dodge_left>0
@@ -164,8 +174,9 @@ func _draw():
  if arena.state.player.combat.melee and cooldown>0 and arena.weapons.get(item().get('definition_id',''),{}).get('kind','')=='melee':
   var angle:float=(get_global_mouse_position()-global_position).angle()
   draw_arc(Vector2.ZERO,90,angle-0.8,angle+0.8,16,Color(0.7,0.95,1,0.4),4)
- var s:Dictionary=arena.state.player.combat
- draw_arc(get_local_mouse_position()+Vector2(0,10),12,0,PI*s.stamina/effective_config().max_stamina,24,Color.RED if s.exhausted else Color.YELLOW,2)
+ if not visual.has_meta("hd_actor"):
+  var s:Dictionary=arena.state.player.combat
+  draw_arc(get_local_mouse_position()+Vector2(0,10),12,0,PI*s.stamina/effective_config().max_stamina,24,Color.RED if s.exhausted else Color.YELLOW,2)
 
 
 

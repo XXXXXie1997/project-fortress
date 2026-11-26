@@ -12,6 +12,7 @@ func record()->Dictionary:
  return arena.state.expedition.maps[arena.state.expedition.map_id].enemies[enemy_id].ai
 func _ready():
  collision_layer=4;collision_mask=11
+ preload("res://scripts/combat/body_geometry.gd").install(self,256,Vector2(0,-48 if kind=="boss" else -36),Vector2(54,88) if kind=="boss" else Vector2(32,66))
  var shape=CollisionShape2D.new();var circle=CircleShape2D.new();circle.radius=spec.radius;shape.shape=circle;add_child(shape)
  set_meta('hp',spec.hp)
  art_visual=load('res://scripts/art/enemy_visual.gd').new();art_visual.kind=kind;add_child(art_visual)
@@ -105,13 +106,14 @@ func _physics_process(dt):
 func resolve_attack(aim_position:Vector2):
  arena.telemetry.attacks_total+=1
  if spec.get('ranged',false):
-  var bullet=load('res://scripts/game/projectile.gd').new();bullet.arena=arena;bullet.hostile=true;bullet.speed=240;bullet.damage=spec.damage;bullet.position=position;bullet.direction=position.direction_to(aim_position);arena.add_child(bullet)
+  var bullet=load('res://scripts/game/projectile.gd').new();bullet.arena=arena;bullet.hostile=true;bullet.speed=240;bullet.damage=spec.damage;bullet.position=preload("res://scripts/combat/body_geometry.gd").safe_muzzle(self,position+Vector2(0,-42));bullet.direction=bullet.position.direction_to(aim_position+Vector2(0,-33));arena.add_child(bullet)
  elif position.distance_to(arena.player.position)<=spec.range and position.direction_to(aim_position).dot(position.direction_to(arena.player.position))>0.3 and arena.clear_line(position,arena.player.position):
   arena.player.receive_attack({'damage':spec.damage,'penetration':2.0,'knockback':45.0},position.direction_to(arena.player.position))
 func visible_to_player()->bool:
  var screen:Vector2=get_global_transform_with_canvas()*Vector2.ZERO
  return get_viewport_rect().has_point(screen) and arena.clear_line(arena.player.global_position,global_position,1) and arena.perceived_brightness(global_position)>0.12
 func _draw():
+ if is_instance_valid(art_visual) and art_visual.visibility_layer==0:return
  if not visible_to_player():return
  var r:Dictionary=record()
  if r.vitals.hp<=0:return
@@ -119,5 +121,3 @@ func _draw():
  if spec.armor>0:draw_line(Vector2(-22,-spec.radius-15),Vector2(-22+44*r.armor.durability/spec.armor,-spec.radius-15),Color.LIGHT_BLUE,2)
  if not r.alerted and r.meter>0:draw_arc(Vector2.ZERO,spec.radius+5,-PI/2,-PI/2+TAU*r.meter,24,Color.YELLOW,2)
  if r.attack_left>0 or r.call_left>0:draw_arc(Vector2.ZERO,spec.radius+8,0,TAU,24,Color.ORANGE,3)
-
-

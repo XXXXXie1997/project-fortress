@@ -63,8 +63,8 @@ func run():
 	victim.position=Vector2(470,400)
 	for i in 3:await physics_frame
 	var hp:float=victim.record().vitals.hp
-	print("ENEMY_PROBE hp=",hp," layer=",victim.collision_layer," ray=",arena.get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(victim.position-Vector2(victim.spec.radius+20,0),victim.position+Vector2(30,0),13)))
-	var shot=load("res://scripts/game/projectile.gd").new();shot.arena=arena;shot.position=victim.position-Vector2(victim.spec.radius+20,0);shot.direction=Vector2.RIGHT;shot.attack={"penetration":100};arena.add_child(shot)
+	var body_center:=preload("res://scripts/combat/body_geometry.gd").center(victim)
+	var shot=load("res://scripts/game/projectile.gd").new();shot.arena=arena;shot.position=body_center-Vector2(victim.spec.radius+20,0);shot.direction=Vector2.RIGHT;shot.attack={"penetration":100};arena.add_child(shot)
 	for i in 8:await physics_frame
 	print("ENEMY_AFTER alive_bullet=",is_instance_valid(shot)," hp=",victim.record().vitals.hp)
 	assert(not is_instance_valid(shot) and victim.record().vitals.hp<hp)

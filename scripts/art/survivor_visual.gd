@@ -62,3 +62,8 @@ func _process(delta: float) -> void:
  battery.visible=charging and weapon_index<3
  battery.modulate=Color(0.65,1.0,1.0,0.8+0.2*sin(elapsed*10.0))
 
+
+func muzzle_position(direction:Vector2)->Vector2:
+ if has_meta("hd_actor"):return get_meta("hd_actor").muzzle_point(direction)
+ # Equipment sheet: gun points right; barrel ends 22 local pixels from grip.
+ return to_global(Vector2(0,-9)+direction.normalized()*22.0)

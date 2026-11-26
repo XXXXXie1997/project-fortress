@@ -7,6 +7,7 @@ var draw_count:=0
 func rect(a:Array)->Rect2:return Rect2(a[0],a[1],a[2],a[3])
 func _draw():
  draw_count+=1
+ if content.id=='suburbs':return
  var material:String="asphalt" if content.id=="city" else ("concrete" if content.id=="armory" else "soil")
  preload("res://scripts/art/continuous_ground.gd").paint(self,projection,Rect2(0,0,content.size[0],content.size[1]),material)
  for road in content.roads:

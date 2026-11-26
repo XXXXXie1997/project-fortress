@@ -61,7 +61,7 @@ func fire()->bool:
  item.energy-=15
  WeaponRules.wear_after_attack(item,spec,actor.effective_config())
  actor.arena.emit_sfx('shot_heavy',actor.global_position,false,'player_launcher')
- destination=landing;flight_start=actor.global_position;flight=0.5
+ destination=landing;flight_start=actor.visual.muzzle_position(actor.visual.aim);flight=0.5
  return true
 func explode(center:Vector2):
  if not ensure_map_context():return
@@ -91,7 +91,7 @@ func _draw():
   if mode==2:
    draw_colored_polygon(polygon(landing,120),Color(1,0.55,0.15,0.15))
    draw_colored_polygon(polygon(landing,55),Color(1,0.25,0.1,0.25))
-  elif battery().get('energy',0)>0:
+  elif battery().get('energy',0)>0 and not actor.visual.has_meta("hd_actor"):
    if mode==1:
     var end:Vector2=actor.global_position+aim*600
     var result=get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(actor.global_position,end,13))
@@ -103,6 +103,7 @@ func _draw():
      var result=get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(actor.global_position,end,1))
      cone.append(to_local(result.position if not result.is_empty() else end))
     draw_colored_polygon(cone,Color(1,0.9,0.6,0.18))
+ if actor.visual.has_meta("hd_actor"):return
  if flight>0:
   var t:=1-flight/0.5
   draw_circle(to_local(flight_start.lerp(destination,t))+Vector2(0,-100*sin(t*PI)),6,Color.ORANGE)

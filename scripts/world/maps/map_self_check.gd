@@ -27,6 +27,7 @@ func run():
  var got:Array=arena.exploration.take_all(arena.state,'key_cache')
  verify(got.size()==1,'钥匙真实搜索拾取')
  arena.hud.inventory_panel.close_panel()
+ while arena.hud.inventory_panel.visible:await process_frame
  arena.player.position=arena.projection.logical_to_world(Vector2(1680,650));await press('interact')
  verify(arena.state.world.exploration.doors.has('suburbs:supply'),'F消耗钥匙永久开门')
  verify(not arena.geometry.doors.has('supply'),'门碰撞移除')

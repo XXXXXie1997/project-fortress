@@ -51,6 +51,7 @@ func _ready():
   target.position=p;target.collision_layer=4;target.collision_mask=2
   var shape=CollisionShape2D.new();var circle=CircleShape2D.new();circle.radius=18;shape.shape=circle
   target.name='Target%d'%targets.size();target.add_child(shape);target.set_meta('hp',100.0);add_child(target);targets.append(target)
+  preload('res://scripts/combat/body_geometry.gd').install(target,256,Vector2.ZERO,Vector2(36,36))
   state.world.combat_targets[str(target.name)]={'vitals':{'hp':100.0,'max_hp':100.0},'action':ActionRules.fresh(config),'armor':{}}
  player=load('res://scripts/game/player_actor.gd').new();player.arena=self;player.position=Vector2(320,360);add_child(player)
  hud=load('res://scripts/ui/combat_hud.gd').new();hud.arena=self;add_child(hud)
